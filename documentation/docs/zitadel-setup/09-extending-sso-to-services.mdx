@@ -1,0 +1,381 @@
+---
+title: Extending SSO to Services
+description: Configure direct OIDC/SAML integration for services using KyleHub-Auth credentials
+sidebar_position: 9
+---
+
+# Extending SSO to Services
+
+## Overview
+
+While Pangolin provides centralized authentication for web-based services, many applications support **direct OIDC or SAML integration** with Zitadel. This eliminates the need for Pangolin to proxy these services while still leveraging your unified `KyleHub-Auth` application.
+
+### Benefits of direct integration
+
+- **Reduced latency**: No proxy hop—services authenticate directly with Zitadel
+- **Native workflows**: Services use their built-in SSO features (user mapping, role sync, etc.)
+- **Flexibility**: Mix Pangolin-proxied and directly-integrated services as needed
+- **Simplified troubleshooting**: Authentication logs in both Zitadel and the service itself
+
+### When to use direct integration vs Pangolin
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Service supports OIDC/SAML | **Direct integration** (better performance, native features) |
+| Service lacks SSO support | **Pangolin proxy** (header injection provides auth) |
+| Multiple services on one domain | **Pangolin proxy** (path-based routing) |
+| Service requires specific claims/roles | **Direct integration** (fine-grained token customization) |
+| Rapid deployment of many services | **Pangolin proxy** (add rule, done) |
+
+:::tip
+You can use **both patterns simultaneously**. For example, Proxmox and Grafana might use direct OIDC while legacy services without SSO support remain behind Pangolin.
+:::
+
+---
+
+## Prerequisites
+
+Before configuring direct SSO integration:
+
+1. **Zitadel setup complete**: You have the `KyleHub` project and `KyleHub-Auth` application configured (see [Initial Project Setup](./04-initial-project-setup.mdx)).
+2. **Roles defined**: Category roles (admin, homelab, media) and service roles (access_grafana, access_proxmox) exist in the `KyleHub` project (see [Permission Deep Dive](./08-zitadel-permission-deep-dive.mdx)).
+3. **Service role grants**: Users have been granted appropriate service-specific roles in Zitadel (Projects → KyleHub → Authorizations).
+4. **Access to service admin UI**: You can log in to configure SSO settings (Grafana admin, Proxmox PAM root, etc.).
+
+---
+
+## 1. Grafana OIDC Integration
+
+Grafana supports native OIDC authentication with automatic role mapping.
+
+### 1.1 Update Zitadel redirect URIs
+
+1. In Zitadel, navigate to **Projects → KyleHub → Applications → KyleHub-Auth**.
+2. Go to **Redirect Settings** and add:
+   ```
+   https://grafana.homelab.yourdomain.com/login/generic_oauth
+   ```
+3. Click **Save**.
+
+### 1.2 Configure Grafana
+
+Edit your Grafana configuration file (`/etc/grafana/grafana.ini` or Docker Compose environment):
+
+```ini
+[server]
+root_url = https://grafana.homelab.yourdomain.com
+
+[auth.generic_oauth]
+enabled = true
+name = Zitadel
+client_id = <KyleHub-Auth Client ID>
+client_secret = <KyleHub-Auth Client Secret>
+scopes = openid profile email urn:zitadel:iam:org:project:roles
+auth_url = https://zitadel.yourdomain.com/oauth/v2/authorize
+token_url = https://zitadel.yourdomain.com/oauth/v2/token
+api_url = https://zitadel.yourdomain.com/oidc/v1/userinfo
+allow_sign_up = true
+role_attribute_path = contains(urn:zitadel:iam:org:project:roles, 'admin') && 'Admin' || contains(urn:zitadel:iam:org:project:roles, 'homelab') && 'Editor' || 'Viewer'
+```
+
+**Explanation**:
+- `scopes`: Includes `urn:zitadel:iam:org:project:roles` to receive role claims
+- `role_attribute_path`: Maps Zitadel roles to Grafana roles:
+  - Users with `admin` role → Grafana **Admin**
+  - Users with `homelab` role → Grafana **Editor**
+  - All others → Grafana **Viewer**
+
+### 1.3 Restart Grafana
+
+```bash
+sudo systemctl restart grafana-server
+# or for Docker:
+docker compose restart grafana
+```
+
+### 1.4 Test the integration
+
+1. Visit `https://grafana.homelab.yourdomain.com`.
+2. Click **Sign in with Zitadel**.
+3. Authenticate through Zitadel.
+4. Verify you're logged into Grafana with the correct role (check user menu → Profile).
+
+### 1.5 Enforce service-specific access (optional)
+
+If you want to restrict Grafana to only users with the `access_grafana` role:
+
+1. In Grafana, configure `role_attribute_path` to check for the service role:
+   ```ini
+   role_attribute_path = contains(urn:zitadel:iam:org:project:roles, 'access_grafana') && (contains(urn:zitadel:iam:org:project:roles, 'admin') && 'Admin' || contains(urn:zitadel:iam:org:project:roles, 'homelab') && 'Editor' || 'Viewer') || ''
+   ```
+   This returns an empty role (denying access) unless `access_grafana` is present.
+
+2. Alternatively, use Pangolin rules in front of Grafana to enforce `access_grafana` before the OIDC handshake (see [Pangolin Auth Setup](./05-pangolin-auth-provider-setup.mdx)).
+
+---
+
+## 2. Proxmox OIDC Integration
+
+Proxmox VE supports OIDC authentication with automatic user provisioning.
+
+### 2.1 Update Zitadel redirect URIs
+
+1. In Zitadel, go to **Projects → KyleHub → Applications → KyleHub-Auth**.
+2. Add the following redirect URI:
+   ```
+   https://proxmox.yourdomain.com
+   ```
+3. Click **Save**.
+
+### 2.2 Configure Proxmox OpenID realm
+
+1. SSH into your Proxmox host or use the web shell.
+2. Edit `/etc/pve/domains.cfg`:
+   ```
+   openid: zitadel
+       issuer-url https://zitadel.yourdomain.com
+       client-id <KyleHub-Auth Client ID>
+       client-key <KyleHub-Auth Client Secret>
+       username-claim preferred_username
+       autocreate 1
+       prompt login
+   ```
+
+3. Alternatively, configure via the Proxmox web UI:
+   - Navigate to **Datacenter → Permissions → Realms → Add → OpenID Connect Server**.
+   - Fill in:
+     - **Realm**: `zitadel`
+     - **Issuer URL**: `https://zitadel.yourdomain.com`
+     - **Client ID**: `<KyleHub-Auth Client ID>`
+     - **Client Key**: `<KyleHub-Auth Client Secret>`
+     - **Username Claim**: `preferred_username`
+     - **Autocreate**: ✅ (enabled)
+     - **Prompt**: `login`
+
+4. Click **Add**.
+
+### 2.3 Configure role-based access
+
+Proxmox doesn't natively map OIDC claims to permissions, so you'll need to manage user permissions after auto-creation:
+
+1. After a user logs in via OIDC for the first time, they'll appear in **Datacenter → Permissions → Users**.
+2. Assign them to a Proxmox group (e.g., `admins`, `homelab-users`) or grant individual permissions.
+
+**Automated approach**:
+- Use Proxmox's REST API and a post-login script to assign permissions based on Zitadel roles.
+- Example: Query the Zitadel user info endpoint, check for `admin` or `homelab` role, then call Proxmox API to assign the user to the appropriate group.
+
+### 2.4 Test the integration
+
+1. Visit `https://proxmox.yourdomain.com`.
+2. Select **Realm: zitadel** from the login dropdown.
+3. Click **Login**.
+4. Authenticate through Zitadel.
+5. Verify you're logged into Proxmox (you may have limited permissions until an admin grants access).
+
+### 2.5 Enforce service-specific access with Pangolin
+
+Since Proxmox doesn't enforce OIDC claims natively, use Pangolin in front of Proxmox to require the `access_proxmox` role before allowing OIDC authentication:
+
+1. Configure a Pangolin rule (see [Pangolin Auth Setup](./05-pangolin-auth-provider-setup.mdx), Section 5.3):
+   ```yaml
+   - name: "Proxmox requires access_proxmox"
+     priority: 5
+     pattern: "proxmox.yourdomain.com"
+     allow: true
+     roles_required:
+       - "access_proxmox"
+   ```
+
+2. This ensures only users with `access_proxmox` can reach the Proxmox OIDC login page.
+
+---
+
+## 3. Portainer OIDC Integration
+
+Portainer supports OAuth 2.0 authentication (compatible with OIDC).
+
+### 3.1 Update Zitadel redirect URIs
+
+1. In Zitadel, go to **Projects → KyleHub → Applications → KyleHub-Auth**.
+2. Add the following redirect URI:
+   ```
+   https://portainer.homelab.yourdomain.com
+   ```
+3. Click **Save**.
+
+### 3.2 Configure Portainer OAuth
+
+1. Log into Portainer as an admin.
+2. Navigate to **Settings → Authentication**.
+3. Select **OAuth** and configure:
+   - **Client ID**: `<KyleHub-Auth Client ID>`
+   - **Client Secret**: `<KyleHub-Auth Client Secret>`
+   - **Authorization URL**: `https://zitadel.yourdomain.com/oauth/v2/authorize`
+   - **Access Token URL**: `https://zitadel.yourdomain.com/oauth/v2/token`
+   - **Resource URL**: `https://zitadel.yourdomain.com/oidc/v1/userinfo`
+   - **Redirect URL**: `https://portainer.homelab.yourdomain.com`
+   - **User Identifier**: `preferred_username`
+   - **Scopes**: `openid profile email urn:zitadel:iam:org:project:roles`
+
+4. Enable **Automatic User Provisioning**.
+5. Click **Save Settings**.
+
+### 3.3 Map roles to Portainer teams (optional)
+
+Portainer doesn't support automatic role mapping from OIDC claims, so users will default to the standard user role. To map Zitadel roles to Portainer teams:
+
+1. Create teams in Portainer (e.g., `Admins`, `Homelab Users`).
+2. After users log in via OAuth, manually assign them to teams based on their Zitadel roles.
+3. Alternatively, use Portainer's REST API with a webhook or script to auto-assign teams based on the `urn:zitadel:iam:org:project:roles` claim.
+
+### 3.4 Test the integration
+
+1. Visit `https://portainer.homelab.yourdomain.com`.
+2. Click **Login with OAuth**.
+3. Authenticate through Zitadel.
+4. Verify you're logged into Portainer.
+
+### 3.5 Enforce service-specific access with Pangolin
+
+Use Pangolin to require the `access_portainer` role before OAuth authentication:
+
+1. Configure a Pangolin rule (see [Pangolin Auth Setup](./05-pangolin-auth-provider-setup.mdx), Section 5.3):
+   ```yaml
+   - name: "Portainer requires access_portainer"
+     priority: 5
+     pattern: "portainer.homelab.yourdomain.com"
+     allow: true
+     roles_required:
+       - "access_portainer"
+   ```
+
+2. This ensures only users with `access_portainer` can initiate the OAuth flow.
+
+---
+
+## 4. General OIDC Integration Pattern
+
+For any service supporting OIDC, follow this pattern:
+
+### 4.1 Gather service requirements
+
+- **Redirect URI format**: Check the service's documentation (often `/callback`, `/login/oauth`, `/auth/callback`).
+- **Required scopes**: Typically `openid profile email`, add `urn:zitadel:iam:org:project:roles` for role claims.
+- **Username claim**: Usually `preferred_username`, `email`, or `sub`.
+
+### 4.2 Configure Zitadel
+
+1. Add the service's redirect URI to **Projects → KyleHub → Applications → KyleHub-Auth → Redirect Settings**.
+2. Ensure **Token Settings** include role assertions (see [Initial Project Setup](./04-initial-project-setup.mdx), Section 3).
+
+### 4.3 Configure the service
+
+1. Locate the service's OIDC/OAuth settings (usually in admin UI or config file).
+2. Enter:
+   - **Client ID**: KyleHub-Auth Client ID
+   - **Client Secret**: KyleHub-Auth Client Secret
+   - **Discovery URL** (if supported): `https://zitadel.yourdomain.com/.well-known/openid-configuration`
+   - **Or manually**:
+     - **Authorization URL**: `https://zitadel.yourdomain.com/oauth/v2/authorize`
+     - **Token URL**: `https://zitadel.yourdomain.com/oauth/v2/token`
+     - **Userinfo URL**: `https://zitadel.yourdomain.com/oidc/v1/userinfo`
+   - **Scopes**: `openid profile email urn:zitadel:iam:org:project:roles`
+   - **Username Claim**: `preferred_username` (or per service requirements)
+
+3. Enable auto-provisioning if available.
+
+### 4.4 Map roles (if supported)
+
+If the service supports role mapping from OIDC claims:
+- Configure it to read from `urn:zitadel:iam:org:project:roles` (array of strings).
+- Map Zitadel roles (`admin`, `homelab`, `access_<service>`) to service-specific roles.
+
+If not supported:
+- Rely on Pangolin rules to enforce service-specific access (`access_<service>` required).
+- Manually assign permissions in the service after first login.
+
+### 4.5 Test and iterate
+
+1. Attempt login via OIDC.
+2. Decode the ID token at [jwt.io](https://jwt.io/) to verify claims are present.
+3. Check service logs and Zitadel logs (**Monitor → Events**) for errors.
+4. Adjust redirect URIs, scopes, or role mappings as needed.
+
+---
+
+## 5. Combining Pangolin and Direct SSO
+
+You can use Pangolin **in front of** directly-integrated services for additional enforcement:
+
+### Example: Grafana with double-layer auth
+
+1. **Pangolin rule**: Requires `access_grafana` role to reach the Grafana domain.
+2. **Grafana OIDC**: Authenticates the user and maps roles to Grafana permissions.
+
+**Workflow**:
+1. User visits `https://grafana.homelab.yourdomain.com`.
+2. Pangolin intercepts, checks for `access_grafana` role via Zitadel.
+3. If authorized, Pangolin forwards the request to Grafana.
+4. Grafana initiates OIDC login (separate authentication flow).
+5. User authenticates again (or uses cached Zitadel session) and is granted Grafana access with role-based permissions.
+
+**Benefits**:
+- **Defense in depth**: Two layers of authorization.
+- **Granular control**: Pangolin enforces service access, Grafana enforces internal permissions.
+
+**Tradeoff**:
+- Double authentication hop (though Zitadel sessions typically avoid re-login).
+
+---
+
+## 6. Troubleshooting
+
+### 6.1 "Invalid redirect URI" error
+
+- **Cause**: The redirect URI used by the service doesn't match Zitadel's configured URIs.
+- **Fix**: Check the service's redirect URI in its logs or network inspector, then add it exactly to Zitadel's **KyleHub-Auth → Redirect Settings**.
+
+### 6.2 User authenticated but denied access
+
+- **Cause**: Service received the OIDC token but user lacks required service-specific permissions.
+- **Fix**:
+  - Grant the `access_<service>` role in Zitadel.
+  - Or configure service-specific permissions (Proxmox groups, Grafana roles, etc.).
+
+### 6.3 Roles not appearing in token
+
+- **Cause**: Token settings don't include role assertions.
+- **Fix**: In Zitadel, go to **Projects → KyleHub → Applications → KyleHub-Auth → Token Settings** and enable **User roles inside ID Token** and **User roles inside Userinfo**.
+
+### 6.4 OIDC discovery fails
+
+- **Cause**: Service can't reach Zitadel's discovery endpoint.
+- **Fix**:
+  - Verify DNS resolves `zitadel.yourdomain.com`.
+  - Check firewall rules allow HTTPS traffic from the service to Zitadel.
+  - Manually configure URLs instead of using discovery.
+
+### 6.5 Role mapping doesn't work
+
+- **Cause**: Service expects a different claim format or key.
+- **Fix**:
+  - Check the service's documentation for expected claim structure.
+  - Adjust `role_attribute_path` (Grafana) or custom claim mappings.
+  - Use Zitadel Actions to transform claims if needed (see [Permission Deep Dive](./08-zitadel-permission-deep-dive.mdx), Section 10).
+
+---
+
+## 7. Next Steps
+
+- **Expand direct integrations**: Repeat this pattern for other OIDC-capable services (Home Assistant, Nextcloud, GitLab, etc.).
+- **Automate role assignment**: Build scripts or webhooks to sync Zitadel roles to service-specific permissions (Proxmox groups, Portainer teams).
+- **Monitor authentication**: Use Zitadel's **Monitor → Events** to track OIDC flows and troubleshoot failed logins.
+- **Refine access policies**: Combine Pangolin rules with OIDC role mapping for defense-in-depth.
+
+For advanced role design and access patterns, see [Zitadel Permission Deep Dive](./08-zitadel-permission-deep-dive.mdx).
+
+[^zitadel-oidc]: [Zitadel OIDC documentation](https://zitadel.com/docs/apis/openidoauth/endpoints)
+[^grafana-oauth]: [Grafana Generic OAuth documentation](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/generic-oauth/)
+[^proxmox-openid]: [Proxmox OpenID Connect documentation](https://pve.proxmox.com/wiki/User_Management#pveum_openid_configuration)
+[^portainer-oauth]: [Portainer OAuth documentation](https://docs.portainer.io/admin/settings/authentication/oauth)

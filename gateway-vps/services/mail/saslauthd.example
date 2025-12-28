@@ -1,0 +1,5 @@
+# This is an example for /etc/default/saslauthd
+# Only the changed lines are shown.
+
+START=yes
+OPTIONS="-c -m /var/spool/postfix/var/run/saslauthd"

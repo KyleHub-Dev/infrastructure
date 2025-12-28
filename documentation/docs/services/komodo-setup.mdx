@@ -1,0 +1,542 @@
+---
+title: Komodo Setup
+sidebar_position: 3
+tags:
+  - Komodo
+  - Infrastructure
+  - Deployment
+  - OIDC
+  - Zitadel
+  - Pangolin
+---
+
+# Komodo Infrastructure Management Setup
+
+This guide walks you through installing Komodo, an open-source infrastructure management platform for building and deploying software across multiple servers, and integrating it with your Zitadel authentication and Pangolin reverse proxy.
+
+## What is Komodo?
+
+Komodo is a powerful infrastructure management tool that provides:
+
+- **Multi-Server Management**: Deploy and manage applications across unlimited servers
+- **Container Orchestration**: Manage Docker containers and compose stacks
+- **Build Automation**: Automated builds with various builder backends (AWS, Docker, etc.)
+- **Git Integration**: Direct integration with Git repositories for automated deployments
+- **System Monitoring**: Real-time stats and monitoring for your infrastructure
+- **Resource Syncing**: Declarative configuration with TOML-based resource syncing
+
+:::tip Why Komodo?
+Unlike enterprise tools with artificial limitations, Komodo is fully open-source (GPL-3.0) with no "business edition" paywalls. It's perfect for homelabs and self-hosted infrastructure.
+:::
+
+## Prerequisites
+
+Before setting up Komodo, ensure you have:
+
+- ✅ **Proxmox VE installed and configured** (see [Proxmox Setup](../proxmox-setup.mdx))
+- ✅ **Zitadel authentication** set up with the `KyleHub-Auth` OIDC application (see [Zitadel Setup](../zitadel-setup/02-installation.mdx))
+- ✅ **Pangolin reverse proxy** installed and configured (see [Pangolin Setup](../pangolin-setup/2-simple-setup.md))
+- ✅ **Access role defined** in Zitadel (we'll create `access_komodo`)
+- ✅ **DNS configured** for your Komodo subdomain (e.g., `komodo.yourdomain.com`)
+
+## 1. Create Komodo Access Role in Zitadel
+
+Before installation, set up the access control role in Zitadel:
+
+1. Log into Zitadel console
+2. Navigate to **Projects → KyleHub → Roles**
+3. Click **New** and create:
+   - **Key**: `access_komodo`
+   - **Display Name**: `Komodo Access`
+   - **Description**: `Access to Komodo infrastructure management platform`
+   - **Group**: `services`
+4. Click **Save**
+
+## 2. Install Komodo LXC Container
+
+### 2.1 Access Proxmox Shell
+
+1. Log into your Proxmox web interface
+2. Select your Proxmox node from the left sidebar
+3. Click **Shell** to open the terminal
+
+### 2.2 Run the Installation Script
+
+Execute the following command to launch the Komodo installer:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/komodo.sh)"
+```
+
+### 2.3 Configure Installation Options
+
+The script will present installation options. Choose based on your setup:
+
+#### Default Settings
+- **Container Type**: Unprivileged
+- **Disk Size**: 8 GB
+- **CPU Cores**: 2
+- **RAM**: 2048 MiB
+- **Operating System**: Debian 12
+
+#### Recommended Configuration for Testing/Starting Out
+
+If you're just testing Komodo or starting small:
+
+- **Container ID**: (Choose an available ID, e.g., 210)
+- **Hostname**: `komodo`
+- **Disk Size**: 8 GB (sufficient for testing)
+- **CPU Cores**: 1 (adequate for light usage)
+- **RAM**: 1024 MiB (1GB - works fine for basic operations)
+- **Root SSH Access**: Disabled (security best practice)
+- **Tags**: `infrastructure,deployment`
+
+:::tip Resource Scaling
+Start with minimal resources (1 CPU, 1GB RAM). You can easily increase them later in Proxmox if you need more capacity for heavy builds or multiple simultaneous deployments.
+:::
+
+#### Production/Heavy Usage Configuration
+
+For intensive workloads with multiple builds and deployments:
+
+- **Disk Size**: 16 GB (recommended for builds and logs)
+- **CPU Cores**: 2-4
+- **RAM**: 4096 MiB (4GB for handling multiple builds)
+
+:::note Network Setup
+Since your core infrastructure runs in the cloud (not in a homelab), ensure Komodo can reach the internet for pulling Docker images and your Pangolin/Zitadel instances for authentication.
+:::
+
+### 2.4 Wait for Installation
+
+The script will:
+1. Download the Debian 12 template (if not cached)
+2. Create and configure the LXC container
+3. Install system dependencies
+4. Set up MongoDB database
+5. Download and install Komodo
+6. Initialize the database
+7. Start the Komodo service
+
+This process typically takes 5-10 minutes.
+
+### 2.5 Installation Complete
+
+After successful installation, you should see:
+
+```
+✔️ Completed Successfully!
+
+🚀 Komodo setup has been successfully initialized!
+💡 Access it using the following URL:
+   🌐 http://YOUR_CONTAINER_IP:9120
+```
+
+:::warning Don't Access Yet
+While Komodo is now running on port 9120, we'll configure OIDC authentication before accessing it. This ensures secure access from the start.
+:::
+
+## 3. Configure Komodo for OIDC Authentication
+
+Now we'll configure Komodo to use Zitadel for authentication.
+
+### 3.1 Access Komodo Container Console
+
+In Proxmox:
+1. Select the Komodo LXC container from the left sidebar
+2. Click **Console**
+
+### 3.2 Edit Komodo Configuration
+
+Komodo can be configured via environment variables. We'll create a systemd override file:
+
+```bash
+# Create systemd override directory
+mkdir -p /etc/systemd/system/komodo.service.d/
+
+# Create override configuration
+cat > /etc/systemd/system/komodo.service.d/override.conf << 'EOF'
+[Service]
+Environment="KOMODO_HOST=https://komodo.yourdomain.com"
+Environment="KOMODO_OIDC_ENABLED=true"
+Environment="KOMODO_OIDC_PROVIDER=https://auth.yourdomain.com"
+Environment="KOMODO_OIDC_CLIENT_ID=YOUR_ZITADEL_CLIENT_ID"
+Environment="KOMODO_OIDC_CLIENT_SECRET=YOUR_ZITADEL_CLIENT_SECRET"
+Environment="KOMODO_LOCAL_AUTH=false"
+Environment="KOMODO_DISABLE_USER_REGISTRATION=true"
+EOF
+```
+
+Replace the following values:
+- `komodo.yourdomain.com` → Your Komodo domain (through Pangolin)
+- `auth.yourdomain.com` → Your Zitadel domain
+- `YOUR_ZITADEL_CLIENT_ID` → Client ID from the `KyleHub-Auth` application
+- `YOUR_ZITADEL_CLIENT_SECRET` → Client Secret from the `KyleHub-Auth` application
+
+:::tip Configuration Options
+- **KOMODO_LOCAL_AUTH=false**: Disables local username/password auth (OIDC only)
+- **KOMODO_DISABLE_USER_REGISTRATION=true**: Only Zitadel users can access (no self-registration)
+- Keep these enabled if you want both OIDC and local auth as fallback
+:::
+
+### 3.3 Reload and Restart Komodo
+
+Apply the configuration changes:
+
+```bash
+# Reload systemd to pick up the override
+systemctl daemon-reload
+
+# Restart Komodo service
+systemctl restart komodo
+
+# Verify it's running
+systemctl status komodo
+```
+
+You should see `active (running)` in the status output.
+
+### 3.4 Check Komodo Logs
+
+Verify OIDC is enabled:
+
+```bash
+journalctl -u komodo -f
+```
+
+Look for log entries indicating OIDC is enabled:
+```
+🔑 OIDC Login Enabled
+```
+
+Press `Ctrl+C` to exit the log view.
+
+## 4. Update Zitadel Redirect URI
+
+Add Komodo's callback URL to the Zitadel application:
+
+1. Log into Zitadel console
+2. Navigate to **Projects → KyleHub → Applications → KyleHub-Auth**
+3. Go to **Settings → Redirect Settings**
+4. Add the following redirect URI:
+   ```
+   https://komodo.yourdomain.com/auth/oidc/callback
+   ```
+5. Click the **+** icon to add it
+6. Click **Save**
+
+:::note Redirect URI Format
+The URI must match exactly: `https://<your-komodo-domain>/auth/oidc/callback`. Komodo expects this specific path for OIDC callbacks. Replace `komodo.yourdomain.com` with your actual domain.
+:::
+
+## 5. Configure Pangolin Reverse Proxy
+
+Now we'll expose Komodo through Pangolin with authentication.
+
+### 5.1 Add Komodo Upstream
+
+1. Log into Pangolin Server Admin console
+2. Navigate to **Server Admin → Upstreams → Add Upstream**
+3. Configure the upstream:
+   - **Name**: `Komodo`
+   - **Target**: `http://YOUR_CONTAINER_IP:9120` (your Komodo container IP and port)
+   - **Health Check Path**: `/` (optional)
+4. Click **Create**
+
+:::tip Finding Your Container IP
+In Proxmox, select your Komodo container and look at the **Summary** tab to find the IP address. Or use the console: `hostname -I`
+:::
+
+### 5.2 Create Routing Rule
+
+1. Navigate to **Server Admin → Routing → Add Route**
+2. Configure the route:
+   - **Domain**: `komodo.yourdomain.com`
+   - **Upstream**: Select `Komodo`
+   - **Enable Authentication**: ✓ (checked)
+   - **Identity Provider**: Select your Zitadel identity provider
+3. Click **Create**
+
+### 5.3 Add Access Control Rule
+
+1. Navigate to **Server Admin → Access Control → Rules**
+2. Click **Add Rule**
+3. Configure the rule:
+   - **Name**: `Komodo Access`
+   - **Domain Pattern**: `komodo.yourdomain.com`
+   - **Required Role**: `access_komodo`
+   - **Action**: Allow
+   - **Priority**: 10
+4. Click **Save**
+
+:::tip Rule Priority
+Lower priority numbers take precedence. If you have wildcard rules (e.g., `*.yourdomain.com`), make sure this specific rule has a lower priority number to ensure the `access_komodo` role is enforced.
+:::
+
+## 6. Verify the Setup
+
+### 6.1 Grant Yourself Access
+
+1. In Zitadel, navigate to **Projects → KyleHub → Authorizations**
+2. Click **New**
+3. Select your user account
+4. Grant the `access_komodo` role
+5. Click **Save**
+
+### 6.2 Test Authentication Flow
+
+1. Open your browser and navigate to `https://komodo.yourdomain.com` (or your configured domain)
+2. You should be redirected to Zitadel for authentication
+3. Log in with your Zitadel credentials
+4. After successful authentication, you'll be redirected back to Komodo
+5. You should see the Komodo dashboard with an "OIDC" login indicator
+
+:::success First Login
+On your first login, Komodo will automatically create a user account linked to your Zitadel identity. If you're the first user, you'll automatically be granted admin privileges.
+:::
+
+### 6.3 Verify User Creation
+
+In Komodo:
+1. Click on your profile icon (top right)
+2. You should see your username (from Zitadel)
+3. Navigate to **Settings → Users** (admin only)
+4. Verify your user is listed with OIDC authentication type
+
+### 6.4 Test Access Revocation
+
+1. In Zitadel, remove the `access_komodo` role from your user
+2. Log out of Komodo
+3. Try to access Komodo again
+4. You should be denied access by Pangolin (before even reaching Komodo)
+5. Re-grant the role and verify access is restored
+
+## 7. Initial Komodo Configuration
+
+Now that authentication is working, let's configure Komodo for your infrastructure.
+
+### 7.1 Add Your First Server
+
+Komodo manages servers using "Periphery" agents. Let's add the Komodo server itself as the first managed server:
+
+1. In Komodo, navigate to **Servers → Add Server**
+2. Configure:
+   - **Name**: `Komodo-Local`
+   - **Address**: `localhost`
+   - **Enabled**: ✓
+3. Click **Create**
+
+:::info Periphery Agents
+For managing remote servers, you'll need to install Komodo Periphery agents on each server. See [Komodo's Periphery documentation](https://github.com/moghtech/komodo/blob/main/scripts/readme.md) for details.
+:::
+
+### 7.2 Configure First Deployment (Optional)
+
+Test Komodo by deploying a simple container:
+
+1. Navigate to **Deployments → New Deployment**
+2. Configure:
+   - **Name**: `test-nginx`
+   - **Server**: `Komodo-Local`
+   - **Image**: `nginx:alpine`
+   - **Ports**: `8080:80`
+3. Click **Create**
+4. Click **Deploy** to start the container
+
+### 7.3 Set Up Monitoring (Optional)
+
+Enable system monitoring:
+
+1. Navigate to **Settings → Monitoring**
+2. Enable monitoring for servers you want to track
+3. View stats in **Dashboard** or individual server pages
+
+## 8. Security Hardening
+
+### 8.1 Disable Local Auth (Already Done)
+
+If you set `KOMODO_LOCAL_AUTH=false` in step 3.2, local authentication is already disabled. Verify this:
+- Try logging out and accessing Komodo
+- You should only see the "OIDC" login button (no username/password fields)
+
+### 8.2 Limit Admin Access
+
+Grant admin privileges only to trusted users:
+
+1. In Komodo, navigate to **Settings → Users**
+2. For each user, set appropriate permissions:
+   - **Admin**: Full access to Komodo configuration
+   - **Create Server**: Can add new servers
+   - **Create Build**: Can create build configurations
+3. Save changes
+
+### 8.3 Review Komodo Logs
+
+Regularly check logs for suspicious activity:
+
+```bash
+# In Komodo container console
+journalctl -u komodo --since "1 hour ago"
+```
+
+## 9. Backup Configuration
+
+### 9.1 Backup MongoDB Data
+
+Komodo stores all data in MongoDB. Create regular backups:
+
+```bash
+# In Komodo container console
+mongodump --out /root/komodo-backup-$(date +%Y%m%d)
+```
+
+### 9.2 Backup Configuration Files
+
+Backup your Komodo configuration:
+
+```bash
+# Backup systemd override
+cp /etc/systemd/system/komodo.service.d/override.conf /root/komodo-env-backup.conf
+
+# If you created a custom config file
+cp /app/config/config.toml /root/komodo-config-backup.toml
+```
+
+### 9.3 Proxmox Backup
+
+Use Proxmox's built-in backup feature:
+
+1. In Proxmox, select the Komodo container
+2. Click **Backup → Backup now**
+3. Choose your backup storage
+4. Set a retention policy
+5. Optionally schedule automatic backups (**Backup → Schedule**)
+
+## 10. Next Steps
+
+With Komodo fully integrated into your infrastructure:
+
+### Expand Infrastructure Management
+- **Add Remote Servers**: Install Periphery agents on other servers in your homelab
+- **Configure Builds**: Set up automated builds for your projects
+- **Create Stacks**: Define multi-container stacks with compose files
+- **Git Integration**: Connect repositories for automated deployments
+
+### Integrate with Other Services
+- **Grafana**: Monitor Komodo metrics in Grafana dashboards
+- **Portainer Alternative**: Use Komodo as a more powerful Portainer replacement
+- **CI/CD Pipeline**: Integrate Komodo builds with your Git webhooks
+
+### Grant Access to Team Members
+1. Create users in Zitadel
+2. Grant them the `access_komodo` role
+3. Set appropriate permissions in Komodo (admin vs. regular user)
+
+### Advanced Configuration
+- **Custom Builders**: Configure AWS, GCP, or custom builder backends
+- **Webhooks**: Set up Git webhooks for automatic deployments
+- **Resource Syncing**: Use TOML files to declare infrastructure as code
+- **Alerting**: Configure notifications for deployment failures
+
+## Troubleshooting
+
+### Issue: Can't Access Komodo After OIDC Configuration
+
+**Symptoms**: Komodo service won't start or shows errors in logs
+
+**Solution**:
+1. Check logs: `journalctl -u komodo -n 50`
+2. Verify environment variables are correct:
+   ```bash
+   systemctl cat komodo | grep Environment
+   ```
+3. Common issues:
+   - Incorrect Client ID or Secret
+   - Wrong OIDC Provider URL (should be base URL, not with `/oauth/v2/authorize`)
+   - KOMODO_HOST doesn't match Pangolin domain
+
+### Issue: Redirect Loop After Login
+
+**Symptoms**: After Zitadel login, you're redirected back to Zitadel repeatedly
+
+**Solution**:
+1. Verify the redirect URI in Zitadel matches exactly:
+   ```
+   https://komodo.yourdomain.com/auth/oidc/callback
+   ```
+   (Replace with your actual domain)
+2. Check that `KOMODO_HOST` environment variable matches your Pangolin domain
+3. Clear browser cookies and try again
+
+### Issue: "User Registration Disabled" Error
+
+**Symptoms**: After successful Zitadel login, you see an error about registration being disabled
+
+**Solution**:
+This happens when:
+- `KOMODO_DISABLE_USER_REGISTRATION=true` is set
+- You're not the first user
+- Your Zitadel account isn't linked to an existing Komodo user
+
+Fix:
+1. Temporarily remove `KOMODO_DISABLE_USER_REGISTRATION` from the config
+2. Restart Komodo: `systemctl restart komodo`
+3. Log in once to create your user
+4. Re-enable the setting if desired
+
+### Issue: Pangolin Denies Access
+
+**Symptoms**: You're redirected to Pangolin's "Access Denied" page before reaching Komodo
+
+**Solution**:
+1. Verify you have the `access_komodo` role in Zitadel
+2. Check Pangolin's access control rules include `access_komodo` role
+3. Verify the domain pattern matches your configured domain (e.g., `komodo.yourdomain.com`)
+4. Check rule priority (specific rules should have lower numbers than wildcards)
+
+### Issue: MongoDB Connection Errors
+
+**Symptoms**: Komodo logs show MongoDB connection failures
+
+**Solution**:
+1. Check MongoDB service: `systemctl status mongod`
+2. Restart if needed: `systemctl restart mongod`
+3. Verify MongoDB is listening: `netstat -tlnp | grep 27017`
+4. Check Komodo's MongoDB configuration in logs
+
+### Issue: Can't Deploy Containers
+
+**Symptoms**: Deployments fail with permission errors
+
+**Solution**:
+1. Verify Docker is running: `systemctl status docker`
+2. Check if Komodo user can access Docker socket:
+   ```bash
+   ls -l /var/run/docker.sock
+   ```
+3. Add komodo user to docker group if needed:
+   ```bash
+   usermod -aG docker komodo
+   systemctl restart komodo
+   ```
+
+## Additional Resources
+
+### Official Komodo Resources
+- 🦎 [Komodo Website](https://komo.do/)
+- 📚 [GitHub Repository](https://github.com/moghtech/komodo)
+- 🎮 [Try the Demo](https://demo.komo.do/) (login: `demo` : `demo`)
+- 💬 [Discord Community](https://discord.gg/DRqE8Fvg5c)
+
+### Related Documentation
+- [Zitadel OIDC Configuration](../zitadel-setup/04-initial-project-setup.mdx)
+- [Pangolin Access Control](../pangolin-setup/4-network-firewall.md)
+- [Proxmox Container Management](../proxmox-setup.mdx)
+
+### Community Scripts
+- [Proxmox VE Helper Scripts](https://community-scripts.github.io/ProxmoxVE/)
+- [Komodo Periphery Setup](https://github.com/moghtech/komodo/blob/main/scripts/readme.md)
+
+---
+
+**Your Komodo infrastructure management platform is now fully integrated with Zitadel authentication and secured behind Pangolin reverse proxy!** 🦎✨

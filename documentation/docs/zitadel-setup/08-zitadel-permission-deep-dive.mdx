@@ -1,0 +1,553 @@
+---
+title: Zitadel Permission Deep Dive
+sidebar_position: 8
+tags:
+- Zitadel
+- IAM
+- Roles
+- Permissions
+- Pangolin
+---
+
+# Designing Roles and Permissions in Zitadel
+
+This guide explains how to design, implement, and operate role-based access control (RBAC) in Zitadel using a unified project approach. By centralizing all roles in a single project, you create a scalable, maintainable identity foundation that serves both Pangolin-proxied services and direct SSO integrations.
+
+## 1. Core Building Blocks
+
+Understanding what each Zitadel concept controls keeps the responsibilities clear:
+
+| Concept | Scope | Why it matters |
+| ------- | ----- | -------------- |
+| **Organization** | Top-level container | Owns projects, users, policies. You already run everything inside your personal organization. |
+| **Project** | Application boundary | Groups one or more applications that share the same role catalog. Grants are issued per project. |
+| **Role (Project Role)** | Defined per project | Machine-readable capability flag (for example `hub_admin`). Roles have *no* inherent meaning until an application interprets them. |
+| **Authorization (User Grant)** | Per user per project | Assigns one or more roles to a user (human or service). Removing the grant revokes access immediately. |
+| **Service User** | Project-scoped machine identity | Authenticates non-human workloads. Works with the same role system as humans. |
+| **Token Claims** | Travel with the user | When configured, Zitadel writes project roles into ID/Access tokens so relying applications can enforce permissions. |
+
+> 📌 **Key mental model:** Zitadel asserts *who a user is* and *which roles they own*. Each application (Pangolin, Portainer, Grafana, …) decides what those roles allow.
+
+## 2. Prerequisites Checklist
+
+Before implementing the unified permission model ensure:
+
+1. Organization exists with your personal admin account (not bootstrap admin).
+2. Central project `KyleHub` with application `KyleHub-Auth` is created.
+3. Role assertions are enabled in the project and application token settings.
+4. You can log into Zitadel as the organization owner to create roles and grants.
+
+## 3. Unified Role Taxonomy
+
+The unified approach uses two complementary role types that work together to provide both broad category-based access and fine-grained service control.
+
+### 3.1 Architecture Philosophy
+
+**Traditional approach** (multiple projects):
+- Each service has its own project with isolated roles
+- Managing access requires updating multiple projects
+- SSO integrations need separate OIDC applications
+- Auditing spreads across many authorization logs
+
+**Unified approach** (single project):
+- All roles live in one `KyleHub` project
+- Category roles grant broad access (e.g., `homelab` → all homelab services)
+- Service roles grant specific access (e.g., `access_grafana` → Grafana only)
+- Users can hold multiple roles for flexible combinations
+- Single OIDC application serves all integrations
+
+### 3.2 Category Roles (Broad Access)
+
+Category roles act as "master keys" for groups of related services. Pangolin evaluates these using wildcard rules.
+
+| Key | Display Name | Purpose | Typical Grant Pattern |
+|-----|--------------|---------|----------------------|
+| `admin` | Administrator | Full access to everything, bypass all restrictions | Infrastructure owners |
+| `homelab` | Homelab Access | All infrastructure, monitoring, and management services | Operators, SREs |
+| `media` | Media Access | Streaming, download management, library tools | Family members, media consumers |
+| `finance` | Finance Access | Budgeting, invoice tracking, payment tools | Household finance managers |
+| `dev` | Developer Access | CI/CD, code hosting, development tools | Software developers |
+| `guest` | Guest Access | Public-facing services only (docs, status pages) | External collaborators |
+
+**When to use category roles:**
+- Onboarding users who need logical groups of services
+- Simplifying grants (one role → many services)
+- Implementing coarse-grained access control
+
+### 3.3 Service-Specific Roles (Granular Access)
+
+Service roles provide fine-grained control over individual applications, allowing you to grant targeted access or override category defaults.
+
+| Key | Display Name | Service Domain(s) | Group |
+|-----|--------------|-------------------|-------|
+| `access_pangolin_ui` | Pangolin UI Access | `pangolin.yourdomain.com` | `services` |
+| `access_grafana` | Grafana Access | `grafana.yourdomain.com` | `services` |
+| `access_portainer` | Portainer Access | `portainer.yourdomain.com` | `services` |
+| `access_proxmox` | Proxmox Access | `proxmox.yourdomain.com` | `services` |
+| `access_prometheus` | Prometheus Access | `prometheus.yourdomain.com` | `services` |
+| `access_firefly` | Firefly III Access | `firefly.yourdomain.com` | `services` |
+| `access_jellyfin` | Jellyfin Access | `jellyfin.yourdomain.com` | `services` |
+| `access_nextcloud` | Nextcloud Access | `nextcloud.yourdomain.com` | `services` |
+
+**When to use service roles:**
+- Granting surgical access to specific tools
+- External contractors who need limited scope
+- Breaking inheritance from category roles (more restrictive rules)
+
+### 3.4 Role Combination Examples
+
+Users can hold multiple roles, and Pangolin evaluates all of them:
+
+| User Type | Roles Granted | Access Pattern |
+|-----------|---------------|----------------|
+| **Infrastructure Admin** | `admin` | Full access to everything via admin bypass rule |
+| **DevOps Engineer** | `homelab` + `dev` | All homelab services + CI/CD + development tools |
+| **Media Family Member** | `media` | Jellyfin, Sonarr, Radarr, Plex—nothing else |
+| **Finance Manager** | `finance` + `access_nextcloud` | Finance tools + file storage |
+| **External Auditor** | `access_grafana` | Grafana dashboards only (read-only configured in Grafana) |
+| **Temp Contractor** | `access_portainer` | Single service access, easily revoked |
+
+### 3.5 Naming Conventions
+
+Maintain consistency for long-term maintainability:
+
+- **Category roles**: Single lowercase word (`admin`, `homelab`, `media`)
+- **Service roles**: `access_<servicename>` format
+- **Groups**: `categories` and `services` for visual organization in Zitadel UI
+- **Display names**: Human-readable with proper capitalization
+
+## 4. Creating Roles in Zitadel
+
+1. Sign into the Zitadel Console as your organization owner.
+2. Open your central project (`KyleHub`).
+3. Navigate to **Roles → New**.
+4. For each role:
+   - **Key**: Exact role name (`admin`, `homelab`, `access_grafana`, etc.)
+   - **Display Name**: Human-readable label
+   - **Group**: `categories` or `services` for organization
+5. Repeat for all category and service roles in your taxonomy.
+
+> 🔁 **Renaming roles:** Keys are immutable once assigned. To rename, create the new role, update all user grants, then delete the old role.
+
+> 💡 **Start small:** Begin with `admin`, `homelab`, and 3-5 service roles. Expand as you add services.
+
+## 5. Publishing Roles to Tokens
+
+Applications only see roles once you toggle the console settings that make Zitadel assert them.
+
+### 5.1 Project role settings
+
+1. In Zitadel Console, open **Projects → KyleHub → Settings**.
+2. Scroll to **Role settings**.
+3. Enable at least **Assert roles on authentication**. Consider turning on **Check authorization on authentication** so only users with grants can sign in.[^zitadel-projects]
+4. Save.
+
+### 5.2 Application token settings
+
+1. Stay inside your project and navigate to **Applications → KyleHub-Auth**.
+2. Open **Settings → Token settings**.
+3. Enable **Include user roles in ID token** and **Include user roles in access token**.[^zitadel-apps]
+4. Save.
+
+### 5.3 Verify emitted claims
+
+Initiate a normal Pangolin login (or the console’s built-in test login, if enabled). Copy the ID token and decode it with a tool such as [jwt.io](https://jwt.io/). You should now see a claim similar to:
+
+```json
+{
+	"urn:zitadel:iam:org:project:roles": [
+		"admin",
+		"homelab",
+		"access_pangolin_ui"
+	]
+}
+```
+
+Record the exact claim key; Pangolin needs it in Section 7.
+
+> 💡 **Multiple roles in action:** Notice the user has both category (`homelab`) and service (`access_pangolin_ui`) roles. Pangolin evaluates all of them when making access decisions.
+
+## 6. Granting Roles to Users
+
+### 6.1 Internal users (within your organization)
+
+1. Open **Project → Authorizations**.
+2. Click **New**.
+3. Select the user (for example your admin account or a team member).
+4. Choose the relevant roles:
+   - **Infrastructure admin**: `admin`
+   - **DevOps engineer**: `homelab` + `dev`
+   - **Family member**: `media`
+   - **Specific service access**: `access_grafana`, `access_portainer`, etc.
+5. Save.
+
+> 💡 **Combine roles strategically:** A user with `homelab` gets broad infrastructure access, but you can add `access_grafana` explicitly for clarity or if you later restrict the category rule.
+
+### 6.2 External collaborators
+
+If a user belongs to another organization (or should not be visible in your org's user list):
+
+1. Go to **Project → Authorizations → External User Grant**.
+2. Enter the email address of the external user.
+3. Assign the same role set as above.
+4. Save. Zitadel delivers the roles when that external user authenticates via their home organization.
+
+### 6.3 Service users (automation, CI/CD)
+
+1. Navigate to **Project → Service Users → New**.
+2. Create credentials (PAT or client secret).
+3. In **Authorizations**, assign minimal roles (for example `dev` for CI/CD, `homelab` for infrastructure automation).
+4. Rotate credentials regularly and store them in a secret manager.
+
+> ❌ **Revoking access** is as simple as removing the authorization. Tokens already issued expire according to their lifetime; new login attempts will fail.
+
+> 🔐 **Service user best practice:** Grant the narrowest role possible. A backup script needs `access_nextcloud` only, not `admin`.
+
+## 7. Teaching Pangolin to Enforce Roles
+
+Pangolin acts as the policy enforcement point. You can configure everything through its admin UI; the YAML snippet remains useful for automation.
+
+### 7.1 Enable OIDC and auto-provisioning (UI)
+
+1. Sign into the Pangolin admin portal as a server administrator.
+2. Go to **Server Admin → Identity Providers** and open your Zitadel provider (or create it pointing to `KyleHub-Auth`).
+3. In **Auth Providers → OpenID Connect**, set:
+	- **Issuer URL** to your Zitadel domain.
+	- **Client ID / Secret** copied from the `KyleHub-Auth` application.
+	- **Roles Claim Path** to `urn:zitadel:iam:org:project:roles` (from Section 5).
+4. Switch to the **Auto Provisioning** tab and toggle **Auto Provision Users** on.[^pangolin-auto]
+
+### 7.2 Map organizations and roles with policies
+
+1. In the same provider modal, open **Organization Policies**.
+2. For each Pangolin organization, define:
+   - **Selecting Organizations**: Expression to match users (e.g., `contains(groups, 'home-lab')` or `'true'` to accept all)
+   - **Selecting Roles**: Map Zitadel roles to Pangolin roles (e.g., `contains(urn:zitadel:iam:org:project:roles, 'admin') && 'Admin' || 'Member'`)
+3. Save the policy. Pangolin evaluates these expressions on every login.[^pangolin-auto]
+
+> ℹ️ **Community Edition 1.10.3 and earlier:** Dynamic organization policies may not be available. You can still enable auto-provisioning with a default role. Refer to the [Pangolin Auth Provider Setup](./05-pangolin-auth-provider-setup.mdx) guide for YAML-based configuration.
+
+### 7.3 Build access rules with category and service roles
+
+This is where the unified taxonomy shows its power. Pangolin access rules can reference both category and service roles.
+
+Navigate to **Server Admin → Access Control → Rules** (or open the resource's **Rules** tab).[^pangolin-rules]
+
+#### Category-based rules (wildcard matching)
+
+Create rules for broad categories:
+
+```yaml
+# Admin bypass - highest priority
+- domain: "*"
+  required_role: "admin"
+  action: "allow"
+  priority: 1
+
+# Homelab category - all homelab.* domains
+- domain: "*.homelab.yourdomain.com"
+  required_role: "homelab"
+  action: "allow"
+  priority: 10
+
+# Media category - all media.* domains
+- domain: "*.media.yourdomain.com"
+  required_role: "media"
+  action: "allow"
+  priority: 10
+
+# Finance category - all finance.* domains
+- domain: "*.finance.yourdomain.com"
+  required_role: "finance"
+  action: "allow"
+  priority: 10
+```
+
+#### Service-specific overrides
+
+Add more restrictive rules for specific services (evaluated before category rules if prioritized):
+
+```yaml
+# Proxmox requires explicit access (even for homelab users)
+- domain: "proxmox.homelab.yourdomain.com"
+  required_role: "access_proxmox"
+  action: "allow"
+  priority: 5
+
+# Pangolin UI requires explicit access
+- domain: "pangolin.yourdomain.com"
+  required_role: "access_pangolin_ui"
+  action: "allow"
+  priority: 5
+
+# Grafana accessible via homelab OR explicit grant
+- domain: "grafana.homelab.yourdomain.com"
+  required_role: "access_grafana"
+  action: "allow"
+  priority: 5
+```
+
+#### Catch-all deny
+
+```yaml
+# Deny everything else
+- domain: "*"
+  action: "deny"
+  priority: 100
+```
+
+> 💡 **Rule priority tip:** Lower numbers = higher priority. Set admin bypass to 1, service-specific to 5-9, categories to 10-99, deny-all to 100.
+
+> ℹ️ **Community Edition UI:** The CE UI may not expose priority settings directly. Configure rules via YAML or adjust ordering in the UI list (top = first evaluated).
+
+### 7.4 Access rule evaluation example
+
+When a user with roles `["homelab", "access_grafana"]` visits `grafana.homelab.yourdomain.com`:
+
+1. **Check admin bypass** (priority 1): No `admin` role → skip
+2. **Check service-specific rule** (priority 5): Has `access_grafana` → **ALLOW**
+3. **Check category rule** (priority 10): Has `homelab` → (not reached, already allowed)
+
+When the same user visits `proxmox.homelab.yourdomain.com`:
+
+1. **Check admin bypass** (priority 1): No `admin` role → skip
+2. **Check service-specific rule** (priority 5): No `access_proxmox` role → skip
+3. **Check category rule** (priority 10): Has `homelab` → **ALLOW** (if Proxmox didn't have a service-specific rule)
+4. **Result**: Denied by service rule, even though category would allow
+
+### 7.5 Optional YAML configuration
+
+If you manage Pangolin "as code", mirror the UI settings in `pangolin.yaml`:
+
+```yaml
+auth:
+	oidc:
+		issuer: "https://auth.yourdomain.com"
+		client_id: "<KyleHub-Auth-client-id>"
+		client_secret: "<KyleHub-Auth-client-secret>"
+		redirect_uri: "https://pangolin.yourdomain.com/oauth2/callback"
+		roles_claim: "urn:zitadel:iam:org:project:roles"
+		auto_provision_users: true
+
+access_control_rules:
+	# Admin bypass
+	- domain: "*"
+		required_role: "admin"
+		action: "allow"
+		priority: 1
+
+	# Service-specific: Proxmox
+	- domain: "proxmox.homelab.yourdomain.com"
+		required_role: "access_proxmox"
+		action: "allow"
+		priority: 5
+
+	# Service-specific: Grafana
+	- domain: "grafana.homelab.yourdomain.com"
+		required_role: "access_grafana"
+		action: "allow"
+		priority: 5
+
+	# Category: Homelab
+	- domain: "*.homelab.yourdomain.com"
+		required_role: "homelab"
+		action: "allow"
+		priority: 10
+
+	# Deny all
+	- domain: "*"
+		action: "deny"
+		priority: 100
+```
+
+### 7.6 Verify the flow end-to-end
+
+1. Visit a protected service (for example `https://grafana.homelab.yourdomain.com`).
+2. Authenticate through Zitadel.
+3. After redirect, open **Server Admin → Sessions** in Pangolin to confirm the user was auto-provisioned with the expected roles.
+4. Test category access: user with `homelab` should access all `*.homelab.yourdomain.com` services.
+5. Test service override: user without `access_proxmox` should be denied to Proxmox even with `homelab`.
+6. Remove a role in Zitadel and repeat—Pangolin should deny access on the next login.
+
+### 7.3 Build access rules visually
+
+1. Open your Pangolin resource and select the **Rules** tab (Community Edition users access it via **Server Admin → Access Control → Rules**).[^
+pangolin-rules]
+2. Create rules that map domains or paths to the Zitadel roles you defined (for example `domain: grafana.yourdomain.com` requires `service_access_grafana`).
+3. Keep a final catch-all rule with action **Deny** to block unexpected traffic.
+
+### 7.4 Optional YAML configuration
+
+If you manage Pangolin “as code”, mirror the UI settings in `pangolin.yaml`:
+
+```yaml
+auth:
+	oidc:
+		issuer: "https://auth.yourdomain.com"
+		client_id: "<client-id-from-zitadel>"
+		client_secret: "<client-secret-from-zitadel>"
+		redirect_uri: "https://pangolin.yourdomain.com/oauth2/callback"
+		roles_claim: "urn:zitadel:iam:org:project:roles"
+		auto_provision_users: true
+
+access_control_rules:
+	- domain: "grafana.yourdomain.com"
+		required_role: "service_access_grafana"
+		action: "allow"
+
+	- domain: "pangolin.yourdomain.com"
+		required_role: "service_access_pangolin_ui"
+		action: "allow"
+
+	- domain: "*"
+		action: "deny"
+```
+
+### 7.5 Verify the flow end-to-end
+
+1. Visit a protected service (for example `https://grafana.yourdomain.com`).
+2. Authenticate through Zitadel.
+3. After redirect, open **Server Admin → Sessions** in Pangolin to confirm the user was auto-provisioned with the expected roles.
+4. Remove a role in Zitadel and repeat—Pangolin should deny access on the next login.
+
+## 8. Managing Access Lifecycle
+
+- **Onboarding:** create the user in Zitadel (or invite externally) ➜ issue an authorization ➜ user logs in via Pangolin ➜ Pangolin provisions the session automatically.
+- **Changing privileges:** edit the authorization to add/remove roles. Changes take effect on the next token issuance.
+- **Offboarding:** delete the authorization (and optionally deactivate the user). The next login attempt is rejected.
+- **Auditing:** use Zitadel's audit trail to review who was granted which roles and when. Combine with Pangolin's access logs for end-to-end visibility.
+
+## 9. Scaling the Model to New Services
+
+Adding a new service to your unified auth model is straightforward:
+
+1. **Define the access pattern:**
+   - Fits existing category? (e.g., new monitoring tool → `homelab` role)
+   - Needs specific control? → Create `access_<servicename>` role
+
+2. **Create service role (if needed):**
+   - Navigate to **Projects → KyleHub → Roles → New**
+   - Key: `access_<servicename>`, Group: `services`
+
+3. **Update Pangolin rules:**
+   - Category approach: Service matches `*.homelab.yourdomain.com` → already covered
+   - Service-specific: Add rule for exact domain + required role
+
+4. **Grant access to users:**
+   - Category users already have access if domain matches
+   - Specific users: Add `access_<servicename>` authorization
+
+5. **Optional - Direct SSO integration:**
+   - Service supports OIDC/SAML? → Reuse `KyleHub-Auth` credentials
+   - Configure service to trust Zitadel issuer
+   - Map Zitadel roles to service's internal permissions
+
+No downstream application needs local user management; Zitadel stays the single source of truth.
+
+## 10. Advanced Patterns
+
+### 10.1 Multi-environment role prefixing
+
+For production/staging separation:
+
+```yaml
+# Roles
+- prod_homelab
+- staging_homelab
+- prod_access_grafana
+- staging_access_grafana
+
+# Pangolin rules
+- domain: "*.prod.yourdomain.com"
+  required_role: "prod_homelab"
+  action: "allow"
+
+- domain: "*.staging.yourdomain.com"
+  required_role: "staging_homelab"
+  action: "allow"
+```
+
+### 10.2 Time-based access with external claims
+
+Use Zitadel Actions to inject time-sensitive claims:
+
+```javascript
+// Zitadel Action: Add shift-based role
+function addShiftRole(ctx, api) {
+  const hour = new Date().getHours();
+  if (hour >= 9 && hour < 17) {
+    api.v1.claims.setClaim('shift', 'business_hours');
+  }
+}
+```
+
+Then in Pangolin, evaluate `shift` claim alongside roles for time-gated access.
+
+### 10.3 External organization collaboration
+
+When working with external organizations using their own Zitadel:
+
+1. Create **External User Grants** in your `KyleHub` project
+2. Grant minimal roles (e.g., `guest`, `access_grafana`)
+3. External users authenticate via their Zitadel, receive your roles in token
+4. Pangolin enforces same rules regardless of user's home organization
+
+### 10.4 Credential rotation for direct SSO
+
+Services using `KyleHub-Auth` directly (Grafana, Proxmox):
+
+1. Generate new client secret in Zitadel application
+2. Update each service's OIDC configuration
+3. Test authentication still works
+4. Delete old secret
+5. Repeat quarterly or after suspected compromise
+
+## 11. Quick Reference
+
+### Role Assignment Cheat Sheet
+
+| User Scenario | Roles to Grant | Result |
+|---------------|----------------|--------|
+| New infrastructure admin | `admin` | Full access everywhere |
+| DevOps team member | `homelab` + `dev` | Infrastructure + dev tools |
+| Family media access | `media` | Streaming and downloads only |
+| External auditor | `access_grafana` | Grafana read-only (configured in Grafana) |
+| Temp contractor | `access_<specific>` | Single service, easy revocation |
+| Finance manager | `finance` + `access_nextcloud` | Finance tools + file storage |
+
+### Troubleshooting Checklist
+
+- **User can't access any service:**
+  - Check Zitadel authorization exists for the project
+  - Verify roles are being asserted (check token with jwt.io)
+  - Confirm Pangolin has rules matching user's roles
+
+- **User has role but Pangolin denies:**
+  - Check rule priority (service-specific may override category)
+  - Verify domain pattern matches (wildcards, typos)
+  - Check Pangolin roles claim path setting
+
+- **Token too large:**
+  - Audit role count (>50 roles may cause issues)
+  - Consider splitting into multiple projects (rare need)
+  - Use access tokens for APIs, ID tokens for Pangolin
+
+- **Role changes not reflected:**
+  - Token lifetime hasn't expired (default 15min)
+  - User needs to re-authenticate
+  - Clear Pangolin session cache
+
+### Key Principles
+
+- **One project, one application** for all core auth
+- **Category roles** for broad access, **service roles** for specific control
+- **Pangolin rules** evaluate all user roles (OR logic by default)
+- **Zitadel = source of truth**, services = enforcement points
+- **Start simple**, scale incrementally
+
+With this unified architecture, you maintain a single identity source, reusable permission vocabulary, and consistent enforcement across every service in your infrastructure—whether accessed through Pangolin or direct SSO integration.
+
+[^zitadel-projects]: [Zitadel Projects console guide](https://zitadel.com/docs/guides/manage/console/projects#project-settings)
+[^zitadel-apps]: [Zitadel Applications token settings](https://zitadel.com/docs/guides/manage/console/applications#token-settings)
+[^pangolin-auto]: [Pangolin auto provisioning documentation](https://docs.digpangolin.com/manage/identity-providers/auto-provisioning)
+[^pangolin-rules]: [Pangolin access rules documentation](https://docs.digpangolin.com/manage/access-control/rules)

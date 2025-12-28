@@ -1,0 +1,510 @@
+---
+title: AdGuard Home Setup
+sidebar_position: 5
+---
+
+This document outlines the steps to set up AdGuard Home using the ProxmoxVE Community Script and integrate it with OPNsense for network-wide ad blocking and DNS services.
+
+## Prerequisites
+
+- Proxmox VE installed and configured (see [Proxmox Setup](./proxmox-setup.mdx))
+- OPNsense firewall set up (see [OPNsense Setup](./opnsense-setup.mdx))
+- Pangolin infrastructure management platform set up (see [Pangolin Setup](./pangolin-setup))
+- Access to Proxmox web interface
+
+## Installation via ProxmoxVE Community Script
+
+The ProxmoxVE Community Script provides an easy way to install AdGuard Home in an LXC container.
+
+### 1. Access Proxmox Shell
+
+Log into your Proxmox host via SSH or the web interface shell.
+
+### 2. Run the Installation Script
+
+Execute the following command to download and run the AdGuard Home installation script:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
+```
+
+### 3. Configure the LXC Container
+
+When prompted by the script, select **Advanced** setup instead of Default. This allows you to customize network settings while using optimal resource defaults.
+
+Use the following configuration:
+
+**Container Settings:**
+- **Container ID**: Accept the auto-suggested ID or choose an available ID
+- **Hostname**: `adguard`
+- **Disk size**: `2GB`
+- **CPU cores**: `1`
+- **RAM**: `512 MB`
+- **Container Type**: `Unprivileged` (for better security)
+
+**Network Settings:**
+- **Network Bridge**: `vmbr1` (or your internal network bridge)
+- **IP Address**: Assign a static IP in your network range (e.g., `192.168.1.10/24`)
+- **Gateway**: Your OPNsense IP (e.g., `192.168.1.1`)
+- **DNS Server IP**: Set to a public DNS temporarily (e.g., `1.1.1.1`)
+
+**Security Settings:**
+- **Enable SSH**: `No` (recommended - AdGuard Home is managed via web interface)
+- **Root password**: **Yes, set a strong password** (required for console access and troubleshooting via `pct enter`)
+- **FUSE Support**: `Yes` (required for AdGuard Home functionality)
+- **Verbose Mode**: `No`
+:::tip Root Password
+Even with SSH disabled, you must set a root password. Store it securely in your password manager. You'll need it to:
+- Access the container console through Proxmox web interface
+- Use `pct enter <ID>` from the Proxmox host for troubleshooting
+- Perform maintenance tasks if needed
+:::
+
+**Note**: The script automatically uses Debian 13 as the base OS.
+
+:::warning Network Bridge Configuration
+Make sure to use `vmbr1` (or your internal network bridge) instead of the default `vmbr0` to ensure AdGuard Home is on your internal network and can communicate with other services properly.
+:::
+
+## Integration in Pangolin
+
+After AdGuard Home is installed, you can add it as a protected service in Pangolin.
+
+### 1. Add AdGuard Home to Pangolin
+
+1. Access the Pangolin web interface
+2. Navigate to the resources section
+3. Add a new resource with the following details:
+   - **Name**: AdGuard Home
+   - **Resource Type**: HTTPS Resource
+   - **Subdomain**: `adguard` (or your chosen subdomain)
+4. Targets Configuration:
+   - **Method**: HTTP
+   - **IP/Hostname**: `192.168.1.10` (or your AdGuard Home IP)
+   - **Port**: `3000` (or your chosen port)
+   - Then click on `Add Target`
+5. Click on **Add Resource** to save the configuration
+
+### 2. Access via Pangolin URL
+
+After adding to Pangolin, AdGuard Home will be accessible via the configured URL (e.g., `https://adguard.kylehub.dev`) instead of the direct IP address. 
+
+### 3. Complete Configuration via Pangolin
+
+Once AdGuard Home is accessible through Pangolin, complete the initial setup wizard:
+
+#### Step 1: Get Started
+Click on **Get Started** to begin the setup wizard.
+
+#### Step 2: Admin Web Interface Configuration
+Configure the admin web interface settings:
+- **Listen interface**: `All interfaces`
+- **Port**: `3000` as configured in pangolin (or keep default `80`)
+
+The interface will display available addresses for accessing AdGuard Home:
+- `http://127.0.0.1`
+- `http://192.168.1.10` (your AdGuard Home IP)
+- `http://[IPv6 addresses]`
+
+:::tip Port Configuration
+If you keep port `3000`, ensure your Pangolin resource target is configured for port `3000`. If you change to port `80`, update the Pangolin target accordingly.
+:::
+
+#### Step 3: DNS Server Configuration
+Configure the DNS server settings:
+- **Listen interface**: `All interfaces`
+- **Port**: `53` (default DNS port)
+
+Devices will use the following DNS server addresses:
+- `127.0.0.1`
+- `192.168.1.10` (your AdGuard Home IP)
+- `[IPv6 addresses]`
+
+:::info Static IP Address Notice
+AdGuard Home requires a static IP address to function properly. Since you assigned a static IP during LXC container creation, you're already configured correctly.
+:::
+
+#### Step 4: Create Admin Account
+Create your administrator credentials:
+- **Username**: Enter a username for the admin account
+- **Password**: Set a strong, secure password (store it in your password manager)
+
+#### Step 5: Configure Devices
+This step provides instructions for configuring your devices to use AdGuard Home as their DNS server. Since you'll be configuring DNS through OPNsense instead, simply click **Next** to skip this step.
+
+Click **Next** to continue.
+
+##### 6. Troubleshooting
+Here it can occure that it gets stuck in a permanent loading state. If this happens, simply close the browser tab and reopen it to access the AdGuard Home interface.
+
+## Post-Setup Configuration
+
+### 1. Login to AdGuard Home
+
+After completing the setup wizard, log in to AdGuard Home:
+
+1. Access the AdGuard Home interface via Pangolin: `https://adguard.kylehub.dev`
+2. Enter your admin username and password created in Step 4
+3. You'll be redirected to the AdGuard Home dashboard
+
+### 2. Configure Upstream DNS Servers
+
+Configure reliable and privacy-focused upstream DNS servers for optimal performance:
+
+1. Navigate to **Settings > DNS Settings**
+
+2. In the **Upstream DNS servers** section, add the following servers (one per line):
+
+   ```
+   https://dns.adguard-dns.com/dns-query
+   94.140.14.14
+   94.140.15.15
+   ```
+
+3. In the **Fallback DNS servers** section, add these reliable fallback servers:
+
+   ```
+   https://dns.cloudflare.com/dns-query
+   1.1.1.1
+   1.0.0.1
+   8.8.8.8
+   8.8.4.4
+   ```
+
+4. In the **Bootstrap DNS servers** section (for resolving DoH/DoT hostnames):
+   
+   ```
+   94.140.14.14
+   94.140.15.15
+   1.1.1.1
+   ```
+
+5. Configure **Private reverse DNS servers**:
+   - Leave as default or add your AdGuard Home IP: `192.168.1.10`
+   
+6. **Enable** the following options:
+   - ✅ **Use private reverse DNS resolvers** - Allows local DNS Resolution
+   - ✅ **Enable reverse resolving of client's IP addresses** - Improves logging and filtering
+
+7. Set **Upstream timeout**: 
+   - Keep default `10` seconds (or adjust if needed)
+
+8. Click `Test Upstreams` to verify connectivity, then `Apply` to save changes
+
+
+### 3. DNS server configuration
+
+In the same **Settings > DNS Settings** menu, scroll down to configure additional DNS server options:
+
+#### DNS Server Configuration
+
+1. **Rate limit**: 
+   - Set to `20` requests per second per client (default)
+   - Prevents DNS abuse while allowing normal usage
+   
+2. **Subnet prefix length for IPv4**: 
+   - Keep default `24` (rate limiting applies per /24 subnet)
+   
+3. **Subnet prefix length for IPv6**: 
+   - Keep default `56` (rate limiting applies per /56 subnet)
+   
+4. **Rate limiting allowlist**: 
+   - Leave empty (or add trusted IPs if needed)
+
+#### EDNS, DNSSEC, and IPv6 Settings
+
+1. **Enable EDNS client subnet**:
+   - ❌ Leave disabled (default)
+   - Only enable if required by specific services or CDNs
+   
+2. **Use custom IP for EDNS**:
+   - Leave empty unless you have specific EDNS requirements
+
+3. **Enable DNSSEC**:
+   - ✅ Enable (recommended for security)
+   - Validates DNS responses and prevents DNS spoofing
+   
+4. **Disable resolving of IPv6 addresses**:
+   - ✅ Enable if you don't use IPv6 on your network
+   - Drops all AAAA queries and speeds up DNS resolution
+
+#### Blocking Mode
+
+- Select **Null IP** (recommended)
+  - Responds with `0.0.0.0` for IPv4 and `::` for IPv6
+  - Most compatible with all devices and applications
+  - Alternative: **NXDOMAIN** (some apps may behave differently)
+
+#### Blocked Response TTL
+
+- Keep default `10` seconds
+- Controls how long clients cache blocked responses
+
+Then click on `Save` to apply the settings.
+
+### 4. DNS Cache Configuration
+
+1. ✅ Enable DNS caching
+2. **Cache size**: 
+   - Keep default `4194304` bytes (4 MB)
+   - Sufficient for typical home networks
+   - Set to `0` to disable caching (not recommended)
+
+3. **Override minimum TTL**: 
+   - Keep default `0` (disabled)
+   - Only change if you experience frequent DNS re-queries
+
+4. **Override maximum TTL**: 
+   - Keep default `0` (disabled)
+   - Only change for specific caching requirements
+
+5. Optimistic caching:
+   - ❌ Leave disabled (default)
+   - Only enable if you understand the implications on DNS caching behavior
+
+### 5. Configure General Settings and Logging
+
+Navigate to **Settings > General Settings** to configure blocking, security features, and logging:
+
+#### General Settings
+
+1. **Block domains using filters and hosts files**:
+   - ✅ Enable (default)
+   - This is the core ad-blocking functionality
+
+2. **Filter update interval**:
+   - Keep default `24 hours`
+   - Ensures blocklists stay up-to-date
+
+3. **Use AdGuard browsing security web service**:
+   - ❌ Disable (optional)
+   - Only enable if you want AdGuard's cloud-based malware/phishing protection
+   - Sends SHA256 hash of domain names to AdGuard servers
+
+4. **Use AdGuard parental control web service**:
+   - ❌ Disable (recommended for personal use)
+   - Only enable if you need parental content filtering
+
+5. **Use Safe Search**:
+   - ❌ Disable (or enable based on preference)
+   - Enforces safe search in: Bing, DuckDuckGo, Ecosia, Google, Pixabay, Yandex, YouTube
+   - Enable if you want safe search enforcement
+
+#### Logs Configuration
+
+1. **Enable log**:
+   - ✅ Enable (recommended)
+   - Allows you to see DNS queries and troubleshoot issues
+
+2. **Anonymize client IP**:
+   - ❌ Disable (recommended for home network)
+   - Enable only if you need to hide client IPs in logs for privacy/compliance
+
+3. **Query logs rotation**:
+   - Select **90 days** (recommended for home use)
+   - Options: Custom, 6 hours, 24 hours, 7 days, 30 days, 90 days
+   - Longer retention helps with troubleshooting
+
+4. **Ignored domains**:
+   - Leave empty (or add domains you don't want logged)
+   - Queries matching these domains won't appear in query logs
+
+#### Statistics Configuration
+
+1. **Enable statistics**:
+   - ✅ Enable (recommended)
+   - Provides dashboard statistics and insights
+
+2. **Statistics retention**:
+   - Select **24 hours** (recommended)
+   - Options: Custom, 24 hours, 7 days, 30 days, 90 days
+   - Adjust based on your monitoring needs
+
+3. **Ignored domains**:
+   - Leave empty (or add domains to exclude from statistics)
+
+Click **Save** to apply all general settings.
+
+:::tip Recommended Configuration
+- **Blocking**: Enabled via filters (core functionality)
+- **Safe browsing/Parental control**: Disabled (use local blocklists instead)
+- **Safe search**: Based on preference
+- **Query logs**: 90 days retention (good for troubleshooting)
+- **Statistics**: 24 hours retention (sufficient for monitoring)
+:::
+
+:::warning Privacy Considerations
+- **AdGuard web services**: Disabling these keeps your DNS queries completely local
+- **Anonymize client IP**: Only needed for strict privacy requirements
+- **Log rotation**: Longer retention = more data stored locally
+:::
+
+## Integrate with OPNsense
+
+Configure OPNsense to use AdGuard Home as the network's primary DNS resolver.
+
+### 1. Disable Unbound DNS (Recommended)
+
+To avoid conflicts, disable OPNsense's built-in Unbound DNS resolver:
+
+1. Log into OPNsense web interface
+2. Go to **Services > Unbound DNS > General**
+3. **Uncheck** "Enable Unbound"
+4. Click **Save** and **Apply**
+
+:::tip Why Disable Unbound?
+With AdGuard Home handling all DNS resolution, keeping Unbound enabled creates unnecessary complexity and potential conflicts. AdGuard Home will be your sole DNS resolver.
+:::
+
+### 2. Configure OPNsense DNS Settings
+
+Set AdGuard Home as the primary DNS server for OPNsense:
+
+1. Go to **System > Settings > General**
+2. Under **DNS Servers**:
+   - **Remove** or **clear** all existing DNS servers
+   - **Add** your AdGuard Home IP (e.g., `192.168.1.10`) as the **only** DNS server
+3. **Uncheck** "Allow DNS server list to be overridden by DHCP/PPP on WAN"
+4. Click **Save**
+
+:::info Automatic DHCP Configuration
+OPNsense will automatically distribute the AdGuard Home DNS server to all DHCP clients. You don't need to configure anything in the DHCP settings - OPNsense uses the DNS servers defined in System > Settings > General for DHCP distribution.
+:::
+
+### 3. Verify DNS Configuration
+
+After saving, verify that DNS is working correctly:
+
+1. From the OPNsense shell, test DNS resolution:
+   ```bash
+   drill google.com
+   ```
+   
+   Or alternatively:
+   ```bash
+   host google.com
+   ```
+   
+2. The command should successfully resolve the domain using your AdGuard Home IP (`192.168.1.10`)
+
+3. Check AdGuard Home's **Query Log** - you should see queries from OPNsense
+
+:::success DNS Integration Complete
+All network devices will now automatically use AdGuard Home for DNS resolution and ad blocking. New DHCP clients will receive the AdGuard Home IP automatically. Existing devices may need to renew their DHCP lease or be rebooted.
+:::
+
+### 4. Update Static IP Services DNS Configuration
+
+Since your infrastructure services (Pangolin, etc.) use static IP addresses configured in Proxmox, they won't automatically pick up the new DNS configuration. You need to update their DNS settings in Proxmox and then reboot them.
+
+#### Update DNS Configuration in Proxmox
+
+For each LXC container with a static IP (except OPNsense and AdGuard Home itself):
+
+1. **Access Proxmox web interface**
+2. **Select the container** (e.g., Pangolin - Container 200)
+3. **Go to the Network tab**
+4. **Click the DNS tab** (top of the Network section)
+5. **Click Edit** button
+6. **Change DNS server** from `192.168.1.1` to `192.168.1.10` (your AdGuard Home IP)
+7. **Click OK** to save
+
+:::warning Which Services Need DNS Updates?
+Update DNS configuration for:
+- ✅ Pangolin container
+- ✅ Any other LXC containers with static IPs
+- ✅ Virtual machines with static network configuration
+
+**Do NOT change DNS for:**
+- ❌ OPNsense (it uses AdGuard Home via System > Settings > General)
+- ❌ AdGuard Home itself (it uses upstream DNS servers you configured)
+- ❌ Proxmox host (uses different DNS configuration)
+:::
+
+#### Reboot Containers to Apply DNS Changes
+
+After updating the DNS configuration in Proxmox, you must reboot each container:
+
+**From the Proxmox host shell:**
+
+```bash
+pct reboot <container-id>
+```
+
+**For example, if Pangolin's container ID is `200`:**
+
+```bash
+pct reboot 200
+```
+
+:::danger Connectivity Loss During Reboot
+**IMPORTANT**: If you're rebooting Pangolin, your system will lose all external connectivity temporarily. This is expected as Pangolin acts as your reverse proxy and will be momentarily offline during the reboot (typically 10-30 seconds).
+:::
+
+#### Verify DNS Configuration
+
+After the container reboots, verify that it's using AdGuard Home for DNS:
+
+1. **Access the container console** (via Proxmox web interface or `pct enter <container-id>`)
+2. **Check DNS configuration:**
+   ```bash
+   cat /etc/resolv.conf
+   ```
+3. **You should see:**
+   ```
+   nameserver 192.168.1.10
+   ```
+4. **Test DNS resolution:**
+   ```bash
+   nslookup google.com
+   nslookup adguard.kylehub.dev
+   ```
+
+Both commands should resolve successfully using AdGuard Home.
+
+:::success DNS Update Complete
+Once all static IP containers are updated and rebooted, they'll use AdGuard Home for DNS resolution. Your entire infrastructure will now benefit from network-wide ad blocking and local DNS resolution.
+:::
+
+## Configure Local DNS Resolver for Internal Services
+
+To ensure private LAN communication works without routing through Cloudflare or external DNS, configure local DNS overrides in AdGuard Home.
+
+### 1. Add DNS Rewrites for Internal Services
+
+1. In AdGuard Home, go to **Filters > DNS Rewrites**
+2. Click **Add DNS Rewrite**
+3. Add entries for each internal service:
+   - **Domain**: `pangolin.kylehub.dev`
+   - **Answer**: `192.168.1.50` (your Pangolin IP)
+   - Click **Save**
+
+4. Repeat for all internal services:
+   - `adguard.kylehub.dev` → `192.168.1.10`
+   - `opnsense.kylehub.dev` → `192.168.1.1`
+   - Add any other services as needed
+
+:::tip Service-to-Service Communication
+DNS rewrites ensure that when one service (e.g., Pangolin) needs to communicate with another (e.g., AdGuard Home), the DNS query resolves to the local IP address instead of routing through external DNS or Cloudflare. This keeps all internal traffic within your LAN.
+:::
+
+### 2. Verify Local DNS Resolution
+
+Test that internal DNS is working correctly:
+
+1. From any device on your network, test DNS resolution:
+   ```bash
+   nslookup proxmox.kylehub.dev
+   nslookup pangolin.kylehub.dev
+   ```
+
+2. Verify that queries return the internal IP addresses, not external ones
+3. Check the **Query Log** in AdGuard Home to see DNS queries in real-time
+
+:::success Internal DNS Working
+If your services resolve to internal IPs, congratulations! Your services can now communicate directly without external DNS lookups or routing through Cloudflare.
+:::
+
+## Additional Resources
+
+For more detailed information, refer to the [official AdGuard Home documentation](https://github.com/AdguardTeam/AdGuardHome/wiki).

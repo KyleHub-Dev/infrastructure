@@ -1,0 +1,57 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Security - Keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.pat
+
+# Data directories
+**/data/*
+**/letsencrypt/*
+**/backups/*
+**/postgres/*
+**/redis/*
+
+# Gitkeep exceptions
+!.gitkeep
+!*/.gitkeep
+!**/.gitkeep
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Podman
+.podman/
+
+# Logs
+*.log
+logs/
+*/logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Backup files
+*.bak
+*.backup

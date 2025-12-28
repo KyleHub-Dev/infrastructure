@@ -1,0 +1,184 @@
+---
+title: Zitadel Setup Overview
+description: Comprehensive guide to setting up Zitadel for unified authentication across KyleHub services
+sidebar_position: 1
+tags:
+  - Zitadel
+  - IAM
+  - Identity Management
+  - SSO
+---
+
+# Zitadel Setup
+
+This guide walks you through setting up **Zitadel**, an open-source identity and access management (IAM) solution, as the central authentication system for your KyleHub platform. You'll configure a **unified authentication architecture** that enables single sign-on (SSO) across all services—from infrastructure tools like Proxmox to applications like Grafana, Portainer, and beyond.
+
+---
+
+## 1. What is Zitadel?
+
+Zitadel is a modern, cloud-native identity platform that provides:
+
+- **Single Sign-On (SSO)**: Users authenticate once and access all services seamlessly
+- **OAuth 2.0 & OIDC**: Industry-standard protocols for secure authentication and authorization
+- **Multi-factor authentication (MFA)**: Enhanced security with TOTP, WebAuthn, and more
+- **User management**: Self-service registration, password reset, profile management
+- **Role-based access control (RBAC)**: Granular permissions via projects, roles, and authorizations
+- **API authentication**: Secure machine-to-machine communication with service accounts
+
+For KyleHub, Zitadel serves as the **identity provider** for all services, eliminating the need for separate login credentials per application.
+
+---
+
+## 2. Architecture Overview
+
+### 2.1 Unified authentication model
+
+KyleHub uses a **single Zitadel project** (`KyleHub`) with **one OIDC application** (`KyleHub-Auth`) to authenticate all users across all services. This approach simplifies:
+
+- **Credential management**: One Client ID/Secret pair for all integrations
+- **Role design**: Define roles once in Zitadel, enforce everywhere
+- **User onboarding**: Grant access to multiple services by assigning a single role
+- **Audit trails**: Centralized authentication logs in Zitadel
+
+### 2.2 Two-layer role taxonomy
+
+Roles are divided into **category roles** (broad access) and **service roles** (granular control):
+
+| Role Type | Examples | Purpose |
+|-----------|----------|---------|
+| **Category Roles** | `admin`, `homelab`, `media`, `finance`, `dev`, `guest` | Grant access to entire service categories via wildcard rules (e.g., `homelab` → all `*.homelab.yourdomain.com`) |
+| **Service Roles** | `access_grafana`, `access_proxmox`, `access_portainer` | Grant access to specific services, overriding or complementing category roles |
+
+**Example**: A user with the `homelab` role can access all homelab services (Proxmox, Grafana, Portainer), while a user with only `access_grafana` can access only Grafana—even if it's under `homelab.yourdomain.com`.
+
+### 2.3 Integration patterns
+
+KyleHub supports two authentication patterns:
+
+#### Pattern A: Pangolin identity-aware proxy
+
+- **Use case**: Services without native SSO support, or rapid deployment of many services
+- **How it works**: Pangolin sits in front of services, authenticates users via Zitadel, and enforces access rules based on roles
+- **Example services**: Legacy apps, custom web UIs, services with header-based auth
+
+#### Pattern B: Direct OIDC/SAML integration
+
+- **Use case**: Services with native SSO support (Grafana, Proxmox, Portainer, etc.)
+- **How it works**: Services authenticate directly with Zitadel using OIDC, leveraging native role mapping features
+- **Example services**: Grafana (role mapping to Editor/Admin), Proxmox (auto-provisioning), Portainer (OAuth)
+
+**Hybrid approach**: You can use Pangolin **in front of** directly-integrated services for defense-in-depth (e.g., Pangolin requires `access_grafana` role, then Grafana performs OIDC authentication and maps Zitadel roles to Grafana permissions).
+
+---
+
+## 3. Guide Structure
+
+Follow these guides in order to build your unified authentication system:
+
+### Core setup (required)
+
+1. **[Installation](./02-installation.mdx)**: Deploy Zitadel on Proxmox using the Community Helper Script
+2. **[Post-Installation](./03-post-installation.mdx)**: Configure DNS, SSL, and verify Zitadel is accessible
+3. **[Initial Project Setup](./04-initial-project-setup.mdx)**: Create the `KyleHub` project, `KyleHub-Auth` application, and define the role taxonomy
+
+### Integration guides
+
+4. **[Pangolin Auth Provider Setup](./05-pangolin-auth-provider-setup.mdx)**: Configure Pangolin to use Zitadel for authentication and enforce role-based access rules
+5. **[Proxmox Auth Provider Setup](./06-proxmox-auth-provider-setup.mdx)**: Configure Proxmox to authenticate via Zitadel using OIDC
+6. **[Extending SSO to Services](./09-extending-sso-to-services.mdx)**: Add direct OIDC/SAML integration to Grafana, Portainer, and other services
+
+### Advanced topics
+
+7. **[Zitadel Permission Deep Dive](./08-zitadel-permission-deep-dive.mdx)**: Comprehensive guide to role design, access patterns, and best practices
+8. **[Troubleshooting](./07-troubleshooting.mdx)**: Common issues and solutions for Zitadel and SSO integrations
+
+---
+
+## 4. Prerequisites
+
+### System requirements (Zitadel container)
+
+**Default configuration:**
+- **vCPU**: 1 core (minimum), 2+ cores recommended for production
+- **RAM**: 1 GB (minimum), 2 GB recommended
+- **Storage**: 8 GB (minimum), 16 GB recommended
+- **OS**: Debian 12 (via Proxmox Community Helper Script)
+
+### Network requirements
+
+- **DNS**: Fully qualified domain name (e.g., `zitadel.yourdomain.com`) resolving to Zitadel's IP
+- **SSL/TLS**: Valid HTTPS certificate (Let's Encrypt recommended, see [Post-Installation](./03-post-installation.mdx))
+- **Firewall**: Port 443 (HTTPS) accessible from users and downstream services
+
+### Required knowledge
+
+- **Basic Proxmox administration**: Creating containers, networking, SSH access
+- **DNS management**: Adding A/CNAME records for your domain
+- **OIDC concepts**: Understanding of OAuth 2.0, ID tokens, and redirect URIs (the guides explain as needed)
+
+---
+
+## 5. Quick Start
+
+If you're ready to begin, follow this path:
+
+1. **Deploy Zitadel**: Start with [Installation](./02-installation.mdx) to get Zitadel running on Proxmox.
+2. **Configure DNS & SSL**: Follow [Post-Installation](./03-post-installation.mdx) to make Zitadel accessible at `https://zitadel.yourdomain.com`.
+3. **Create authentication project**: Use [Initial Project Setup](./04-initial-project-setup.mdx) to define the `KyleHub` project and role taxonomy.
+4. **Choose integration path**:
+   - **For Pangolin proxy**: See [Pangolin Auth Provider Setup](./05-pangolin-auth-provider-setup.mdx) to configure identity-aware reverse proxy.
+   - **For direct OIDC**: See [Extending SSO to Services](./09-extending-sso-to-services.mdx) for Grafana, Proxmox, Portainer examples.
+5. **Deep dive (optional)**: Read [Zitadel Permission Deep Dive](./08-zitadel-permission-deep-dive.mdx) for advanced role design and access patterns.
+
+---
+
+## 6. Why Unified Authentication Matters
+
+### Traditional approach (multi-project)
+
+- **Separate project per service**: `Proxmox-Auth`, `Grafana-Auth`, `Portainer-Auth`, etc.
+- **Duplicate role definitions**: `admin` role defined in every project
+- **Credential sprawl**: Multiple Client ID/Secret pairs to manage
+- **User frustration**: Grant access to 10 services = 10 separate authorization steps
+- **Audit complexity**: Authentication logs scattered across projects
+
+### Unified approach (KyleHub)
+
+- **One project**: `KyleHub` with all roles defined centrally
+- **One application**: `KyleHub-Auth` with one Client ID/Secret for all integrations
+- **One role grant**: Assign `homelab` role → user gains access to 20+ services instantly
+- **Consistent enforcement**: Same role rules apply everywhere (Pangolin, direct OIDC, custom apps)
+- **Simple auditing**: All authentication events in one project's logs
+
+**Result**: Faster onboarding, easier management, better security posture.
+
+---
+
+## 7. What You'll Build
+
+By the end of this guide series, you'll have:
+
+- ✅ **Zitadel instance** running on Proxmox with HTTPS and a custom domain
+- ✅ **Unified KyleHub project** with category and service roles
+- ✅ **Pangolin integration** (optional) for identity-aware reverse proxy
+- ✅ **Direct SSO integration** for Proxmox, Grafana, Portainer, and other OIDC-capable services
+- ✅ **Role-based access control** enforced consistently across all services
+- ✅ **Centralized authentication** with single sign-on and audit trails
+
+---
+
+## 8. Community & Support
+
+- **Zitadel Documentation**: [https://zitadel.com/docs](https://zitadel.com/docs)
+- **Zitadel GitHub**: [https://github.com/zitadel/zitadel](https://github.com/zitadel/zitadel)
+- **Pangolin Documentation**: [https://docs.digpangolin.com](https://docs.digpangolin.com)
+- **Proxmox Community Helper Scripts**: [https://tteck.github.io/Proxmox/](https://tteck.github.io/Proxmox/)
+
+For issues specific to KyleHub integration patterns, refer to the [Troubleshooting](./07-troubleshooting.mdx) guide or consult the relevant service's documentation.
+
+---
+
+## Next Steps
+
+Ready to get started? Begin with [Installation](./02-installation.mdx) to deploy Zitadel on Proxmox.

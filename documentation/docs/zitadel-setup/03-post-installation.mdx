@@ -1,0 +1,152 @@
+---
+title: Post-Installation
+sidebar_position: 3
+tags:
+  - Setup
+  - Configuration
+  - Initial Access
+---
+
+# Post-Installation
+
+## 1. Create Pangolin Resource for Access
+
+Before accessing Zitadel, you need to create a resource in Pangolin to access it through your private LAN:
+
+1. After creating the site, click on the **Resources** tab in the left sidebar
+2. Click **Add Resource**
+3. Configure the Zitadel resource:
+   - **Name**: `Zitadel Dashboard` (or any descriptive name)
+   - **Resource Type**: `HTTP Resource` (select this since Zitadel expects HTTP internally)
+   - **Subdomain**: `auth` (or `auth.yourdomain.com` as the full domain)
+   - **Method/Protocol**: `http` (Pangolin handles TLS externally while Zitadel listens on HTTP)
+   - **IP/Hostname**: `192.168.1.51` (Zitadel container's internal IP)
+   - **Port**: `8080` (Zitadel web interface port)
+4. Click **Save** or **Create**
+
+**Note**: Zitadel still serves HTTP internally on port 8080. Pangolin terminates TLS at the edge and forwards cleartext HTTP/2 (h2c) traffic to the backend.
+
+## 2. Configure Zitadel Before First Login
+
+Once installation completes, the helper script prints a summary similar to:
+
+```
+Completed Successfully!
+
+ZITADEL setup has been successfully initialized!
+Access it using the following URL:
+   http://YOUR_IP:8080/ui/console
+```
+
+Before using that URL, configure Zitadel with the public hostname Pangolin exposes. Otherwise, redirects and cookies will fail when you sign in through Pangolin.
+
+### 2.1 Update the configuration file
+
+The main configuration lives at `/opt/zitadel/config.yaml`.
+
+1. In the Proxmox console for the Zitadel container, open the configuration file:
+
+```bash
+nano /opt/zitadel/config.yaml
+```
+
+2. Ensure the external section matches your domain and Pangolin port:
+
+```yaml
+ExternalDomain: auth.yourdomain.com
+ExternalPort: 443
+ExternalSecure: true
+```
+
+3. Save the file, make the helper script executable, and rerun Zitadel so the changes take effect:
+
+```bash
+chmod +x ~/zitadel-rerun.sh
+bash ~/zitadel-rerun.sh
+```
+
+The script stops Zitadel, reapplies configuration, and starts the service. If "Failed to fetch" errors persist after the rerun, review the [Troubleshooting](07-troubleshooting.mdx) guide for advanced troubleshooting.
+
+## 3. Access Zitadel
+
+With the external domain configured, you can now access the console through Pangolin.
+
+**Default Login Credentials:**
+- **Username**: `zitadel-admin@zitadel.localhost`
+- **Password**: `Password1!`
+
+**Important**: Change this default password immediately after first login!
+
+1. Open your browser and navigate to `https://auth.yourdomain.com/ui/console`
+2. Login with the default credentials above
+3. The initial setup wizard will guide you through:
+   - Creating/changing your organization settings
+   - Updating the administrator account
+   - Configuring basic settings
+4. **Immediately change the default password** to a strong, unique password
+5. Save the new credentials securely
+
+## 4. Retrieve Credentials
+
+Database credentials are stored in the container:
+
+```bash
+pct exec <container-id> -- cat ~/zitadel.creds
+```
+
+You'll find:
+- Database name
+- Database user credentials
+- Database admin credentials
+- Config file location
+- Master encryption key
+
+**Important**: Store these credentials securely!
+
+## 5. Secure Initial Setup
+
+**Important**: After logging in with the default credentials, immediately secure the admin account and disable self-registration.
+
+1. You should now be logged in with the default administrator account
+2. **Disable self-registration**:
+   - Navigate to **Default-Settings** → **Login Behavior and Security** 
+   - Scroll down to **Login Form** and 
+   - Find the **User Registration allowed** option, uncheck it.
+   - Find the **Organization Registration allowed** option, uncheck it.
+   - Find the **External Login allowed** option, uncheck it if you do not plan to use external IdPs. 
+   - Save the changes
+
+This ensures your account is secure and only administrators can create new user accounts.
+
+## 6 Alternative: Create Users as Admin
+
+If you prefer to keep email verification enabled but need to create users without SMTP:
+
+1. **Create users directly as an administrator**:
+   - Go to **Users** → **Create User**
+   - Fill in user details (email, username, etc.)
+   - **Important**: Check for options like "Send invitation email" or "Skip email verification"
+   - Set a temporary password directly in the user creation form
+
+2. **Retrieve verification codes from Zitadel logs** (if email verification is required):
+   ```bash
+   # In the container console
+   journalctl -u zitadel -f | grep -i "verification\|code\|email"
+   ```
+   This may show verification codes in the logs.
+
+3. **Check the database directly** (advanced):
+   ```bash
+   # Access PostgreSQL
+   sudo -u postgres psql -d zitadel
+   
+   # Query for verification codes (be careful with production data)
+   SELECT * FROM auth.verification_codes ORDER BY created_at DESC LIMIT 5;
+   ```
+
+**Recommended**: Disable email verification entirely for personal setups - it's simpler and more practical.
+
+## 7. Next steps
+
+- Continue with [Initial Project Setup](04-initial-project-setup.mdx) to replace the bootstrap admin with your own IAM owner account.
+- When you're ready to delegate Pangolin authentication to Zitadel, follow the [Pangolin Auth Provider Setup](05-pangolin-auth-provider-setup.mdx).

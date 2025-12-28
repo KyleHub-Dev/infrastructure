@@ -1,0 +1,79 @@
+---
+title: Troubleshooting
+sidebar_position: 7
+tags:
+  - Troubleshooting
+  - Issues
+  - Solutions
+---
+
+# Troubleshooting
+
+## 1. Service Won't Start
+
+Check the service status:
+```bash
+systemctl status zitadel
+```
+
+View detailed logs:
+```bash
+journalctl -u zitadel -n 100 --no-pager
+```
+
+## 2. Database Connection Issues
+
+Verify PostgreSQL is running:
+```bash
+systemctl status postgresql
+```
+
+Test database connection:
+```bash
+sudo -u postgres psql -d zitadel -c "SELECT version();"
+```
+
+## 3. Network Connectivity
+
+Verify container can reach the internet:
+```bash
+ping -c 4 8.8.8.8
+curl -I https://google.com
+```
+
+## 4. Cannot Access Web Interface
+
+1. Check if Zitadel is listening:
+```bash
+ss -tlnp | grep 8080
+```
+
+2. Verify firewall rules (if applicable)
+3. Ensure the `ExternalDomain`, `ExternalPort`, and `ExternalSecure` values match your public entrypoint
+4. Inspect the Pangolin Traefik middleware to confirm `hostsProxyHeaders: ["Host"]` and `X-Forwarded-Proto: "https"` are present
+5. Use browser developer tools to verify the forwarded `Host` header is `zitadel.yourdomain.com`
+
+## 5. Reconfigure External Domain
+
+If you need to change the domain after initial setup:
+
+1. Edit config:
+```bash
+nano /opt/zitadel/config.yaml
+```
+
+2. Update `ExternalDomain`, `ExternalPort`, and `ExternalSecure`
+
+3. Run the reconfiguration script:
+```bash
+~/zitadel-rerun.sh
+```
+
+## 6. Common Reverse Proxy Errors
+
+| Symptom | Cause | Resolution |
+| ------- | ----- | ---------- |
+| `Instance not found` | Host header rewritten by Traefik | Reapply the `zitadel-headers` middleware and ensure it is attached to the Zitadel router. |
+| `502 Bad Gateway` | Pangolin cannot reach Zitadel | From the Pangolin LXC, run `curl http://192.168.1.101:8080` and check Traefik logs. |
+| `ERR_TOO_MANY_REDIRECTS` | `ExternalSecure` false or missing `X-Forwarded-Proto` | Set `ExternalSecure: true` and confirm middleware sets `X-Forwarded-Proto: https`. |
+| Invalid TLS certificate | ACME challenge blocked | Confirm OPNsense port forwards for 80/443 exist and DNS points to the WAN IP. |

@@ -1,0 +1,8 @@
+{
+  "label": "Pangolin Setup",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Complete guide for setting up Pangolin as an infrastructure management platform on Proxmox VE. Choose between a simple DNS-only setup or an advanced Cloudflare proxy configuration for enhanced security."
+  }
+}

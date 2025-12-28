@@ -1,0 +1,91 @@
+---
+title: Installation
+sidebar_position: 2
+tags:
+  - Installation
+  - Proxmox
+  - LXC
+  - Container
+---
+
+# Installation Steps
+
+## 1. Access Proxmox Shell
+
+1. Log into your Proxmox web interface
+2. Select your Proxmox node from the left sidebar
+3. Click **Shell** to open the terminal
+
+## 2. Run the Installation Script
+
+Execute the following command:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/zitadel.sh)"
+```
+
+## 3. Configure Installation Options
+
+The script will present you with a menu. Choose from:
+
+### 3.1 Default Settings (Recommended)
+- **Container Type**: Unprivileged
+- **Disk Size**: 8 GB
+- **CPU Cores**: 1
+- **RAM**: 1024 MiB
+- **Operating System**: Debian 12
+
+### 3.2 Advanced Settings
+
+Customize the following parameters:
+- Container ID
+- Hostname (container name, not domain)
+- CPU cores (1+)
+- RAM (1024+ MiB recommended)
+- Disk size (8+ GB recommended)
+- Network configuration (DHCP or static IP)
+- IPv6 settings
+- DNS settings
+- SSH access
+- Root password
+
+**Recommended Advanced Configuration (Tested Setup):**
+- **Container ID**: 201
+- **Hostname**: zitadel
+- **Disk Size**: 12 GB
+- **CPU Cores**: 2
+- **RAM**: 2048 MiB
+- **Network Bridge**: vmbr1 (private LAN)
+- **Static IP**: 192.168.1.51/24
+- **Gateway**: 192.168.1.1
+- **DNS Server**: 192.168.1.1
+- **Root SSH Access**: Disabled
+- **Tags**: identity-provider
+
+## 4. Wait for Installation
+
+The script will:
+1. Download the Debian 12 template (if not already cached)
+2. Create the LXC container
+3. Install system dependencies
+4. Set up PostgreSQL database
+5. Download and configure Zitadel
+6. Initialize the database schema
+7. Start the Zitadel service
+
+This process typically takes 3-5 minutes.
+
+## 5. Installation Complete
+
+After successful installation, you should see output similar to:
+
+```
+  ✔️   Cleaned
+  ✔️   Completed Successfully!
+
+  🚀  Zitadel setup has been successfully initialized!
+  💡   Access it using the following URL:
+    🌐  http://192.168.1.51:8080/ui/console
+```
+
+**Note**: The IP address in the URL will match the static IP you configured for the container (192.168.1.51 in the recommended advanced configuration).

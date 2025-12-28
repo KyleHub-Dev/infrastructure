@@ -1,0 +1,876 @@
+---
+title: Pangolin Auth Provider Setup
+sidebar_position: 5
+tags:
+  - Pangolin
+  - Authentication
+  - OIDC
+  - Zitadel
+---
+
+# Pangolin Auth Provider Setup
+
+This guide walks through configuring Pangolin to use your unified `KyleHub-Auth` application from Zitadel. By pointing Pangolin at your central authentication project, all services proxied through Pangolin will inherit the same role-based access control you defined in Zitadel.
+
+This setup supports **true multi-tenant architecture** using Zitadel's Project Grant system. You maintain one centralized application in your management organization (`KHOps`), then grant access to tenant organizations. Users from different Zitadel organizations are automatically mapped to their corresponding Pangolin organizations based on their authentication token.
+
+## Prerequisites
+
+- Zitadel organization exists with the `KyleHub` project and `KyleHub-Auth` application (see [Initial Project Setup](./04-initial-project-setup.mdx))
+- Role assertions are enabled in Zitadel (project and application settings)
+- At least one role is defined in the `KyleHub` project (e.g., `admin`, `services`)
+- Pangolin Community Edition is running at `https://pangolin.yourdomain.com`
+- You are signed in as both a Zitadel administrator and Pangolin server administrator
+- AdGuard Home is configured as your DNS resolver (see [AdGuard Home Setup](../adguard-home-setup.mdx))
+
+## 1. Configure Local DNS Resolution for Zitadel
+
+Before configuring Pangolin to use Zitadel for authentication, you need to ensure Pangolin can resolve the Zitadel domain to its local IP address. Without this DNS rewrite, requests may route through Cloudflare, which can cause authentication failures.
+
+### 1.1 Add DNS Rewrite in AdGuard Home
+
+1. Access AdGuard Home via Pangolin: `https://adguard.yourdomain.com`
+2. Navigate to **Filters > DNS Rewrites**
+3. Click **Add DNS Rewrite**
+4. Configure the rewrite:
+   - **Domain**: Your Zitadel domain (e.g., `auth.yourdomain.com` or `zitadel.yourdomain.com`)
+   - **Answer**: The local IP address of your Zitadel instance (e.g., `192.168.1.51`)
+   - Click **Save**
+
+:::tip Why This Matters
+When Pangolin attempts to communicate with Zitadel during OAuth authentication, it performs DNS lookups. Without a local DNS rewrite, these lookups may resolve to Cloudflare's proxy IP, causing:
+- Authentication failures due to Cloudflare's bot protection
+- Slower response times due to external routing
+- Unnecessary external traffic for internal communication
+
+The DNS rewrite ensures Pangolin communicates with Zitadel directly over your local network.
+:::
+
+### 1.2 Verify DNS Resolution
+
+Test that the DNS rewrite is working correctly:
+
+1. Access the Pangolin container console (via Proxmox: `pct enter <container-id>`)
+2. Test DNS resolution:
+   ```bash
+   nslookup auth.yourdomain.com
+   ```
+3. Verify it returns your local Zitadel IP (e.g., `192.168.1.51`)
+4. Test connectivity using the actual Zitadel port:
+   ```bash
+   curl -I http://auth.yourdomain.com:8080
+   ```
+
+If the DNS lookup returns the local IP and the curl command succeeds with a `302 Found` or `200 OK` response, you're ready to proceed.
+
+:::info Port Configuration
+Zitadel typically runs on port `8080` internally. When accessed externally through Cloudflare, it uses standard HTTPS (port `443`). However, for internal communication (Pangolin to Zitadel), you must use the actual port `8080`. This is configured in the next section when setting up the OAuth endpoints.
+:::
+
+:::warning Update All Static IP Services
+If you haven't already updated your static IP services to use AdGuard Home as their DNS server, refer to the [AdGuard Home Setup - Update Static IP Services](../adguard-home-setup.mdx#4-update-static-ip-services-dns-configuration) section. Pangolin must be using AdGuard Home (`192.168.1.10`) as its DNS server for this DNS rewrite to work.
+:::
+
+## 2. Verify Zitadel Configuration
+
+Before configuring Pangolin, confirm your Zitadel setup is ready:
+
+1. Open the Zitadel console and navigate to **Projects → KyleHub**.
+2. Verify **Applications → KyleHub-Auth** exists.
+3. Check **Settings → Role settings** has **Assert roles on authentication** enabled.
+4. Confirm the application's **Token settings** includes roles in ID and access tokens.
+5. Note the **Authorization Endpoint** and **Token Endpoint** from the application's **URLs** tab—you'll need these shortly.
+
+If any of these are missing, refer back to [Initial Project Setup](./04-initial-project-setup.mdx).
+
+## 3. Configure the Identity Provider in Pangolin
+
+1. Sign into the Pangolin Server Admin console.
+2. Navigate to **Server Admin → Identity Providers**.
+3. Click **Add Identity Provider** to open the identity provider creation form.
+4. Configure the **Basic Settings**:
+   - **Name**: `Zitadel` or `KyleHub-Auth`
+   - **Auto Provision Users**: Toggle **ON** (this allows Zitadel users to automatically get Pangolin accounts)
+   - **Provider Type**: OAuth2/OIDC (should be auto-selected if this is your first OAuth provider)
+5. Configure the **OAuth2/OIDC Configuration** section:
+   - **Client ID**: From Zitadel's `KyleHub-Auth` application
+   - **Client Secret**: From Zitadel's `KyleHub-Auth` application
+   - **Authorization URL**: `https://auth.yourdomain.com/oauth/v2/authorize` (external HTTPS URL through Pangolin)
+   - **Token URL**: `http://auth.yourdomain.com:8080/oauth/v2/token` (internal HTTP URL with port 8080)
+
+:::warning Authorization URL vs Token URL
+**Critical distinction** - these URLs serve different purposes:
+
+**Authorization URL** (`https://auth.yourdomain.com/oauth/v2/authorize`):
+- ✅ Use **external HTTPS URL** (through Cloudflare)
+- Accessed by the **user's browser** (client-side)
+- Users need to see the Zitadel login page in their browser
+- Must be publicly accessible from the internet/your network
+
+**Token URL** (`http://auth.yourdomain.com:8080/oauth/v2/token`):
+- ✅ Use **internal HTTP URL with port 8080**
+- Accessed by **Pangolin's backend** (server-side)
+- This is a backend API call that happens internally
+- Using the internal endpoint avoids Cloudflare's bot protection blocking the token exchange
+
+**Why this configuration works:**
+1. User clicks "Login with Zitadel" in Pangolin
+2. User's browser redirects to `https://auth.yourdomain.com/oauth/v2/authorize` (external URL)
+3. User sees Zitadel login page and authenticates
+4. Zitadel redirects back to Pangolin with authorization code
+5. Pangolin's backend calls `http://auth.yourdomain.com:8080/oauth/v2/token` (internal URL) to exchange code for tokens
+6. This internal call uses DNS rewrite from AdGuard Home to reach Zitadel directly
+:::
+
+6. Configure the **Token Configuration** section (uses JMESPath syntax):
+   - **Identifier Path**: `sub` (default) or `preferred_username` (to display Zitadel usernames)
+   - **Email Path**: `email` (default)
+   - **Name Path**: `name` (default)
+   - **Roles Claim Path** (if available): `"urn:zitadel:iam:org:project:roles"` (wrap in quotes due to colons)
+   - **Scopes**: `openid profile email` (add `offline_access` if using refresh tokens)
+
+:::warning JMESPath Syntax for Claim Paths
+When claim paths contain special characters like colons (`:`), you **must wrap them in double quotes** or JMESPath will fail to parse them.
+
+**Incorrect:** `urn:zitadel:iam:org:project:roles` → Parser error
+**Correct:** `"urn:zitadel:iam:org:project:roles"` → Works correctly
+
+This applies to:
+- Roles Claim Path
+- Role Mapping Path (in Organization Policies)
+- Organization Mapping Path (in Organization Policies)
+:::
+7. Click **Create** or **Save**.
+8. After creation, copy the generated **Callback URL** from the provider details page.
+
+## 4. Update Redirect URI in Zitadel
+
+1. Return to the Zitadel console and open **Projects → KyleHub → Applications → KyleHub-Auth**.
+2. Navigate to **Settings → Redirect settings**.
+3. Paste the Pangolin Redirect URL you copied in Section 3.
+4. Click the **+** icon to add it, then **Save**.
+
+## 5. Prepare Roles in Zitadel
+
+Pangolin grants access based on the roles that Zitadel includes in each ID token. Make sure the roles you plan to reference later exist in the `KyleHub` project.
+
+### 5.1 Create project roles
+
+1. In the Zitadel console, open **Projects → KyleHub → Roles**.
+2. Click **New role** for each role you need Pangolin to honor.
+3. Use short, lowercase identifiers—these become the exact strings you will type in Pangolin rules.
+
+Recommended starting roles:
+
+**Category Roles:**
+
+| Key | Display Name | Group | Description |
+|-----|--------------|-------|-------------|
+| `guest` | Guest | Category | Limited access to specific resources only |
+| `member` | Member | Category | Standard user access to common services |
+| `admin` | Administrator | Category | Full administrative access with bypass for all operations and Server Admin UI |
+
+**Service-Specific Access Roles:**
+
+| Key | Display Name | Group | Description |
+|-----|--------------|-------|-------------|
+| `access_proxmox` | Proxmox Access | Service | Explicit access to Proxmox VE UI |
+| `access_pangolin` | Pangolin Access | Service | Access to the Pangolin management interface |
+| `access_adguard` | AdGuard Access | Service | Access to AdGuard Home DNS management |
+| `access_zitadel` | Zitadel Access | Service | Access to Zitadel authentication console |
+| `access_opnsense` | OPNsense Access | Service | Access to OPNsense firewall interface |
+
+Add additional `access_<service>` roles as you publish more resources (e.g., `access_grafana`, `access_portainer`).
+
+### 5.2 Assign baseline roles
+
+1. Stay within **Projects → KyleHub** and switch to **Authorizations**.
+2. Click **New**.
+3. Search for the admin account you will use to manage Pangolin going forward.
+4. Select the `admin` role (and any other roles you want to test) and click **Save**.
+5. Repeat for any other user who needs immediate access.
+
+## 6. Configure Organization Auto-Provisioning
+
+When users authenticate via Zitadel, they need to be added to your Pangolin organization to access resources.
+
+### 6.1 Access Organization Policies
+
+1. Navigate to **Server Admin → Identity Providers**
+2. Click on the **Zitadel** or **KyleHub-Auth** provider you created earlier
+3. Switch to the **Organization Policies** tab
+
+### 6.2 Configure dynamic organization mapping
+
+Configure how Pangolin automatically maps users to organizations based on their Zitadel organization membership:
+
+1. Click **Add Organization Policy**
+2. Fill in the **Add Organization Policy** form:
+   - **Organization**: Select your **primary management organization** from the dropdown (e.g., `KHOps`)
+   
+     This serves as the fallback organization for users who don't match any other organization in Pangolin.
+
+   - **Role Mapping Path (Optional)**: Enter `"urn:zitadel:iam:org:project:roles"`
+
+     This JMESPath expression tells Pangolin where to find roles in the Zitadel token. **Must be wrapped in quotes** due to the colons.
+
+   - **Organization Mapping Path (Optional)**: Enter `"urn:zitadel:iam:org:name"`
+     
+     This JMESPath expression extracts the organization name from the user's Zitadel token. When a user authenticates, Pangolin reads this claim and automatically places them into the matching Pangolin organization. **Must be wrapped in quotes** due to the colons.
+     
+     **How it works:**
+     - User from Zitadel org `CustomerA` logs in
+     - Token contains: `"urn:zitadel:iam:org:name": "CustomerA"`
+     - Pangolin reads this claim and adds user to Pangolin org `CustomerA`
+     - If no matching org exists, user is added to the fallback org (selected in dropdown above)
+
+3. Click **Add Policy**
+4. Click **Save Default Mappings** at the top of the page
+
+:::tip Roles Claim Path - Where to configure it
+You have two options for configuring where Pangolin finds roles in the Zitadel token:
+1. **Section 3** (Identity Provider settings): Use the "Roles Claim Path" field if available
+2. **Section 6** (Organization Policies): Use the "Role Mapping Path" field (recommended if Section 3 field is missing)
+
+Both accomplish the same thing. Configure it in **one** location, not both.
+
+**Important:** Always wrap the path in double quotes: `"urn:zitadel:iam:org:project:roles"`
+:::
+
+:::info Multi-Tenant Architecture
+The **Organization Mapping Path** enables true multi-tenancy:
+
+**Single Organization (Simple)**: Leave empty if you only have one organization and want all users in the same place.
+
+**Multi-Tenant (Scalable)**: Use `"urn:zitadel:iam:org:name"` to automatically route users to their respective organizations based on their Zitadel organization membership. This is essential for:
+- SaaS platforms serving multiple customers
+- Managed service providers with separate client organizations
+- Enterprise deployments with multiple business units
+
+The key advantage: You maintain **one centralized application** in Zitadel and grant access to tenant organizations using **Project Grants** (explained in Section 6.3).
+:::
+
+:::tip Organization name matching
+For dynamic mapping to work, organization names must be **identical** between Zitadel and Pangolin:
+- Zitadel organization: `CustomerA` → Pangolin organization: `CustomerA`
+- Zitadel organization: `CustomerB` → Pangolin organization: `CustomerB`
+
+Names are case-sensitive. If a user's organization doesn't match any Pangolin organization, they'll be added to the fallback organization selected in the dropdown.
+:::
+
+### 6.3 Understanding Multi-Tenant Architecture with Project Grants
+
+If you're building a multi-tenant SaaS platform, Zitadel's **Project Grant** system is the key to scalability. This allows you to maintain one centralized application while serving multiple customer organizations.
+
+#### The Landlord and Tenant Model
+
+Think of your setup like an apartment building:
+
+- **Your Management Org (KHOps)**: You are the **Landlord**. You own and maintain the building.
+- **Your Zitadel Project (KyleHub)**: This is the **Apartment Building** with all shared facilities (your application and its roles).
+- **Customer Organizations (CustomerA, CustomerB)**: These are your **Tenants**. They don't own the building, but they need access to it.
+- **Project Grant**: This is the **Lease Agreement**. You grant each tenant organization access to your centralized application.
+
+#### How Project Grants Work
+
+Without a Project Grant, users in `CustomerA` organization cannot access the application you defined in your `KHOps` organization—even if they have valid Zitadel credentials.
+
+The Project Grant bridges this gap:
+
+1. You create a Zitadel organization for your customer: `CustomerA`
+2. You create a Project Grant from your `KyleHub` project to the `CustomerA` organization
+3. Now users in `CustomerA` can authenticate via your application
+4. Their authentication token includes the claim: `"urn:zitadel:iam:org:name": "CustomerA"`
+5. Pangolin reads this claim and routes them to the `CustomerA` organization automatically
+
+**Result**: One application, many tenants, automatic routing—true multi-tenancy.
+
+#### Onboarding a New Tenant
+
+When you onboard a new customer, follow this workflow:
+
+**In Zitadel:**
+
+1. Navigate to **Organizations** in the Zitadel console
+2. Click **Create New Organization**
+3. Name it after your customer (e.g., `CustomerA`)
+4. Create users within this organization or enable self-registration
+5. Navigate to **Projects → KyleHub** (in your management org)
+6. Go to the **Grants** tab
+7. Click **New Project Grant**
+8. Select **CustomerA** from the "Granted Organization" dropdown
+9. Optionally grant default roles (e.g., `member`) that all CustomerA users should have
+10. Click **Save**
+
+**In Pangolin:**
+
+1. Navigate to **Server Admin → Organizations**
+2. Click **Create Organization**
+3. Name it **exactly** the same as the Zitadel organization: `CustomerA`
+4. Configure organization-specific settings (branding, limits, etc.)
+5. Click **Save**
+
+**That's it!** When users from `CustomerA` log in:
+- They authenticate via Zitadel
+- Their token includes `"urn:zitadel:iam:org:name": "CustomerA"`
+- Pangolin automatically places them in the `CustomerA` organization
+- They can only access resources assigned to their organization
+
+:::tip Scaling to 100+ Tenants
+This architecture scales beautifully:
+- **One** Zitadel project and application (centralized management)
+- **One** Pangolin Identity Provider configuration (no duplication)
+- **N** tenant organizations (each with their own users, roles, and resources)
+
+You can onboard new customers in minutes without touching your core authentication infrastructure.
+:::
+
+:::warning Project Grant Limitations
+Project Grants give tenant organizations access to your application, but they don't automatically grant roles. You still need to:
+- Assign roles to users within each tenant organization (via Authorizations in Zitadel)
+- Configure resource access rules in Pangolin (Section 7) that honor those roles
+
+The grant enables authentication, but authorization is still role-based.
+:::
+
+## 7. Configure Resource-Specific Access Rules
+
+Now configure access control on a per-resource basis. Each proxied service in Pangolin can have its own access rules.
+
+In a **multi-tenant setup**, resources can be:
+- **Shared across all organizations** (e.g., common services accessible to all tenants)
+- **Organization-specific** (e.g., dedicated instances per customer)
+
+Access control is always role-based—Pangolin checks if the authenticated user has the required role in their Zitadel token, regardless of which organization they belong to.
+
+### 7.1 Access your organization's resources
+
+1. Sign in to Pangolin with your Zitadel admin account.
+2. Navigate to your organization (e.g., `KHOps`) by selecting it from the organization switcher.
+3. Go to **Resources** or **Proxies** within your organization.
+
+### 7.2 Understanding Pangolin's Authentication Options
+
+Pangolin offers two ways to control resource access:
+
+**Rules Tab (Network-based):**
+- Controls access based on IP addresses, paths, and IP ranges
+- Does NOT support role-based authentication from Zitadel
+- Use for network-level restrictions only
+
+**Authentication Tab (SSO-based):**
+- Integrates with your Identity Provider (Zitadel)
+- Supports role-based access control using Zitadel roles
+- This is what we'll use for all resources
+
+:::warning Important
+You must configure roles in the **Authentication** tab, not the Rules tab. The Rules tab only supports IP/Path-based restrictions.
+:::
+
+### 7.3 Configure Proxmox Access
+
+1. Find the **Proxmox** resource in your list (e.g., `proxmox.yourdomain.com`).
+2. Click on the resource to open its settings.
+3. Navigate to the **Authentication** tab.
+4. In the **Users & Roles** section:
+   - Enable **Use Platform SSO** toggle (this enables Zitadel authentication)
+   - Under **Roles**, click the **Select a role** dropdown
+   - Select or type the roles that should have access: `access_proxmox` and `admin`
+   - Note: "Admins can always access this resource" is shown below
+5. Leave **Users** empty (we're using role-based access, not individual users)
+6. Optionally enable **Auto Login with External IDP** to skip the Pangolin login page
+7. Click **Save Users & Roles** at the bottom right.
+
+:::danger CRITICAL: Do NOT Protect Zitadel with Pangolin Authentication
+**Before configuring any resources**, ensure your Zitadel instance is **NOT** protected by Pangolin SSO:
+
+1. Find the **Zitadel** resource (e.g., `auth.yourdomain.com`) in your resources list
+2. Navigate to the **Authentication** tab
+3. **Disable** the **Use Platform SSO** toggle (or leave it disabled)
+4. Leave **Roles** and **Users** empty
+5. Save the configuration
+
+**Why this is critical:**
+- If Zitadel is protected by Pangolin authentication, you create a circular dependency
+- Users trying to access any resource will be redirected to Zitadel to authenticate
+- But accessing Zitadel itself would require authentication through Pangolin
+- This creates an infinite loop where authentication is impossible
+
+**Security Note:**
+- Zitadel has its own robust authentication system
+- Reverse proxying without additional Pangolin auth is safe
+- You can still control **who** can access resources protected by Zitadel via role-based access
+- Consider using Zitadel's own access controls, IP restrictions, or fail2ban for additional security on the Zitadel instance itself
+
+Alternatively, you can choose **not** to proxy Zitadel through Pangolin at all and access it directly via its IP or a separate domain not managed by Pangolin.
+:::
+
+:::tip Creating Roles in Pangolin
+If the role doesn't appear in the dropdown, you may need to create it first in Pangolin:
+1. Go to **Server Admin → Roles** (or within your organization's settings)
+2. Click **Create Role**
+3. Enter the role name exactly as it appears in Zitadel (e.g., `access_proxmox`)
+4. Save and return to the resource's Authentication tab
+
+The role names must match exactly (case-sensitive) between Zitadel and Pangolin for the mapping to work.
+:::
+
+:::warning Clean Up Duplicate Roles
+After creating roles with the exact names from Zitadel, clean up any duplicate roles with different capitalization:
+
+**Keep:**
+- `admin`, `member`, `guest` (lowercase - matching Zitadel)
+- `access_proxmox`, `access_adguard`, etc. (matching Zitadel)
+
+**Delete (if they exist):**
+- `Member` (capital M) - duplicate of lowercase `member`
+- Any other roles with different capitalization than Zitadel
+
+**Important: The "Admin" role cannot be deleted**
+- The **"Admin"** role (capital A) is a built-in Pangolin system role
+- This role **cannot be deleted** from the system (the delete button won't work)
+- It is reserved for Pangolin's internal admin account only
+- Your Zitadel users should use the lowercase **"admin"** role instead
+- Do not assign the "Admin" role (capital A) to any Zitadel-authenticated users
+
+Having duplicate roles with different capitalization can cause confusion and authentication issues.
+:::
+
+### 7.4 Configure Pangolin UI Access
+
+The Pangolin UI itself is a proxied resource and needs explicit access control:
+
+1. Find the **Pangolin** resource (e.g., `pangolin.yourdomain.com`) in your resources list.
+2. Click on it to open its settings.
+3. Navigate to the **Authentication** tab.
+4. Enable **Use Platform SSO**.
+5. Under **Roles**, select: `access_pangolin` and `admin`
+6. Click **Save Users & Roles**.
+
+### 7.5 Configure AdGuard Home Access
+
+1. Find the **AdGuard Home** resource (e.g., `adguard.yourdomain.com`).
+2. Navigate to the **Authentication** tab.
+3. Enable **Use Platform SSO**.
+4. Under **Roles**, select: `access_adguard` and `admin`
+5. Click **Save Users & Roles**.
+
+> 💡 **Category + service pattern**: By including both `access_adguard` and `admin`, you allow access via either a service-specific role or the broader admin role.
+
+### 7.6 Apply Pattern to Remaining Services
+
+For each additional service, repeat the process using the **Authentication** tab:
+
+**General Pattern:**
+1. Open the resource settings
+2. Go to **Authentication** tab
+3. Enable **Use Platform SSO** toggle
+4. Under **Roles**, select the appropriate roles from the dropdown
+5. Click **Save Users & Roles**
+
+**Recommended role configurations:**
+
+**Authentication Services (Zitadel):**
+- Roles: `access_zitadel`, `admin`
+
+**Network Services (OPNsense):**
+- Roles: `access_opnsense`, `admin`
+
+**Monitoring Services (Grafana, if applicable):**
+- Roles: `access_grafana`, `admin`
+
+**Container Management (Portainer, if applicable):**
+- Roles: `access_portainer`, `admin`
+
+**Access Pattern Examples:**
+
+Example for Grafana with member access:
+- Roles: `access_grafana`, `member`, `admin`
+
+Example for Portainer (admin-only):
+- Roles: `access_portainer`, `admin`
+
+Example for a media service accessible to guests:
+- Roles: `access_plex`, `guest`, `member`, `admin`
+
+:::tip Role Hierarchy
+Use category roles to grant access to multiple services at once:
+- **guest**: Minimal access, specific services only
+- **member**: Standard users, common services
+- **admin**: Full access to everything (always has access per Pangolin's default)
+
+Combine with service-specific `access_*` roles for granular control.
+:::
+
+:::warning Creating Roles First
+If a role doesn't appear in the dropdown when configuring resources, you need to create it first in Pangolin's Roles management:
+
+1. Navigate to **Server Admin → Roles** (or your organization's role management)
+2. Create each role with the exact same name as in Zitadel (e.g., `access_proxmox`, `access_adguard`, `admin`, etc.)
+3. Return to your resource's Authentication tab and select the newly created roles
+
+The roles must exist in both systems with matching names for the authorization flow to work correctly.
+:::
+
+:::tip Role Hierarchy
+Use category roles to grant access to multiple services at once:
+- **guest**: Minimal access, specific services only
+- **member**: Standard users, common services
+- **admin**: Full access to everything (always has access per Pangolin's default)
+
+Combine with service-specific `access_*` roles for granular control.
+:::
+
+:::warning Creating Roles First
+If a role doesn't appear in the dropdown when configuring resources, you need to create it first in Pangolin's Roles management:
+
+1. Navigate to **Server Admin → Roles** (or your organization's role management)
+2. Create each role with the exact same name as in Zitadel (e.g., `access_proxmox`, `access_adguard`, `admin`, etc.)
+3. Return to your resource's Authentication tab and select the newly created roles
+
+The roles must exist in both systems with matching names for the authorization flow to work correctly.
+:::
+
+:::info Rules Tab vs Authentication Tab
+**Rules Tab**: Use for network-level restrictions:
+- IP-based access control (allow/deny specific IPs or ranges)
+- Path-based restrictions (control access to specific URLs)
+- Does NOT integrate with Zitadel roles
+
+**Authentication Tab**: Use for SSO and role-based access:
+- Integrates with your Identity Provider (Zitadel)
+- Enforces role-based authorization
+- Supports "Auto Login with External IDP" for seamless authentication
+
+For this setup, always configure role-based access in the **Authentication** tab.
+:::
+
+:::note Wildcards in Community Edition
+Pangolin CE may not support wildcard domain matching (`*.yourdomain.com`) in resource rules. You must configure access control for each individual resource. Category-based access is achieved by listing the category role (e.g., `admin`) in each resource's allowed roles.
+:::
+
+:::info Multi-Tenant Resource Isolation
+In a multi-tenant SaaS platform, you typically want to isolate resources between organizations:
+
+**Option 1: Separate Resource Instances**
+- Create separate resources for each tenant (e.g., `customera-app.yourdomain.com`, `customerb-app.yourdomain.com`)
+- Configure access rules limiting each resource to specific organizations
+- Provides complete data isolation
+
+**Option 2: Shared Resources with Application-Level Isolation**
+- Use a single shared resource (e.g., `app.yourdomain.com`)
+- Your backend application reads the organization from the forwarded authentication headers
+- The application handles data isolation internally based on organization context
+
+**Option 3: Hybrid Approach**
+- Shared infrastructure services for your management org (Proxmox, Zitadel, etc.)
+- Customer-specific application instances for tenant data
+- Common services (like monitoring dashboards) accessible across organizations with appropriate roles
+
+Pangolin's organization-based routing ensures users are always authenticated with their organization context, but your resource architecture determines the level of isolation.
+:::
+
+## 8. Grant Admin Access to Your Zitadel User
+
+To transition from using the Pangolin admin account to your Zitadel-authenticated account, you need to grant your Zitadel user administrative privileges in both systems.
+
+### 8.1 Grant admin role in Zitadel
+
+1. Open the Zitadel console and navigate to **Projects → KyleHub**.
+2. Go to **Authorizations**.
+3. Click **New** to add a user authorization.
+4. Search for your user account.
+5. Select the **admin** role.
+6. Click **Save**.
+
+### 8.2 Test Zitadel authentication
+
+1. Open an incognito/private browser window.
+2. Navigate to `https://pangolin.yourdomain.com`.
+3. You should be redirected to Zitadel for authentication.
+4. Sign in with your Zitadel account.
+5. After authentication, verify you're redirected back to Pangolin.
+
+### 8.3 Verify auto-provisioned account
+
+1. As the Pangolin admin, navigate to **Server Admin → Users**.
+2. Find your newly created user (should match your Zitadel username or email).
+3. Click on the user to view details.
+4. Verify the **Roles** section shows `admin` (and any other roles from Zitadel).
+
+### 8.4 Promote user to Pangolin administrator
+
+Auto-provisioned users have roles but may not have **administrative access** to the Server Admin interface:
+
+1. While viewing your user's details, look for **User Type** or **Permissions**.
+2. Change the user type to **Administrator** or grant **Server Admin** permissions.
+3. Alternatively, look for an **Admin** toggle or checkbox and enable it.
+4. Click **Save**.
+
+:::tip First-time admin promotion
+Some Pangolin versions require manual promotion of the first OIDC-authenticated user to admin. After this initial promotion, you can configure future admin users entirely through Zitadel roles if you set up role-to-permission mappings.
+:::
+
+### 8.5 Test full admin access
+
+1. Sign out of the Pangolin admin account.
+2. Sign in again using Zitadel (your new admin user).
+3. Verify you can access **Server Admin** interfaces.
+4. Check that you can view and modify resources, users, and policies.
+
+### 8.6 Optional: Disable local admin account
+
+Once your Zitadel admin account is fully functional:
+
+1. Navigate to **Server Admin → Users**.
+2. Find the original `admin` user (local account).
+3. **Disable** or **Delete** the account (keep it disabled initially for safety).
+3. Ensure you have a backup authentication method before fully removing local admin access.
+
+## 9. Verify the Integration
+
+Now that roles, policies, and resource rules are configured, test the complete authentication and authorization flow.
+
+### 9.1 Test admin access
+
+1. Sign in to Pangolin with your Zitadel account (the one with the `admin` role).
+2. Attempt to access various resources:
+   - `https://proxmox.yourdomain.com` → Should be granted (admin bypass)
+   - `https://grafana.yourdomain.com` → Should be granted (admin bypass)
+   - `https://pangolin.yourdomain.com` → Should be granted (admin bypass)
+3. Check **Server Admin → Sessions** to confirm your user session shows the `admin` role.
+
+### 9.2 Test category-based access
+
+Create a test user to verify category roles work correctly:
+
+1. In Zitadel, create a new user or use an existing non-admin user.
+2. Navigate to **Projects → KyleHub → Authorizations**.
+3. Grant the user only the `admin` role (or create a category role like `services` for testing).
+4. Sign in to Pangolin as this user.
+5. Attempt to access:
+   - `https://grafana.yourdomain.com` → Should be granted (has admin role)
+   - `https://proxmox.yourdomain.com` → **Should be denied** if you set it to require `access_proxmox` explicitly
+   - `https://someotherservice.yourdomain.com` → Should be denied (no matching role)
+
+### 9.3 Test service-specific access
+
+1. Remove the `admin` role from your test user in Zitadel.
+2. Grant only the `access_grafana` role.
+3. Sign in to Pangolin as this user again.
+4. Attempt to access:
+   - `https://grafana.yourdomain.com` → Should be granted (has explicit `access_grafana`)
+   - `https://portainer.yourdomain.com` → Should be denied (no `access_portainer` or `admin`)
+
+### 9.4 Test access revocation
+
+1. In Zitadel, remove all roles from your test user.
+2. Force the user to log out of Pangolin (or wait for session expiry).
+3. Attempt to access any protected resource → Should be denied (no roles).
+4. Verify the user can still authenticate but gets "Access Denied" or "Forbidden" errors.
+
+### 9.5 Inspect token claims (optional)
+
+To debug role mapping issues:
+
+1. During login, capture the authentication flow using browser dev tools (Network tab).
+2. Find the ID token in the callback response.
+3. Decode it using [jwt.io](https://jwt.io/).
+4. Verify the `urn:zitadel:iam:org:project:roles` claim contains the expected roles:
+   ```json
+   {
+     "urn:zitadel:iam:org:project:roles": {
+       "admin": {
+         "204145526116868871": "KyleHub"
+       },
+       "services": {
+         "204145526116868871": "KyleHub"
+       }
+     }
+   }
+   ```
+5. If roles are missing from the token, verify:
+   - Role assertions are enabled in Zitadel project settings
+   - The application's token settings include roles
+   - The user has been granted the roles in the project authorizations
+
+### 9.6 Verify role synchronization
+
+1. Navigate to **Server Admin → Users** in Pangolin.
+2. Find your test user.
+3. Check the **Roles** field—it should show all roles from the Zitadel token.
+4. Grant a new role in Zitadel (e.g., add `media` to the user).
+5. Force the user to re-authenticate (log out and log back in).
+6. Verify the new role appears in Pangolin's user details.
+
+:::warning Session persistence
+Pangolin caches user sessions. Role changes in Zitadel will not take effect until the user's Pangolin session expires or they log out and log back in. Session duration is configurable in Pangolin settings.
+:::
+
+## 10. Troubleshooting Common Issues
+
+### Issue: User authenticates but gets "Access Denied"
+
+**Cause**: Roles from Zitadel are not being mapped to Pangolin, or resource rules are misconfigured.
+
+**Solutions**:
+1. Verify the **Roles Claim Path** in the identity provider settings is set to `"urn:zitadel:iam:org:project:roles"`.
+2. Check that the resource has access rules configured (Section 7) and that the role names match exactly (case-sensitive).
+3. Inspect the user's roles in **Server Admin → Users** to confirm they were assigned during authentication.
+4. Decode the ID token (Section 9.5) to verify the roles are present in the authentication token.
+
+### Issue: Roles not appearing in Pangolin user details
+
+**Cause**: The roles claim is not included in the ID token, or the claim path is incorrect.
+
+**Solutions**:
+1. In Zitadel, verify **Projects → KyleHub → Settings → Assert roles on authentication** is enabled.
+2. Verify **Applications → KyleHub-Auth → Token Settings** includes roles in ID tokens and access tokens.
+3. Decode the ID token (see Section 9.5) to confirm the roles claim exists and has the correct structure.
+4. If using Pangolin CE 1.10.3 or earlier, manually add `roles_claim: "urn:zitadel:iam:org:project:roles"` to your `config.yaml` (see Section 2, note at the end).
+
+### Issue: User can't access Pangolin Server Admin
+
+**Cause**: The user has the `admin` role but lacks Pangolin-specific administrative permissions.
+
+**Solutions**:
+1. In **Server Admin → Users**, find the user and manually promote them to **Administrator** (see Section 8.4).
+2. Verify the user has both the `admin` role (in the Roles field) and **Admin** user type/permission.
+
+### Issue: Changes in Zitadel not reflected in Pangolin
+
+**Cause**: User sessions are cached and persist beyond role changes.
+
+**Solutions**:
+1. Have the user log out of Pangolin and log back in.
+2. In **Server Admin → Sessions**, manually revoke the user's session.
+3. Reduce session duration in **Server Admin → Organization Policies** or **Settings**.
+
+### Issue: "Invalid callback URL" error during login
+
+**Cause**: The redirect URI in Zitadel does not match the callback URL Pangolin generated.
+
+**Solutions**:
+1. In Pangolin, navigate to **Server Admin → Identity Providers → Zitadel**.
+2. Copy the **Callback URL** shown in the provider details.
+3. In Zitadel, navigate to **Applications → KyleHub-Auth → Redirect Settings**.
+4. Ensure the exact callback URL is listed and saved.
+
+### Issue: Authentication fails with connection timeout or DNS errors
+
+**Cause**: Pangolin cannot resolve or reach the Zitadel domain, possibly due to DNS routing through Cloudflare.
+
+**Solutions**:
+1. Verify the DNS rewrite is configured in AdGuard Home (see Section 1.1).
+2. Test DNS resolution from the Pangolin container:
+   ```bash
+   pct enter <container-id>
+   nslookup auth.yourdomain.com
+   ```
+3. Ensure the Pangolin container is using AdGuard Home (`192.168.1.10`) as its DNS server (check `/etc/resolv.conf`).
+4. Verify network connectivity between Pangolin and Zitadel:
+   ```bash
+   curl -I https://auth.yourdomain.com
+   ```
+5. Check AdGuard Home's **Query Log** to confirm DNS queries for the Zitadel domain are being rewritten to the local IP.
+
+### Issue: User from tenant organization can't authenticate
+
+**Cause**: Project Grant is missing or organization mapping is misconfigured.
+
+**Solutions**:
+1. Verify the Project Grant exists:
+   - In Zitadel, navigate to **Projects → KyleHub → Grants**
+   - Confirm the tenant organization appears in the grants list
+   - If missing, create a new Project Grant for that organization
+2. Check the user exists in the tenant organization (not your management org):
+   - Navigate to **Organizations** in Zitadel
+   - Switch to the tenant organization
+   - Verify the user exists there
+3. Verify the Organization Mapping Path in Pangolin:
+   - **Server Admin → Identity Providers → Zitadel → Organization Policies**
+   - Confirm **Organization Mapping Path** is set to `"urn:zitadel:iam:org:name"`
+4. Test the token claim:
+   - Decode the user's ID token (Section 9.5)
+   - Verify it contains: `"urn:zitadel:iam:org:name": "TenantOrgName"`
+5. Ensure matching organization exists in Pangolin:
+   - **Server Admin → Organizations**
+   - Confirm organization name matches **exactly** (case-sensitive)
+
+### Issue: User lands in wrong organization
+
+**Cause**: Organization name mismatch between Zitadel and Pangolin, or multiple orgs with similar names.
+
+**Solutions**:
+1. Check exact name match:
+   - Zitadel: Get org name from token (`urn:zitadel:iam:org:name`)
+   - Pangolin: Verify org name matches character-for-character (including spaces, capitalization)
+2. Check for duplicate organizations in Pangolin with similar names
+3. If user should be in fallback org, verify which org is selected in the Organization Policy dropdown
+
+## 11. Next Steps
+
+Your unified authentication system is now operational. To expand and refine:
+
+- **Onboard new tenants** (for multi-tenant SaaS):
+  1. Create organization in Zitadel (e.g., `CustomerB`)
+  2. Create Project Grant from `KyleHub` to `CustomerB`
+  3. Create matching organization in Pangolin: `CustomerB`
+  4. Create users in `CustomerB` Zitadel org and assign roles
+  5. Done! Users automatically route to their organization on login.
+
+- **Add new services**: 
+  1. Define a role in Zitadel (e.g., `access_newservice`)
+  2. Create/import the resource in Pangolin
+  3. Add an access rule referencing the role name
+  4. Grant users the role in Zitadel—done!
+  
+  **No need to create the role in Pangolin**—just type it in the access rule.
+
+- **Expand role taxonomy**: Add new category roles (e.g., `iot`, `gaming`) in Zitadel, then reference them in resource rules.
+- **Direct SSO integration**: Configure services like Grafana, Proxmox, or other OIDC-capable apps to authenticate directly against Zitadel (see [Extending SSO to Services](./09-extending-sso-to-services.mdx)).
+- **Automate user provisioning**: Use Zitadel Actions or Pangolin webhooks to automatically create users in downstream services when they first authenticate.
+- **Refine policies**: Implement path-based rules (if supported), IP restrictions, or MFA requirements for sensitive resources.
+
+:::tip Simple workflow for new resources
+**Zitadel (your single source of truth)**:
+1. Create role: `access_newservice`
+2. Grant users the role
+
+**Pangolin**:
+1. Add resource/proxy
+2. Add access rule: type `access_newservice, admin`
+3. Done!
+
+No role duplication needed.
+:::
+
+:::tip Multi-Tenant Quick Reference
+
+**Your Architecture:**
+- **One** Zitadel project (`KyleHub`) in your management org (`KHOps`)
+- **One** Pangolin Identity Provider (pointing to `KyleHub-Auth` application)
+- **Many** tenant organizations (granted access via Project Grants)
+- **Automatic** routing based on `urn:zitadel:iam:org:name` claim
+
+**Onboarding Checklist:**
+1. ✅ Zitadel: Create org → Grant project access
+2. ✅ Pangolin: Create matching org
+3. ✅ Zitadel: Add users → Assign roles
+4. ✅ Test: User logs in → Auto-routed to their org
+
+**Why this scales:**
+- No duplicate auth configs
+- No manual user-to-org mapping
+- Centralized role management
+- Tenant isolation handled automatically
+:::
+
+For advanced role design patterns and permission strategies, see [Zitadel Permission Deep Dive](./08-zitadel-permission-deep-dive.mdx). For integrating specific services with direct OIDC, continue to [Extending SSO to Services](./09-extending-sso-to-services.mdx).
+
+[^zitadel-projects]: [Zitadel Projects console guide](https://zitadel.com/docs/guides/manage/console/projects#project-settings)
+[^zitadel-apps]: [Zitadel Applications token settings](https://zitadel.com/docs/guides/manage/console/applications#token-settings)
+[^pangolin-add-idp]: [Pangolin – Add identity providers](https://docs.digpangolin.com/manage/identity-providers/add-an-idp)
+[^pangolin-auto]: [Pangolin – Auto provisioning](https://docs.digpangolin.com/manage/identity-providers/auto-provisioning)
+[^pangolin-rules]: [Pangolin – Access control rules](https://docs.digpangolin.com/manage/access-control/rules)
+

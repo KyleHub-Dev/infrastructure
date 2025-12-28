@@ -1,0 +1,358 @@
+---
+title: Proxmox Setup
+sidebar_position: 2
+---
+
+:::info Original Guide
+This guide is heavily based on and adapted from the official Proxmox VE Wiki: [Install Proxmox VE on Debian 13 Trixie](https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_13_Trixie). Please refer to the original guide for the most up-to-date and comprehensive information.
+:::
+
+This document outlines the steps to install and perform a basic/initial configuration of Proxmox VE on a Debian 13 Trixie server.
+
+## 1. Ensure Hostname Resolves to Host's IP Address
+
+The hostname of your machine must be resolvable to a non-loopback IP address. It's recommended to configure this via `/etc/hosts`.
+
+For example, if your IP address is `192.168.15.77` and your hostname is `prox4m1`, your `/etc/hosts` file could look like this:
+
+```
+127.0.0.1 localhost
+192.168.15.77 prox4m1.proxmox.com prox4m1
+
+# The following lines are desirable for IPv6 capable hosts
+::1 localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+```
+
+You can test your setup using the `hostname` command:
+
+```bash
+hostname --ip-address
+```
+
+This should return at least one non-loopback IP address.
+
+## 2. Install Proxmox VE
+
+### 2.1 Add Proxmox VE Repository
+
+Add the Proxmox VE repository sources using the preferred `deb822` style format:
+
+```bash
+cat > /etc/apt/sources.list.d/pve-install-repo.sources << EOL
+Types: deb
+URIs: http://download.proxmox.com/debian/pve
+Suites: trixie
+Components: pve-no-subscription
+Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+EOL
+```
+
+Add the Proxmox VE repository key as root (or use `sudo`):
+
+```bash
+wget https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg -O /usr/share/keyrings/proxmox-archive-keyring.gpg
+```
+
+Verify the keyring (optional but recommended):
+
+```bash
+sha256sum /usr/share/keyrings/proxmox-archive-keyring.gpg
+md5sum /usr/share/keyrings/proxmox-archive-keyring.gpg
+```
+
+Update your repository and system:
+
+```bash
+apt update && apt full-upgrade
+```
+
+### 2.2 Install the Proxmox VE Kernel
+
+Install and boot the Proxmox VE kernel:
+
+```bash
+apt install proxmox-default-kernel
+systemctl reboot
+```
+
+After rebooting, log back in.
+
+### 2.3 Install the Proxmox VE Packages
+
+Install the main Proxmox VE packages:
+
+```bash
+apt install proxmox-ve postfix open-iscsi chrony
+```
+
+*   **Postfix Configuration**: If you have a mail server, configure Postfix as a satellite system. Otherwise, choose `local only`.
+*   **Chrony**: `chrony` is recommended for NTP.
+
+### 2.4 Remove the Debian Kernel
+
+It's recommended to remove the default Debian kernel to avoid potential issues during upgrades:
+
+```bash
+apt remove linux-image-amd64 'linux-image-6.12*'
+```
+
+Update `grub2` configuration (not required if `systemd-boot` is used):
+
+```bash
+update-grub
+```
+
+### 2.5 Remove the `os-prober` Package
+
+Remove `os-prober` to prevent it from scanning virtual machine partitions and creating unwanted GRUB entries:
+
+```bash
+apt remove os-prober
+```
+
+## 3. Connect to the Proxmox VE Web Interface
+
+Access the admin web interface in your browser:
+
+`https://your-ip-address:8006`
+
+Log in with the `root` user account and select `PAM authentication realm`.
+
+## 4. Initial Proxmox VE Configuration
+
+After successfully connecting to the web interface, perform the following initial configurations:
+
+### 4.1 Create a New User
+
+It is recommended to create a new user for daily administration instead of using the `root` account directly.
+
+1.  In the Proxmox VE web interface, navigate to **Datacenter > Permissions > Users**.
+2.  Click **Add** to create a new user.
+3.  Fill in the required details (e.g., username, password).
+4.  Assign appropriate permissions (e.g., `Administrator` role on `/` path for full access).
+
+### 4.2 Set up Two-Factor Authentication (TOTP)
+
+Enhance security by enabling Time-based One-Time Password (TOTP) for both the `root` user and your newly created administrative user *before* switching accounts. You will set up both while logged in as `root`.
+
+1.  **For the `root` user**:
+    *   While logged in as `root`, navigate to **Datacenter > Permissions > Users**, select `root`, and click **TOTP**.
+    *   Follow the instructions to set up TOTP using an authenticator app (e.g., Google Authenticator, Authy).
+2.  **For your new administrative user**:
+    *   While still logged in as `root`, navigate to **Datacenter > Permissions > Users**, select your newly created user, and click **TOTP**.
+    *   Follow the instructions to set up TOTP for this user.
+
+### 4.3 Switch User Accounts
+
+After setting up TOTP for both the `root` account and your new administrative user, log out of the `root` account. Then, log back in using your newly created user account with its associated TOTP. This ensures you are using a less privileged account for daily tasks.
+
+## 5. Run Post-Installation Helper Script
+
+After completing the initial Proxmox VE configuration, it is highly recommended to run the `post-pve-install.sh` helper script from the [Proxmox VE Helper Scripts](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install) collection. This script automates several common post-installation tasks, optimizations, and fixes.
+
+Execute the following command within the Proxmox shell (either via SSH or the web interface console):
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh)"
+```
+
+The script will present various options, each with a description of what it does. Here are recommendations based on a typical single-node home lab setup without a Proxmox subscription:
+
+*   **Start the Proxmox VE Post Install Script (y/n)?**: Answer `y` (Yes) to proceed.
+
+*   **Disable legacy sources?**: Answer `yes` if prompted. It's best to migrate to the modern `deb822` `.sources` format for APT.
+
+*   **Migrate to deb822 sources format?**: Answer `yes` if prompted. This ensures your APT sources are in the recommended modern format.
+
+*   **PVE-ENTERPRISE repository**: Choose `disable` (comment out) or `delete` (remove file) if it's enabled. If asked to add it, choose `no`. You do not have a subscription.
+
+*   **CEPH-ENTERPRISE repository**: Choose `disable` or `delete` if it's enabled. If asked to add it, choose `no`. You are not using Ceph.
+
+*   **PVE-NO-SUBSCRIPTION repository**: Choose `enable` if it's disabled, or `keep` if it's already enabled. If asked to add it, choose `yes`. This is the repository for open-source components.
+
+*   **CEPH PACKAGE REPOSITORIES (no-subscription)**: Choose `disable` or `delete` if it's enabled. If asked to add it, choose `no`. You are not using Ceph.
+
+*   **PVE-TEST repository**: Choose `no`. This is for advanced users testing beta features.
+
+*   **Disable subscription nag?**: Answer `yes`. This removes the "no valid subscription" popup in the web UI.
+
+*   **HIGH AVAILABILITY: Disable high availability?**: Answer `yes`. For a single-node setup, HA services are not needed and consume resources.
+
+*   **COROSYNC: Disable Corosync for a Proxmox VE Cluster?**: Answer `yes` if prompted (this appears if HA was enabled and then disabled). Corosync is part of clustering/HA and not needed for a single node.
+
+*   **Update Proxmox VE now?**: Answer `yes` to apply all updates.
+
+*   **Reboot Proxmox VE now? (recommended)**: Answer `yes` to ensure all changes take effect.
+
+## 6. Additional steps to harden security
+
+### 6.1 Install fail2ban:
+
+```bash
+apt update
+apt install fail2ban
+```
+
+### 6.2 Setup jail config:
+
+```bash
+cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+```
+
+In `/etc/fail2ban/jail.local`, enable [sshd] jail:
+
+```bash
+nano /etc/fail2ban/jail.local
+```
+
+Scroll down till u see:
+```
+#
+# JAILS
+#
+
+#
+# SSH servers
+#
+
+[sshd]
+
+# To use more aggressive sshd modes set filter parameter "mode" in jail.local:
+# normal (default), ddos, extra or aggressive (combines all).
+# See "tests/files/logs/sshd" or "filter.d/sshd.conf" for usage example and details.
+#mode   = normal
+port    = ssh
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s
+```
+
+Then add 
+
+```
+mode = normal
+enabled = true
+filter  = sshd
+maxretry = 5
+bantime  = 3600
+findtime = 600
+```
+
+<details>
+<summary>Example `/etc/fail2ban/jail.local` configuration </summary>
+
+```
+...
+
+#
+# JAILS
+#
+
+#
+# SSH servers
+#
+
+[sshd]
+
+# To use more aggressive sshd modes set filter parameter "mode" in jail.local:
+# normal (default), ddos, extra or aggressive (combines all).
+# See "tests/files/logs/sshd" or "filter.d/sshd.conf" for usage example and details.
+#mode   = normal
+port    = ssh
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s
+mode = normal
+enabled = true
+filter  = sshd
+maxretry = 5
+bantime  = 3600
+findtime = 600
+
+[dropbear]
+
+port     = ssh
+logpath  = %(dropbear_log)s
+backend  = %(dropbear_backend)s
+
+...
+```
+</details>
+
+### 6.3. Enable & Restart
+```bash
+systemctl enable fail2ban
+systemctl restart fail2ban
+```
+
+### 6.4. Check status
+```bash
+fail2ban-client status sshd
+```
+
+## Troubleshooting
+
+### Proxmox VE Kernel Fails to Boot
+
+If you encounter `bad shim signature` errors, ensure Secure Boot is disabled in your server's BIOS/UEFI settings.
+
+### `resolv.conf` Gets Overwritten
+
+The Proxmox VE GUI expects to control DNS management. If `resolv.conf` is being overwritten by other packages (e.g., `resolvconf` or `rdnssd`), DNS resolution may fail.
+
+### `ipcc_send_rec[1] failed`
+
+If you see `ipcc_send_rec[1] failed: Connection refused` messages, review your `/etc/hosts` file as described in Section 1.
+
+### `apt update` Failed with `401 Unauthorized`
+
+If you encounter an `apt update` failure with an error similar to `Err:10 https://enterprise.proxmox.com/debian/pve trixie InRelease 401 Unauthorized`, it means your system is trying to access the Proxmox enterprise repository without a valid subscription.
+
+To resolve this:
+
+1.  **Identify and disable the enterprise repository**:
+    First, locate where the enterprise repository is declared. It's often in a `.sources` file.
+    ```bash
+    grep -R "enterprise.proxmox.com" /etc/apt/sources.list*
+    ```
+    If the output shows a file like `/etc/apt/sources.list.d/pve-enterprise.sources`, disable it by renaming it:
+    ```bash
+    mv /etc/apt/sources.list.d/pve-enterprise.sources /etc/apt/sources.list.d/pve-enterprise.sources.disabled
+    ```
+    If it's in a `.list` file (e.g., `/etc/apt/sources.list.d/pve-enterprise.list`), you would comment out the line by adding a `#` at the beginning.
+
+2.  **Handle the `pve-no-subscription` repository**:
+    The `pve-no-subscription` repository is typically already configured in `/etc/apt/sources.list.d/pve-install-repo.sources` during the initial Proxmox VE installation.
+    If you previously created a separate file like `/etc/apt/sources.list.d/pve-no-subscription.list` and are now seeing "Target Packages is configured multiple times" warnings during `apt update`, it means you have duplicated the repository entry. To fix this, remove the manually created duplicate file:
+    ```bash
+    rm /etc/apt/sources.list.d/pve-no-subscription.list
+    ```
+    You should only have one entry for the `pve-no-subscription` repository, preferably in `pve-install-repo.sources`.
+
+3.  **Update your package lists**:
+    ```bash
+    apt update
+    ```
+    This should now complete without the `401 Unauthorized` error and without duplication warnings.
+
+## Additional Resources
+
+### Proxmox VE Helper Scripts
+
+These [community-maintained scripts](https://community-scripts.github.io/ProxmoxVE/) are incredibly useful for various tasks within Proxmox VE, from installing common applications to optimizing your setup. They will be referenced throughout this guide for simplifying certain configurations.
+
+For a visual guide and further insights, you might find these videos helpful.
+
+:::info Note on Language
+The following videos are in German. You may need to enable subtitles or search for English tutorials if you prefer. However, these videos were found to be very helpful for the setup process.
+:::
+
+### Private Cloud mit Proxmox (by Apfelcast)
+
+A video series by [Apfelcast](https://www.youtube.com/@apfelcast) that provides a comprehensive guide to setting up a private cloud with Proxmox.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Jbs-MirmshM?si=_cT5s-iGljcpXS43" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5Akt_xgjhN8?si=8Pna29VuEP1OqHW4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/45o3n5Y_lKU?si=JhO7ta4XyNXqKw1P" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>

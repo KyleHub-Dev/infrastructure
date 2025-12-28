@@ -1,0 +1,215 @@
+---
+title: Initial Organization and Project Setup
+sidebar_position: 4
+tags:
+  - Zitadel
+  - IAM
+  - Organizations
+  - Projects
+  - Users
+---
+
+# Bootstrap Your Zitadel Organization and Central Auth Project
+
+With Zitadel running behind Pangolin, the next step is to replace the bootstrap admin with a dedicated organization and centralized authentication project. This creates a clean separation between the installation's default organization and your personal setup, and establishes a single source of truth for all service access—whether through Pangolin's proxy or direct SSO integrations.
+
+## 1. Create a dedicated organization
+
+1. Log into the Zitadel console using the default administrator account.
+2. If not already there, click the **Default Settings** button located next to your profile icon in the top-right corner.
+3. In the left sidebar, click **Organizations**.
+4. Click the **New** button to create a new organization.
+5. **Important**: Uncheck the option **"Use your personal account as organization owner"** since you're logged in with the bootstrap `Zitadel Admin` account.
+6. Enter the organization details:
+   - **Name**: `KHOps` (or your preferred organization name)
+   - **Domain**: `kylehub.dev` (or your domain)
+7. Click **Configure Organization Owner** to set up the initial administrator for this organization.
+8. Enter the details for your organization owner user (this will be your main managing user):
+   - Username, email, and other profile information
+   - Select **Email verified** (since email verification may be disabled)
+   - Choose **Set Initial Password**
+   - Enter a strong, unique password and save it securely (consider using a password manager)
+9. Click **Finish** to complete the organization creation.
+
+You should now have your new organization created with a dedicated owner account. Switch to your new organization using the organization selector in the top-left corner.
+
+## 2.1 Switch to Organization Admin Account (Recommended)
+
+After creating the organization, switch to using your dedicated organization admin account:
+
+1. **Logout** from the bootstrap admin account
+2. **Login** using the format: `username@domain` (e.g., `yourusername@kylehub.dev`) with the password you set
+3. You should now see your organization's overview page
+
+This ensures you're working within your secure organization context.
+
+## 2.2 Optional: Configure Primary Domain
+
+If you want to use a custom domain instead of the default subdomain:
+
+1. Go to **Settings → Verified Domains**
+2. Click **Set as Primary** for your preferred domain (e.g., `kylehub.dev` instead of `khops.auth.kylehub.dev`)
+
+## 2.3 Optional: Enable MFA Requirements
+
+To enhance security for your organization:
+
+1. First, add MFA to your account: Go to **Profile → Security → Multi-factor** and enroll an authenticator
+2. Then go to **Settings → Login Behavior and Security**
+3. Check **"Force MFA for all users"** to require MFA for all users in the organization
+4. Optionally disable password-only login if desired
+
+Your organization and account are now properly secured.
+
+## 2.4. Optional: Retire or demote the bootstrap admin
+
+The installation user (`zitadel-admin@zitadel.localhost`) exists in the default organization and was meant for initial setup only. After verifying your new organization owner login works:
+
+1. Switch back to the default organization.
+2. Sign back in as the bootstrap admin if needed.
+3. Remove its project memberships or deactivate the account entirely.
+
+This ensures only the new dedicated account in your organization can administer the environment.
+
+## 3. Create the Central Authentication Project
+
+Instead of creating separate projects for each service, you'll establish a single **KyleHub** project that serves as the unified identity and access control hub for all services—whether proxied through Pangolin or accessed directly via SSO.
+
+### 3.1 Why a unified project?
+
+- **Single source of truth**: All access roles live in one place
+- **Simplified SSO**: Services that support OIDC/SAML reuse the same application credentials
+- **Easier onboarding**: Grant `homelab` role → instant access to 10+ services
+- **Better auditing**: One project authorization log tracks all access
+- **Scalable**: Add new service = add one role + one Pangolin rule
+
+### 3.2 Create the project
+
+1. In your organization, navigate to **Projects** and click **New**.
+2. Enter the project name: `KyleHub` (or `KyleHub-Core`).
+3. Click **Continue** to create the project.
+
+### 3.3 Create the unified OIDC application
+
+1. Inside the `KyleHub` project, go to **Applications → New**.
+2. **Important**: Click **"I'm a pro, skip the wizard"** to access the detailed configuration options.
+3. Enter the application name: `KyleHub-Auth`.
+4. Choose **Web** for the application type.
+5. Configure the OAuth/OIDC settings:
+   - **Grant Types**: Select **Authorization Code** (leave others unchecked unless needed)
+   - **Response Types**: Select **Code** (Authorization Code Flow)
+   - **Authentication Method**: Select **Basic** (Client ID and Secret)
+6. Leave **Redirect URIs** blank for now—you'll add Pangolin's callback URL in the next guide.
+7. Leave **Post Logout URIs** blank (optional).
+8. Click **Create** and securely save the **Client ID** and **Client Secret** that are displayed.
+
+### 3.4 Enable role assertions
+
+1. Navigate back to the **Projects** view and select your **KyleHub** project.
+2. Go to the **General** tab in the project settings.
+3. Scroll down to the **Settings** section and configure the following:
+   - **Assert Roles on Authentication**: Enable this to include role information in tokens and the Userinfo endpoint
+   - **Check authorization on Authentication**: (Optional) Enable this to only allow authentication if the user has at least one role assigned
+   - **Check for Project on Authentication**: (Optional) Enable this to verify the user's organization has access to this project
+4. Click **Save** to apply the changes.
+
+:::tip
+Enabling "Assert Roles on Authentication" is essential for role-based access control. The role information will be included in ID tokens and access tokens when properly configured in the application settings (see next section).
+:::
+
+### 3.5 Configure token output
+
+1. Navigate to **Applications → KyleHub-Auth**.
+2. Open the **Token Settings** tab.
+3. Configure the **Auth Token Type**:
+   - **Option A - JWT** (Recommended for Pangolin): Select **JWT** and enable:
+     - **Add user roles to the access token** ✓
+     - **User roles inside ID Token** ✓
+   - **Option B - Bearer** (Default): Select **Bearer**
+     - Roles are automatically included in the access token
+     - Enable **User roles inside ID Token** ✓
+4. (Optional) Enable **User Info inside ID Token** to include profile, email, phone, and address claims
+5. (Optional) Configure **ClockSkew** (0-5s) if you need to handle time synchronization issues
+6. Click **Save** to apply the changes.
+7. Switch to the **URLs** tab and note the **Authorization Endpoint** and **Token Endpoint** for later use.
+
+:::tip Which token type should I use?
+- **JWT** is recommended for Pangolin and most reverse proxy setups because:
+  - Self-contained tokens can be validated locally without calling Zitadel
+  - Faster validation (no introspection endpoint call needed)
+  - Works better with stateless authentication
+  - You have explicit control over role inclusion
+  
+- **Bearer** is suitable when:
+  - Your application needs to validate tokens against Zitadel's introspection endpoint
+  - You prefer opaque tokens for security reasons
+  - Roles are automatically included in access tokens
+:::
+
+:::warning Important for Pangolin
+For Pangolin integration, **JWT** is the recommended choice. Make sure to enable **both** role toggles so roles appear in both the ID token and access token for proper authorization.
+:::
+
+## 4. Define Your Role Taxonomy
+
+The power of the unified project comes from a well-structured role catalog. You'll create two types of roles:
+
+- **Category roles**: Broad access to groups of services (e.g., `homelab`, `media`, `finance`)
+- **Service-specific roles**: Granular access to individual services (e.g., `access_grafana`, `access_portainer`)
+
+### 4.1 Create category roles
+
+Navigate to **Projects → KyleHub → Roles → New** and create the following:
+
+| Key | Display Name | Description | Group |
+|-----|--------------|-------------|-------|
+| `admin` | Administrator | Full access to all services and Zitadel management | `categories` |
+| `homelab` | Homelab Access | Access to all homelab infrastructure services | `categories` |
+| `guest` | Guest Access | Access to public-facing services only | `categories` |
+
+### 4.2 Create service-specific roles
+
+Continue adding roles for each service:
+
+| Key | Display Name | Description | Group |
+|-----|--------------|-------------|-------|
+| `access_pangolin_ui` | Pangolin UI Access | Access to Pangolin management interface | `services` |
+| `access_proxmox` | Proxmox Access | Access to Proxmox virtualization | `services` |
+| `access_opnsense` | OPNsense Access | Access to OPNsense firewall | `services` |
+| `access_komodo` | Komodo Access | Access to Komodo container management | `services` |
+
+Add more service roles as you expand your infrastructure. Keep the naming convention consistent: `access_<servicename>`.
+
+### 4.3 Role combination strategy
+
+Users can hold multiple roles simultaneously:
+
+- **Admin user**: `admin` role (grants everything)
+- **Infrastructure operator**: `homelab` + `access_proxmox` + `access_portainer`
+- **Developer**: `homelab` + `access_grafana` + `access_prometheus`
+- **Media consumer**: `media` role only
+- **External auditor**: `access_grafana` (view-only, configured in Grafana itself)
+
+Pangolin will evaluate all roles when making access decisions, so a user with both `homelab` and `access_grafana` can access Grafana via either rule.
+
+## 5. Grant Initial Access
+
+Grant yourself full administrative access to start:
+
+1. Navigate to **Projects → KyleHub → Authorizations → New**.
+2. Select your organization owner account.
+3. Choose the `admin` role.
+4. Click **Save**.
+
+You can now test authentication and verify the role appears in your token claims (covered in the Pangolin setup guide).
+
+## 6. Next Steps
+
+With your central authentication project established:
+
+1. Configure Pangolin to use the `KyleHub-Auth` application (see [Pangolin Auth Provider Setup](./05-pangolin-auth-provider-setup.mdx))
+2. Define access rules in Pangolin that enforce category and service roles
+3. Optionally configure services like Grafana or Proxmox to use the same `KyleHub-Auth` credentials for direct SSO
+4. Add users and grant them appropriate role combinations as your team grows
+
+Your unified authentication hub is now ready to serve as the identity foundation for your entire infrastructure.

@@ -1,0 +1,305 @@
+---
+title: Proxmox Auth Provider Setup
+description: Configure Proxmox VE to authenticate via Zitadel using the unified KyleHub-Auth application
+sidebar_position: 6
+tags:
+  - Proxmox
+  - Authentication
+  - OIDC
+---
+
+# Setting up Zitadel as Auth Provider in Proxmox
+
+## Overview
+
+Proxmox VE supports **OpenID Connect (OIDC)** authentication, allowing users to log in with Zitadel credentials instead of local Proxmox accounts. By integrating with the unified `KyleHub-Auth` application, you gain:
+
+- **Centralized identity management**: Users authenticate through Zitadel across all KyleHub services
+- **Automatic user provisioning**: First-time logins create Proxmox user accounts automatically
+- **Role-based access control**: Combine Pangolin enforcement (`access_proxmox` required) with Proxmox permission groups
+- **Audit trails**: Authentication logs in both Zitadel and Proxmox
+
+:::info Integration approach
+Proxmox uses **direct OIDC integration** with Zitadel. This guide configures Proxmox to use the existing `KyleHub-Auth` application, then optionally adds Pangolin in front for service-specific role enforcement.
+:::
+
+---
+
+## Prerequisites
+
+1. **Zitadel setup complete**: The `KyleHub` project and `KyleHub-Auth` application exist (see [Initial Project Setup](./04-initial-project-setup.mdx)).
+2. **Roles configured**: Users have been granted appropriate roles in Zitadel:
+   - **Category roles**: `admin` or `homelab` for broad infrastructure access
+   - **Service role**: `access_proxmox` for Proxmox-specific access (optional if using Pangolin enforcement)
+3. **Proxmox admin access**: You can log in as `root@pam` or another admin account to configure realms.
+4. **Network connectivity**: Proxmox can reach `https://zitadel.yourdomain.com` over HTTPS.
+
+---
+
+## 1. Update Zitadel Redirect URI
+
+Proxmox requires the base domain as its redirect URI (not a subpath).
+
+1. In Zitadel, navigate to **Projects → KyleHub → Applications → KyleHub-Auth**.
+2. Scroll to **Redirect Settings** and click **+ Add URI**.
+3. Enter:
+   ```
+   https://proxmox.yourdomain.com
+   ```
+4. Click **Save**.
+
+:::tip Multiple Proxmox hosts
+If you have multiple Proxmox clusters (e.g., `proxmox-prod.yourdomain.com`, `proxmox-lab.yourdomain.com`), add each as a separate redirect URI.
+:::
+
+---
+
+## 2. Configure OpenID Realm in Proxmox
+
+### 2.1 Option A: Web UI configuration
+
+1. Log into Proxmox as `root@pam`.
+2. Navigate to **Datacenter → Permissions → Realms**.
+3. Click **Add → OpenID Connect Server**.
+4. Fill in the following:
+   - **Realm**: `zitadel` (or any unique identifier)
+   - **Issuer URL**: `https://zitadel.yourdomain.com`
+   - **Client ID**: `<KyleHub-Auth Client ID>`
+     - Find this in Zitadel: **Projects → KyleHub → Applications → KyleHub-Auth → Copy Client ID**
+   - **Client Key**: `<KyleHub-Auth Client Secret>`
+     - Find this in Zitadel: **Projects → KyleHub → Applications → KyleHub-Auth → Regenerate Client Secret** (copy the value)
+   - **Username Claim**: `preferred_username`
+   - **Autocreate Users**: ✅ Enabled
+   - **Prompt**: `login` (forces re-authentication for security)
+5. Click **Add**.
+
+### 2.2 Option B: CLI configuration
+
+SSH into your Proxmox host and edit `/etc/pve/domains.cfg`:
+
+```bash
+openid: zitadel
+    issuer-url https://zitadel.yourdomain.com
+    client-id <KyleHub-Auth Client ID>
+    client-key <KyleHub-Auth Client Secret>
+    username-claim preferred_username
+    autocreate 1
+    prompt login
+```
+
+**Explanation**:
+- `issuer-url`: Zitadel's base URL (Proxmox auto-discovers OIDC endpoints)
+- `client-id` / `client-key`: Credentials for the `KyleHub-Auth` application
+- `username-claim`: Proxmox creates local users named after the `preferred_username` claim from Zitadel (e.g., `kyle@zitadel`)
+- `autocreate 1`: Automatically provisions user accounts on first login
+- `prompt login`: Forces users to re-enter credentials (prevents silent re-use of stale sessions)
+
+---
+
+## 3. Assign Proxmox Permissions
+
+Proxmox doesn't automatically map OIDC claims to permissions—users created via OIDC start with **no permissions**. You must manually assign them to groups or grant individual permissions.
+
+### 3.1 Create a permission group
+
+1. In Proxmox, go to **Datacenter → Permissions → Groups**.
+2. Click **Create** and name the group (e.g., `homelab-users`, `proxmox-admins`).
+3. Click **Permissions** and assign the group access to resources:
+   - **Path**: `/` (root, all resources) or `/vms/` (VMs only) or specific nodes/storage
+   - **Role**: `PVEAdmin` (full admin), `PVEVMUser` (VM management), or custom role
+4. Click **Add**.
+
+### 3.2 Add users to the group after first login
+
+After a user logs in via OIDC for the first time:
+
+1. Go to **Datacenter → Permissions → Users**.
+2. Find the user (e.g., `kyle@zitadel`).
+3. Click **Edit** and assign them to the group you created (e.g., `homelab-users`).
+4. Click **OK**.
+
+The user will inherit all permissions from the group on their next login.
+
+### 3.3 Automate permission assignment (advanced)
+
+For organizations with many users, manually assigning permissions is impractical. You can automate this with a script:
+
+1. **Post-login hook**: Use Proxmox's REST API to assign users to groups based on their Zitadel roles.
+2. **Example workflow**:
+   - User logs in via OIDC.
+   - Proxmox creates the user account.
+   - A webhook or cron job queries Zitadel for the user's roles (`admin`, `homelab`, etc.).
+   - The script calls Proxmox API to add the user to the appropriate group (`homelab-users` for `homelab` role, `proxmox-admins` for `admin` role).
+
+**Reference implementation**:
+```python
+# Pseudo-code for auto-assignment script
+import requests
+
+# Fetch user roles from Zitadel userinfo endpoint
+response = requests.get('https://zitadel.yourdomain.com/oidc/v1/userinfo', headers={'Authorization': f'Bearer {access_token}'})
+roles = response.json().get('urn:zitadel:iam:org:project:roles', [])
+
+# Assign Proxmox group based on Zitadel role
+if 'admin' in roles:
+    proxmox_group = 'proxmox-admins'
+elif 'homelab' in roles:
+    proxmox_group = 'homelab-users'
+else:
+    proxmox_group = 'guests'
+
+# Call Proxmox API to add user to group
+proxmox_api.add_user_to_group(username, proxmox_group)
+```
+
+:::tip
+This approach is useful if you have dozens of users and want role-based permissions to be automatically enforced. For smaller deployments, manual group assignment is sufficient.
+:::
+
+---
+
+## 4. Test the Integration
+
+### 4.1 Log in via OIDC
+
+1. Visit `https://proxmox.yourdomain.com`.
+2. In the login form, select **Realm: zitadel** from the dropdown.
+3. Click **Login**.
+4. You'll be redirected to Zitadel's login page—authenticate with your Zitadel credentials.
+5. After successful authentication, you'll be redirected back to Proxmox.
+
+### 4.2 Verify user creation
+
+1. As an admin (`root@pam`), navigate to **Datacenter → Permissions → Users**.
+2. Confirm the new user appears with the realm `@zitadel` (e.g., `kyle@zitadel`).
+3. If auto-provisioning failed, check Proxmox logs:
+   ```bash
+   journalctl -u pveproxy -f
+   ```
+
+### 4.3 Verify permissions
+
+1. As the OIDC user, check what resources are visible:
+   - If you haven't assigned permissions yet, you'll see a blank dashboard or "Permission Denied" errors.
+2. Assign the user to a group (Section 3.2) and have them log out and back in.
+3. Verify they now see the expected resources.
+
+---
+
+## 5. Enforce Service-Specific Access with Pangolin (Optional)
+
+While Proxmox authenticates via OIDC, it doesn't enforce Zitadel role requirements natively. To require the `access_proxmox` role **before** users reach the OIDC login:
+
+### 5.1 Add a Pangolin access rule
+
+In Pangolin's **Access Control → Rules**, create:
+
+| Field | Value |
+|-------|-------|
+| **Name** | Proxmox requires access_proxmox |
+| **Priority** | 5 (higher than category rules) |
+| **Pattern** | `proxmox.yourdomain.com` |
+| **Allow** | ✅ |
+| **Roles Required** | `access_proxmox` |
+
+Or via YAML (`/etc/pangolin/config.yaml`):
+
+```yaml
+access_rules:
+  - name: "Proxmox requires access_proxmox"
+    priority: 5
+    pattern: "proxmox.yourdomain.com"
+    allow: true
+    roles_required:
+      - "access_proxmox"
+```
+
+### 5.2 How this works
+
+1. User visits `https://proxmox.yourdomain.com`.
+2. Pangolin intercepts the request and checks Zitadel for the user's roles.
+3. If the user has `access_proxmox` (or `admin`), Pangolin forwards the request to Proxmox.
+4. Proxmox initiates the OIDC login flow with Zitadel.
+5. User authenticates and is granted access based on Proxmox permissions.
+
+**Benefits**:
+- **Defense in depth**: Two layers of authorization (Pangolin + Proxmox)
+- **Service-specific enforcement**: Users without `access_proxmox` never reach the Proxmox login page
+- **Consistent access control**: Same role enforcement pattern as other KyleHub services
+
+**Tradeoff**:
+- Double authentication hop (though Zitadel sessions typically avoid re-login)
+
+---
+
+## 6. Troubleshooting
+
+### 6.1 "Invalid redirect URI" error
+
+**Symptom**: After clicking "Login", Zitadel shows "Invalid redirect URI".
+
+**Cause**: Proxmox's redirect URI doesn't match Zitadel's configured URIs.
+
+**Fix**:
+1. Check the URL in the error message (e.g., `https://proxmox.yourdomain.com/`).
+2. Add it exactly to Zitadel: **Projects → KyleHub → Applications → KyleHub-Auth → Redirect Settings**.
+3. Common pitfall: Trailing slashes—Proxmox may redirect to `https://proxmox.yourdomain.com/` (with slash) even if you configured `https://proxmox.yourdomain.com` (without slash). Add both variants.
+
+### 6.2 User authenticated but sees "Permission Denied"
+
+**Symptom**: User logs in successfully but sees no resources or "Permission Denied" errors.
+
+**Cause**: Proxmox created the user account but hasn't assigned any permissions.
+
+**Fix**: Assign the user to a permission group (see Section 3.2) or grant individual permissions.
+
+### 6.3 Auto-provisioning doesn't work
+
+**Symptom**: User authenticates in Zitadel but isn't created in Proxmox.
+
+**Cause**: `autocreate` is disabled in the OpenID realm configuration.
+
+**Fix**:
+1. Edit the realm in Proxmox (**Datacenter → Permissions → Realms → zitadel → Edit**).
+2. Enable **Autocreate Users**.
+3. Click **OK**.
+4. Have the user attempt login again.
+
+### 6.4 "OIDC discovery failed"
+
+**Symptom**: Proxmox logs show "Failed to fetch OpenID configuration".
+
+**Cause**: Proxmox can't reach Zitadel's discovery endpoint.
+
+**Fix**:
+1. From the Proxmox host, test connectivity:
+   ```bash
+   curl https://zitadel.yourdomain.com/.well-known/openid-configuration
+   ```
+2. If it fails:
+   - Check DNS resolution: `dig zitadel.yourdomain.com`
+   - Check firewall rules (Proxmox → Zitadel on port 443)
+   - Verify SSL certificate is valid (not self-signed without proper CA)
+
+### 6.5 Roles not reflected in Proxmox
+
+**Symptom**: User has `admin` role in Zitadel but still has limited permissions in Proxmox.
+
+**Cause**: Proxmox doesn't automatically map OIDC claims to permissions—you must manually assign users to groups.
+
+**Fix**: Use the manual group assignment (Section 3.2) or automated script (Section 3.3) to sync Zitadel roles to Proxmox permissions.
+
+---
+
+## 7. Next Steps
+
+- **Direct SSO for other services**: Apply the same pattern to Grafana, Portainer, etc. (see [Extending SSO to Services](./09-extending-sso-to-services.mdx)).
+- **Automate permission sync**: Build a script to assign Proxmox groups based on Zitadel roles (see Section 3.3).
+- **Refine access rules**: Add path-based Pangolin rules (e.g., `/admin/*` requires `admin` role) or IP restrictions.
+- **Monitor logins**: Use Zitadel's **Monitor → Events** to track OIDC authentication attempts.
+
+For advanced role design and access patterns, see [Zitadel Permission Deep Dive](./08-zitadel-permission-deep-dive.mdx).
+
+[^zitadel-oidc]: [Zitadel OIDC documentation](https://zitadel.com/docs/apis/openidoauth/endpoints)
+[^proxmox-openid]: [Proxmox OpenID Connect documentation](https://pve.proxmox.com/wiki/User_Management#pveum_openid_configuration)
+[^proxmox-api]: [Proxmox VE API documentation](https://pve.proxmox.com/pve-docs/api-viewer/)

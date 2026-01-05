@@ -46,7 +46,7 @@ services:
 
       # --- Router: WebSocket (Port 3000) ---
       # Shares the same service/port as API
-      - "traefik.http.routers.ws-router.rule=Host(`${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}`) && Headers(`Upgrade`, `websocket`)"
+      - "traefik.http.routers.ws-router.rule=Host(`${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}`) && Header(`Upgrade`, `websocket`)"
       - "traefik.http.routers.ws-router.entrypoints=websecure"
       - "traefik.http.routers.ws-router.middlewares=badger"
       - "traefik.http.routers.ws-router.tls.certresolver=letsencrypt"

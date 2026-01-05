@@ -1,4 +1,0 @@
-# Dynamic configuration is now handled via Docker Labels in compose.yaml
-# This file is kept if you need to add custom file-based configuration later.
-
-http: {}

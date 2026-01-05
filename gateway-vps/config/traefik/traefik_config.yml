@@ -3,6 +3,8 @@ api:
   dashboard: true
 
 providers:
+  docker:
+    exposedByDefault: false
   http:
     endpoint: "http://pangolin:3001/api/v1/traefik-config"
     pollInterval: "5s"

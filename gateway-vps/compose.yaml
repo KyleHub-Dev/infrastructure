@@ -3,6 +3,8 @@ services:
     image: fosrl/pangolin:ee-latest
     container_name: pangolin
     restart: unless-stopped
+    env_file:
+      - .env
     volumes:
       - ./config:/app/config
     healthcheck:
@@ -10,6 +12,48 @@ services:
       interval: "3s"
       timeout: "3s"
       retries: 15
+    labels:
+      - "traefik.enable=true"
+      
+      # --- Middleware: Badger (Auth) ---
+      - "traefik.http.middlewares.badger.plugin.badger.disableForwardAuth=true"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # --- Router: HTTP to HTTPS Redirect ---
+      - "traefik.http.routers.main-app-router-redirect.rule=Host(`${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}`)"
+      - "traefik.http.routers.main-app-router-redirect.entrypoints=web"
+      - "traefik.http.routers.main-app-router-redirect.middlewares=redirect-to-https,badger"
+      - "traefik.http.routers.main-app-router-redirect.service=next-service"
+
+      # --- Router: Next.js UI (Port 3002) ---
+      # Handles everything EXCEPT /api/v1
+      - "traefik.http.routers.next-router.rule=Host(`${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}`) && !PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.next-router.entrypoints=websecure"
+      - "traefik.http.routers.next-router.middlewares=badger"
+      - "traefik.http.routers.next-router.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.next-router.service=next-service"
+      
+      # Service Definition for Next.js
+      - "traefik.http.services.next-service.loadbalancer.server.port=3002"
+
+      # --- Router: API (Port 3000) ---
+      # Handles /api/v1
+      - "traefik.http.routers.api-router.rule=Host(`${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.api-router.entrypoints=websecure"
+      - "traefik.http.routers.api-router.middlewares=badger"
+      - "traefik.http.routers.api-router.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api-router.service=api-service"
+
+      # --- Router: WebSocket (Port 3000) ---
+      # Shares the same service/port as API
+      - "traefik.http.routers.ws-router.rule=Host(`${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}`) && Headers(`Upgrade`, `websocket`)"
+      - "traefik.http.routers.ws-router.entrypoints=websecure"
+      - "traefik.http.routers.ws-router.middlewares=badger"
+      - "traefik.http.routers.ws-router.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ws-router.service=api-service"
+
+      # Service Definition for API/Websockets
+      - "traefik.http.services.api-service.loadbalancer.server.port=3000"
 
   gerbil:
     image: fosrl/gerbil:latest

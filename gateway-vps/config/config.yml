@@ -1,0 +1,6 @@
+# Pangolin Configuration
+# Variables defined here use the ${VAR} syntax to pull from the .env file.
+
+gerbil:
+  # The public IP of this server, used by WireGuard clients to connect.
+  base_endpoint: "${VPS_PUBLIC_IP}"

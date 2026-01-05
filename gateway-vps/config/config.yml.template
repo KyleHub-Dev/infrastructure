@@ -14,7 +14,7 @@ app:
 domains:
   # The primary domain configuration
   primary:
-    domain: "${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}"
+    base_domain: "${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}"
     cert_resolver: "letsencrypt"
 
 gerbil:

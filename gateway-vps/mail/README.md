@@ -264,4 +264,3 @@ SMTPConfiguration:
     *   **Error:** *Certificate verification failed* -> Ensure `smtp_tls_security_level = may` in `main.cf`.
     *   **Error:** `File has unexpected size` or `Mirror sync in progress?` during `sudo apt update` -> This indicates a temporary issue with a specific package mirror. The core `apt install` command may still succeed. If not, try clearing the apt lists cache: `sudo rm -rf /var/lib/apt/lists/* && sudo apt update`.
     *   **Error:** `dpkg: dependency problems prevent configuration of protonmail-bridge` -> If `sudo dpkg -i proton-bridge.deb` fails due to unmet dependencies, run `sudo apt install -f` to install the missing packages and configure the bridge. Then, re-run `sudo dpkg -i proton-bridge.deb` to complete the installation.
-

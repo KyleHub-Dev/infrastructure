@@ -58,3 +58,5 @@ logs/
 
 # Configuration files
 gateway-vps/config/config.yml
+gateway-vps/config/db/
+gateway-vps/config/key

@@ -1,106 +1,60 @@
 services:
-  # --- Pangolin (Zero Trust Gateway) ---
   pangolin:
-    image: pangolin/server:latest # ⚠️ REPLACE with actual image (e.g., specific version)
-    restart: always
+    image: fosrl/pangolin:ee-latest
     container_name: pangolin
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+      interval: "3s"
+      timeout: "3s"
+      retries: 15
+
+  gerbil:
+    image: fosrl/gerbil:latest
+    container_name: gerbil
+    restart: unless-stopped
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --reachableAt=http://gerbil:3004
+      - --generateAndSaveKeyTo=/var/config/key
+      - --remoteConfig=http://pangolin:3001/api/v1/
+    volumes:
+      - ./config/:/var/config
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    ports:
+      - 51820:51820/udp
+      - 21820:21820/udp
+      - 443:443
+      - 80:80
+
+  traefik:
+    image: traefik:v3.6.4
+    container_name: traefik
+    restart: unless-stopped
+    network_mode: service:gerbil
+    security_opt:
+      - no-new-privileges:true
     environment:
-      - PANGOLIN_DASHBOARD_PORT=7443
+      - TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL=${ACME_EMAIL}
       - CF_API_EMAIL=${CF_API_EMAIL}
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
-      - ACME_EMAIL=${ACME_EMAIL}
-    ports:
-      - "80:80"
-      - "443:443"
-      - "51820:51820/udp" # WireGuard
-    volumes:
-      - ./services/pangolin/data:/data
-    networks:
-      - gateway-net
-
-  # --- Zitadel (Identity Provider) ---
-  zitadel:
-    image: ghcr.io/zitadel/zitadel:v4.7.1
-    restart: always
-    container_name: zitadel
-    command: 'start-from-init --masterkey "${ZITADEL_MASTERKEY}"'
-    user: "0"
-    environment:
-      - ZITADEL_DATABASE_POSTGRES_HOST=db
-      - ZITADEL_DATABASE_POSTGRES_PORT=5432
-      - ZITADEL_DATABASE_POSTGRES_DATABASE=${POSTGRES_DB}
-      - ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME=${POSTGRES_USER}
-      - ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD=${POSTGRES_PASSWORD}
-      - ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE=disable
-      - ZITADEL_DATABASE_POSTGRES_USER_USERNAME=${POSTGRES_USER}
-      - ZITADEL_DATABASE_POSTGRES_USER_PASSWORD=${POSTGRES_PASSWORD}
-      - ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE=disable
-      - ZITADEL_EXTERNALPORT=443
-      - ZITADEL_EXTERNALDOMAIN=${DOMAIN}
-      - ZITADEL_EXTERNALSECURE=true
-      - ZITADEL_TLS_ENABLED=false
-      - ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH=/current-dir/login-client.pat
-      - ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME=login-client
-      - ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME="Automatically Initialized IAM_LOGIN_CLIENT"
-      - ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE=2029-01-01T00:00:00Z
-      - ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED=true
-      - ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI=https://${DOMAIN}/ui/v2/login
-      - ZITADEL_OIDC_DEFAULTLOGINURLV2=https://${DOMAIN}/ui/v2/login/login?authRequest=
-      - ZITADEL_OIDC_DEFAULTLOGOUTURLV2=https://${DOMAIN}/ui/v2/login/logout?post_logout_redirect=
-      - ZITADEL_SAML_DEFAULTLOGINURLV2=https://${DOMAIN}/ui/v2/login/login?samlRequest=
-    healthcheck:
-      test: [ "CMD", "/app/zitadel", "ready" ]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-    volumes:
-      - ./services/auth:/current-dir:delegated
     depends_on:
-      db:
+      pangolin:
         condition: service_healthy
-    networks:
-      - gateway-net
-
-  # --- Zitadel Login V2 (Sidecar) ---
-  login:
-    image: ghcr.io/zitadel/zitadel-login:v4.7.1
-    restart: always
-    container_name: zitadel_login
-    environment:
-      - ZITADEL_API_URL=http://zitadel:8080
-      - NEXT_PUBLIC_BASE_PATH=/ui/v2/login
-      - ZITADEL_SERVICE_USER_TOKEN_FILE=/current-dir/login-client.pat
-      - CUSTOM_REQUEST_HEADERS=Host:${DOMAIN}
-    user: "0"
+    command:
+      - --configFile=/etc/traefik/traefik_config.yml
     volumes:
-      - ./services/auth:/current-dir:ro
-    networks:
-      - gateway-net
-    depends_on:
-      zitadel:
-        condition: service_healthy
-        restart: false
-
-  # --- PostgreSQL (Database) ---
-  db:
-    image: postgres:17-alpine
-    restart: always
-    container_name: zitadel_db
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    volumes:
-      - ./services/auth/data/postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - gateway-net
+      - ./config/traefik:/etc/traefik:ro
+      - ./config/letsencrypt:/letsencrypt
+      - ./config/traefik/logs:/var/log/traefik
 
 networks:
-  gateway-net:
+  default:
     driver: bridge
+    name: pangolin

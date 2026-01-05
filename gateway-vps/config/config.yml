@@ -1,6 +1,20 @@
 # Pangolin Configuration
 # Variables defined here use the ${VAR} syntax to pull from the .env file.
 
+server:
+  # Secret key for session encryption etc.
+  secret: "${PANGOLIN_SERVER_SECRET}"
+
+app:
+  # Public URL for the dashboard
+  dashboard_url: "${PANGOLIN_DASHBOARD_URL}"
+
+domains:
+  # The primary domain configuration
+  primary:
+    domain: "${PANGOLIN_SUBDOMAIN}.${DOMAIN_ROOT}"
+    cert_resolver: "letsencrypt"
+
 gerbil:
   # The public IP of this server, used by WireGuard clients to connect.
   base_endpoint: "${VPS_PUBLIC_IP}"

@@ -8,6 +8,8 @@ server:
 app:
   # Public URL for the dashboard
   dashboard_url: "${PANGOLIN_DASHBOARD_URL}"
+  # Enterprise License Key
+  license_key: "${PANGOLIN_LICENSE_KEY}"
 
 domains:
   # The primary domain configuration

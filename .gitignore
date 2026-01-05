@@ -60,3 +60,5 @@ logs/
 gateway-vps/config/config.yml
 gateway-vps/config/db/
 gateway-vps/config/key
+gateway-vps/auth/data/postgres/
+gateway-vps/auth/login-client.pat

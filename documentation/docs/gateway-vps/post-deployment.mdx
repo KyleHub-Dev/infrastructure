@@ -50,37 +50,9 @@ After setup, you can add this admin to your Zitadel instance for unified identit
 
 ---
 
-## 3. Configure Identity Provider
+## 3. Expose Documentation Site (Optional)
 
-This step connects Pangolin to Zitadel for **user authentication**. Users will log in via Zitadel's login interface, and Pangolin will verify their identity through OIDC.
-
-### Add Zitadel as Identity Provider
-
-1. Go to **Admin** → **Identity Providers**
-2. Click **Add Identity Provider**
-3. Configure (see [Zitadel Setup](./zitadel-setup) for details):
-
-| Setting | Value |
-|---------|-------|
-| Name | Zitadel |
-| Type | OIDC |
-| Client ID | From Zitadel (`KyleHub-Auth` application) |
-| Client Secret | From Zitadel (`KyleHub-Auth` application) |
-| Authorization URL | `https://auth.yourdomain.com/oauth/v2/authorize` |
-| Token URL | `http://auth.yourdomain.com:8080/oauth/v2/token` |
-
-4. Save and copy the callback URL
-5. Add callback URL to Zitadel's redirect URIs (in [Zitadel Setup](./zitadel-setup#3-create-the-auth-application))
-
-:::note Single Sign-On
-After this step, users access resources through Pangolin, get redirected to Zitadel for login, and are automatically granted access based on their Zitadel roles and Pangolin access policies.
-:::
-
----
-
-## 4. Expose Documentation Site
-
-The Gateway VPS includes a built-in documentation site. Create a resource to expose it.
+The Gateway VPS includes a built-in documentation site. You can expose it now or after completing Zitadel setup.
 
 ### Create Documentation Resource
 
@@ -117,7 +89,7 @@ docker compose build docs && docker compose up -d docs
 
 ---
 
-## 5. Create Your First Site
+## 4. Create Your First Site
 
 Sites are logical groupings for resources (services).
 
@@ -144,7 +116,7 @@ You'll need this for the homelab deployment.
 
 ---
 
-## 6. Verify Services
+## 5. Verify Services
 
 ### Check Zitadel
 
@@ -170,7 +142,7 @@ docker compose logs traefik -f
 
 ---
 
-## 7. DNS Verification
+## 6. DNS Verification
 
 Ensure all subdomains resolve correctly:
 
@@ -192,7 +164,7 @@ If using Cloudflare:
 
 ---
 
-## 8. Firewall Configuration
+## 7. Firewall Configuration
 
 ### VPS Firewall Rules
 
@@ -226,7 +198,7 @@ sudo ufw enable
 
 ---
 
-## 9. Health Checks
+## 8. Health Checks
 
 ### Container Health
 
@@ -277,12 +249,12 @@ All containers should show `healthy` or `running`.
 
 ## Next Steps
 
-Continue with Zitadel configuration:
+Now that Pangolin is configured, set up your identity provider:
 
-1. **[Zitadel Setup](./zitadel-setup)** — Configure the identity provider
+1. **[Zitadel Setup](./zitadel-setup)** — Configure Zitadel and integrate it with Pangolin as the identity provider
 2. **[SMTP Configuration](./smtp-setup)** — Enable email notifications (optional)
 
-After completing the Gateway VPS setup:
+After completing Zitadel setup:
 
 1. **[Homelab Setup](/docs/homelab)** — Deploy NEWT and services
 2. **[Expose Services](/docs/service-configuration/expose-services)** — Add resources in Pangolin

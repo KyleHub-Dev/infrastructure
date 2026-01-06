@@ -257,11 +257,24 @@ To ensure Pangolin can extract user roles and identify which organization they b
 
 | Field | Value |
 |-------|-------|
-| **Default Role Mapping** | `"urn:zitadel:iam:org:project:roles"` |
-| **Default Organization Mapping** | `true` |
+| **Default Role Mapping** | `keys("urn:zitadel:iam:org:project:roles") \| [0]` |
+| **Default Organization Mapping** | `` `true` `` |
 
-:::note Why "true" for Organization Mapping?
-In simple setups, returning `true` tells Pangolin to accept the user into the current organization context without requiring a specific ID match. This is the easiest way to grant access to all users authenticated via your Zitadel instance.
+:::note Understanding the JMESPath Expressions
+Pangolin uses **JMESPath** to evaluate these fields against the ID token from Zitadel.
+
+**Role Mapping Explained:**
+Zitadel returns roles as an object like `{"Dev": {...}, "Admin": {...}}`. The expression:
+- `keys("urn:zitadel:iam:org:project:roles")` → Extracts the role names as an array: `["Dev", "Admin"]`
+- `| [0]` → Returns the first role: `"Dev"`
+
+If a user has multiple roles and you want to match a specific one, use:
+```
+keys("urn:zitadel:iam:org:project:roles")[?@ == 'Admin'] | [0]
+```
+
+**Organization Mapping Explained:**
+The backticks around `true` (`` `true` ``) create a JMESPath **literal**. This tells Pangolin to always return the boolean `true`, accepting any authenticated user into the organization.
 :::
 
 :::tip JMESPath Syntax

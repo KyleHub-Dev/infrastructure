@@ -133,7 +133,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `<a href="https://docs.kylehub.dev">KyleHub-Documentation</a> &copy; 2025 by <a href="https://kylehub.dev/aboutme">Kyle</a> is licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Built with Docusaurus.`,
+      copyright: `<a href="https://docs.kylehub.dev">KyleHub-Documentation</a> &copy; 2026 by <a href="https://kylehub.dev/aboutme">Kyle</a> is licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

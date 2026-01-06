@@ -7,8 +7,17 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
  * - Getting Started (quick start)
  * - Architecture (overview)
  * - Gateway VPS (VPS deployment)
+ *   - Environment Configuration
+ *   - Initial Configuration (Pangolin access)
+ *   - Zitadel Setup (identity provider)
+ *   - SMTP Setup (optional)
  * - Homelab (homelab deployment)
- * - Post-Deployment (configuration)
+ *   - NEWT Connection
+ *   - Adding Services
+ * - Service Configuration (post-deployment)
+ *   - Expose Services
+ *   - Configure SSO
+ *   - Zitadel Domain
  * - Troubleshooting
  * - Archive (legacy docs)
  */

@@ -1,8 +1,0 @@
-{
-  "label": "Post-Deployment",
-  "position": 5,
-  "link": {
-    "type": "doc",
-    "id": "post-deployment/index"
-  }
-}

@@ -1,0 +1,8 @@
+{
+  "label": "Service Configuration",
+  "position": 5,
+  "link": {
+    "type": "doc",
+    "id": "service-configuration/index"
+  }
+}

@@ -1,10 +1,10 @@
 ---
-title: Post-Deployment Setup
-sidebar_position: 4
-description: Complete the Gateway VPS setup in the Pangolin dashboard
+title: Initial Configuration
+sidebar_position: 3
+description: Access Pangolin and complete the initial Gateway VPS setup
 ---
 
-# Post-Deployment Setup
+# Initial Configuration
 
 After deploying the Gateway VPS stack, complete the configuration through the Pangolin dashboard.
 
@@ -277,8 +277,13 @@ All containers should show `healthy` or `running`.
 
 ## Next Steps
 
-Your Gateway VPS is now configured. Continue with:
+Continue with Zitadel configuration:
+
+1. **[Zitadel Setup](./zitadel-setup)** — Configure the identity provider
+2. **[SMTP Configuration](./smtp-setup)** — Enable email notifications (optional)
+
+After completing the Gateway VPS setup:
 
 1. **[Homelab Setup](/docs/homelab)** — Deploy NEWT and services
-2. **[Expose Services](/docs/post-deployment/expose-services)** — Add resources in Pangolin
-3. **[Configure SSO](/docs/post-deployment/configure-sso)** — Protect services with authentication
+2. **[Expose Services](/docs/service-configuration/expose-services)** — Add resources in Pangolin
+3. **[Configure SSO](/docs/service-configuration/configure-sso)** — Protect services with authentication

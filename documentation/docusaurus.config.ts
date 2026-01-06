@@ -9,11 +9,6 @@ const config: Config = {
   tagline: 'Hybrid Cloud Infrastructure Documentation',
   favicon: 'img/favicon.ico',
 
-  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
-  future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
-  },
-
   // Set the production url of your site here
   url: 'https://docs.kylehub.dev',
   // Set the /<baseUrl>/ pathname under which your site is served
@@ -21,6 +16,9 @@ const config: Config = {
   baseUrl: '/',
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
   },
 
   // GitHub pages deployment config.
@@ -29,7 +27,6 @@ const config: Config = {
   projectName: 'documentation', // Usually your repo name.
 
   onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -43,10 +40,10 @@ const config: Config = {
     [
       'classic',
       {
-            docs: {
-              sidebarPath: require.resolve('./sidebars.js'),
-              showLastUpdateTime: true,
-            },
+        docs: {
+          sidebarPath: require.resolve('./sidebars.ts'),
+          showLastUpdateTime: true,
+        },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -57,7 +54,7 @@ const config: Config = {
   themes: [
     '@docusaurus/theme-mermaid',
     [
-      require.resolve('@easyops-cn/docusaurus-search-local'),
+      '@easyops-cn/docusaurus-search-local',
       {
         hashed: true,
         language: ['en'],

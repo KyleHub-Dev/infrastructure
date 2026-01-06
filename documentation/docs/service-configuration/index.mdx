@@ -1,12 +1,12 @@
 ---
-title: Post-Deployment Overview
+title: Service Configuration Overview
 sidebar_position: 1
-description: Configuration tasks after deploying both stacks
+description: Configure and expose services after deploying both stacks
 ---
 
-# Post-Deployment Configuration
+# Service Configuration
 
-After deploying both the Gateway VPS and Homelab Core stacks, complete these configuration steps to fully enable the platform.
+After deploying both the Gateway VPS and Homelab Core stacks, complete these configuration steps to expose and protect your services.
 
 ---
 
@@ -14,14 +14,18 @@ After deploying both the Gateway VPS and Homelab Core stacks, complete these con
 
 ```mermaid
 flowchart TD
-    A[VPS Deployed] --> B[Homelab Deployed]
+    A[VPS Deployed + Zitadel Configured] --> B[Homelab Deployed]
     B --> C[NEWT Connected]
-    C --> D[Configure Zitadel]
-    D --> E[Add Identity Provider to Pangolin]
-    E --> F[Expose First Service]
-    F --> G[Configure SSO]
-    G --> H[Add More Services]
+    C --> D[Expose First Service]
+    D --> E[Configure SSO]
+    E --> F[Add More Services]
 ```
+
+:::info Prerequisites
+Before starting service configuration, ensure you've completed:
+- [Gateway VPS Setup](/docs/gateway-vps) — including Zitadel configuration
+- [Homelab Setup](/docs/homelab) — with NEWT connected
+:::
 
 ---
 

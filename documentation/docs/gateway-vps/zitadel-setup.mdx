@@ -1,6 +1,6 @@
 ---
 title: Zitadel Setup
-sidebar_position: 3
+sidebar_position: 4
 description: Configure Zitadel as your identity provider
 ---
 
@@ -43,9 +43,19 @@ Zitadel provides:
 
 ---
 
+## Prerequisites
+
+Before proceeding, ensure you've completed the [Initial Configuration](./post-deployment) guide:
+
+- [ ] Gateway VPS stack is deployed and running
+- [ ] Pangolin dashboard is accessible
+- [ ] Admin account created in Pangolin
+
+---
+
 ## Expose Zitadel via Pangolin
 
-Before accessing Zitadel, you need to create a resource in Pangolin to route traffic to the Zitadel containers.
+First, create a resource in Pangolin to route traffic to the Zitadel containers.
 
 ### 1. Create the Zitadel Resource
 
@@ -295,6 +305,6 @@ If using AdGuard Home for internal DNS, add a rewrite rule:
 
 ## Next Steps
 
-1. **[Configure SSO for services](/docs/post-deployment/configure-sso)** — Protect resources with authentication
+1. **[Configure SSO for services](/docs/service-configuration/configure-sso)** — Protect resources with authentication
 2. **Create more roles** — Add granular access control in Zitadel console
 3. **Enable MFA** — Configure multi-factor authentication in Zitadel settings

@@ -8,6 +8,10 @@ description: Complete the Gateway VPS setup in the Pangolin dashboard
 
 After deploying the Gateway VPS stack, complete the configuration through the Pangolin dashboard.
 
+:::info Authentication Architecture
+**Zitadel is your authoritative identity provider.** All user authentication happens through Zitadel's login UI and OIDC protocol. Pangolin delegates authentication to Zitadel—it does not manage user identities. The admin account created below is **only for Pangolin administration**, not user authentication.
+:::
+
 :::tip SMTP Configuration
 For email functionality (invitations, password resets, 2FA notifications), configure SMTP before proceeding. See [SMTP Configuration](./smtp-setup) for details.
 :::
@@ -28,31 +32,27 @@ Copy the setup token from the logs.
 
 1. Navigate to `https://pangolin.yourdomain.com`
 2. Enter the setup token
-3. You'll be prompted to create an admin account
+3. You'll be prompted to create an **admin account** (for Pangolin administration only)
 
 ---
 
-## 2. Initial Setup Wizard
+## 2. Create Pangolin Admin Account
 
-### Create Admin Account
+This account is for administering Pangolin (creating resources, managing access policies). Regular users will authenticate via **Zitadel**, not this account.
 
 | Field | Description |
 |-------|-------------|
-| **Email** | Your admin email |
+| **Email** | Your admin email (used only for Pangolin admin panel) |
 | **Password** | Strong password |
 | **Organization** | e.g., `KyleHub` |
 
-### Configure Organization
-
-1. Enter organization name
-2. Set primary domain
-3. Configure notification preferences (optional)
+After setup, you can add this admin to your Zitadel instance for unified identity management.
 
 ---
 
 ## 3. Configure Identity Provider
 
-This step connects Pangolin to Zitadel for authentication.
+This step connects Pangolin to Zitadel for **user authentication**. Users will log in via Zitadel's login interface, and Pangolin will verify their identity through OIDC.
 
 ### Add Zitadel as Identity Provider
 
@@ -64,13 +64,17 @@ This step connects Pangolin to Zitadel for authentication.
 |---------|-------|
 | Name | Zitadel |
 | Type | OIDC |
-| Client ID | From Zitadel |
-| Client Secret | From Zitadel |
+| Client ID | From Zitadel (`KyleHub-Auth` application) |
+| Client Secret | From Zitadel (`KyleHub-Auth` application) |
 | Authorization URL | `https://auth.yourdomain.com/oauth/v2/authorize` |
 | Token URL | `http://auth.yourdomain.com:8080/oauth/v2/token` |
 
 4. Save and copy the callback URL
-5. Add callback URL to Zitadel's redirect URIs
+5. Add callback URL to Zitadel's redirect URIs (in [Zitadel Setup](./zitadel-setup#3-create-the-auth-application))
+
+:::note Single Sign-On
+After this step, users access resources through Pangolin, get redirected to Zitadel for login, and are automatically granted access based on their Zitadel roles and Pangolin access policies.
+:::
 
 ---
 

@@ -6,18 +6,40 @@ description: Configure Zitadel as your identity provider
 
 # Zitadel Setup
 
-Zitadel is the identity provider for all KyleHub services. This guide covers initial configuration and integration with Pangolin.
+Zitadel is the **authoritative identity provider** for your infrastructure. It manages all user identities, authentication, and provides SSO to Pangolin and all downstream services.
+
+---
+
+## Architecture
+
+```mermaid
+graph LR
+    A[Users] -- Browse to Service --> B[Pangolin]
+    B -- OIDC Redirect --> C[Zitadel Login]
+    C -- User authenticates --> C
+    C -- Returns ID Token --> B
+    B -- Validates Token + Checks ACL --> D[Service/API]
+    D -- Access Granted --> A
+```
+
+**Flow:**
+1. User tries to access a protected resource
+2. Pangolin redirects to Zitadel for authentication
+3. User logs in with Zitadel credentials (Pangolin never sees the password)
+4. Zitadel returns an ID token with user claims and roles
+5. Pangolin validates the token and grants access based on policies
 
 ---
 
 ## Overview
 
 Zitadel provides:
-- **Single Sign-On (SSO)** across all services
-- **OIDC/OAuth2** protocols
+- **Single Sign-On (SSO)** across all services via OIDC/OAuth2
+- **Authoritative identity** — single source of truth for users and roles
 - **Multi-factor authentication** (MFA)
 - **User self-service** (password reset, profile management)
-- **Role-based access control** (RBAC)
+- **Role-based access control** (RBAC) — integrated with Pangolin policies
+- **Audit logging** — track all authentication events
 
 ---
 
@@ -95,19 +117,21 @@ Immediately change the default admin password after first login.
 
 ### 3. Create the Auth Application
 
+This application represents **Pangolin's OIDC integration**. Pangolin will use this application's credentials to authenticate users via Zitadel.
+
 1. Inside your project, click **New** → **Application**
 2. Configure:
-   - **Name**: `KyleHub-Auth`
+   - **Name**: `KyleHub-Auth` (represents Pangolin)
    - **Type**: Web
    - **Authentication Method**: Code (PKCE optional)
 
-3. Add Redirect URIs:
+3. Add Redirect URIs (where Zitadel returns the user after login):
    ```
    https://pangolin.yourdomain.com/auth/callback
    https://pangolin.yourdomain.com/api/v1/auth/idp/callback
    ```
 
-4. Add Post-Logout URIs:
+4. Add Post-Logout URIs (where user is sent after logout):
    ```
    https://pangolin.yourdomain.com
    ```
@@ -115,7 +139,11 @@ Immediately change the default admin password after first login.
 5. **Save** and copy the **Client ID** and **Client Secret**
 
 :::tip Save Credentials
-Store the Client ID and Client Secret securely. You'll need them for Pangolin configuration.
+Store the Client ID and Client Secret securely. You'll use them in [Post-Deployment Setup](./post-deployment#3-configure-identity-provider) to configure Pangolin's identity provider.
+:::
+
+:::note Application Purpose
+This application is **not for users to log into directly**—it's for Pangolin to authenticate users. Users will see Zitadel's login UI at `https://auth.yourdomain.com`, then be returned to their requested resource in Pangolin after successful authentication.
 :::
 
 ---

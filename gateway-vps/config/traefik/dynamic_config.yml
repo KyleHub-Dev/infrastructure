@@ -1,0 +1,2 @@
+# Dynamic Traefik Configuration
+# Currently empty - Zitadel routing is handled via Docker labels in compose.yaml

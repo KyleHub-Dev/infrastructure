@@ -64,7 +64,7 @@ services:
     user: "0" # Required for PAT file exchange in /auth-dir
     environment:
       # DB Connection (Admin & User)
-      - ZITADEL_DATABASE_POSTGRES_HOST=db
+      - ZITADEL_DATABASE_POSTGRES_HOST=zitadel_db
       - ZITADEL_DATABASE_POSTGRES_PORT=5432
       - ZITADEL_DATABASE_POSTGRES_DATABASE=${POSTGRES_DB}
       - ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME=${POSTGRES_USER}
@@ -111,7 +111,7 @@ services:
       - ZITADEL_API_URL=http://zitadel:8080
       - NEXT_PUBLIC_BASE_PATH=/ui/v2/login
       - ZITADEL_SERVICE_USER_TOKEN_FILE=/auth-dir/login-client.pat
-      - CUSTOM_REQUEST_HEADERS=Host:${DOMAIN}
+      - CUSTOM_REQUEST_HEADERS=Host:${ZITADEL_DOMAIN}
     user: "0"
     volumes:
       - ./auth/:/auth-dir:ro

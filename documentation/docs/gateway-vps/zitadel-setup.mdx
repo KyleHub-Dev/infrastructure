@@ -21,6 +21,43 @@ Zitadel provides:
 
 ---
 
+## Expose Zitadel via Pangolin
+
+Before accessing Zitadel, you need to create a resource in Pangolin to route traffic to the Zitadel containers.
+
+### 1. Create the Zitadel Resource
+
+1. Open **Pangolin Dashboard** (`https://pangolin.yourdomain.com`)
+2. Navigate to your site → **Resources** → **Add Resource**
+3. Configure the resource:
+
+| Field | Value |
+|-------|-------|
+| **Name** | Zitadel |
+| **Subdomain** | `auth` (or your chosen subdomain) |
+| **Domain** | `yourdomain.com` |
+
+### 2. Configure Target Routing
+
+Zitadel uses a **Login V2 sidecar** that requires path-based routing. Enable **Advanced Mode** and configure two targets:
+
+| Match Path | Type | Host | Port | Priority |
+|------------|------|------|------|----------|
+| `/ui/v2/login` | Prefix | `zitadel_login` | `3000` | **200** |
+| *(empty)* | — | `zitadel` | `8080` | 100 |
+
+:::warning Priority Order
+The `/ui/v2/login` route **must have higher priority** (200) than the catch-all route (100) to ensure login requests go to the correct backend.
+:::
+
+### 3. Save and Verify
+
+1. Click **Save**
+2. Wait for the SSL certificate to provision
+3. Open `https://auth.yourdomain.com` — you should see the Zitadel login page
+
+---
+
 ## Initial Access
 
 After deploying the Gateway VPS stack, access Zitadel:

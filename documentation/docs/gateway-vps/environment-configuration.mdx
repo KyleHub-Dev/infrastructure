@@ -96,10 +96,10 @@ For email functionality (invitations, password resets, 2FA notifications). See [
 
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
-| `EMAIL_SMTP_PASS` | ❌ | SMTP password (alternative to config.yml) | `your-smtp-password` |
+| `PANGOLIN_EMAIL_SMTP_PASS` | ❌ | SMTP password (alternative to config.yml) | `your-smtp-password` |
 
 :::note
-Most SMTP settings are configured in `config/config.yml` rather than environment variables. Use `EMAIL_SMTP_PASS` for enhanced security to avoid storing passwords in config files.
+Most SMTP settings are configured in `config/config.yml` rather than environment variables. Use `PANGOLIN_EMAIL_SMTP_PASS` for enhanced security to avoid storing passwords in config files.
 :::
 
 ---
@@ -143,7 +143,7 @@ WG_PORT_2=21820
 
 # === SMTP (Optional) ===
 # Password for SMTP authentication (configured in config.yml)
-# EMAIL_SMTP_PASS=your-smtp-password
+# PANGOLIN_EMAIL_SMTP_PASS=your-smtp-password
 ```
 
 ---

@@ -111,7 +111,7 @@ For enhanced security, you can set the SMTP password via environment variable in
 
 ```bash
 # SMTP Configuration
-EMAIL_SMTP_PASS=your-smtp-password
+PANGOLIN_EMAIL_SMTP_PASS=your-smtp-password
 ```
 
 **In `config.yml`:**
@@ -121,7 +121,7 @@ email:
   smtp_host: "172.18.0.1"
   smtp_port: 25
   smtp_user: "pangolin"
-  # smtp_pass is read from EMAIL_SMTP_PASS environment variable
+  # smtp_pass is read from PANGOLIN_EMAIL_SMTP_PASS environment variable
   smtp_secure: false
   smtp_tls_reject_unauthorized: false
   no_reply: "noreply@yourdomain.com"

@@ -1,0 +1,335 @@
+---
+title: SMTP Configuration
+sidebar_position: 5
+description: Configure SMTP email functionality for Pangolin and Zitadel
+---
+
+# SMTP Configuration
+
+This guide explains how to configure SMTP email functionality for your Gateway VPS services. Both Pangolin and Zitadel can send transactional emails (invitations, password resets, 2FA notifications) through your existing SMTP relay.
+
+---
+
+## Architecture Overview
+
+The Gateway VPS uses a 3-tier email architecture with Proton Mail Bridge and Postfix:
+
+```mermaid
+graph LR
+    A[Pangolin / Zitadel] -- SMTP Auth --> B(Postfix Relay :25)
+    B -- SMTP + TLS --> C(Proton Mail Bridge :1025)
+    C -- Encrypted --> D[Proton Mail Cloud]
+```
+
+| Component | Role |
+|-----------|------|
+| **Applications** | Connect to Postfix on port 25 with SASL authentication |
+| **Postfix** | Queues mail, handles SASL auth, relays to Proton Bridge |
+| **Proton Bridge** | Encrypts and sends via Proton Mail servers |
+
+---
+
+## Prerequisites
+
+Before configuring SMTP for Pangolin, ensure the SMTP relay is set up on your VPS host. See the detailed setup guide in [`gateway-vps/mail/README.md`](https://github.com/KyleHub-Dev/infrastructure/blob/main/gateway-vps/mail/README.md).
+
+**Required components running on VPS host:**
+- Proton Mail Bridge (systemd service)
+- Postfix with SASL authentication
+- A dedicated SMTP user (e.g., `pangolin`)
+
+---
+
+## Creating a Pangolin SMTP User
+
+Create a dedicated Linux user for Pangolin's SMTP authentication (separate from the Zitadel user):
+
+```bash
+# Create the pangolin SMTP user
+sudo useradd pangolin
+
+# Set a password for authentication
+sudo passwd pangolin
+# Enter a secure password when prompted
+```
+
+:::tip Using the Same User
+You can reuse the existing `zitadel` user for Pangolin if you prefer. Just use the same credentials in the Pangolin configuration.
+:::
+
+---
+
+## Configuring Pangolin SMTP
+
+### Option 1: Via `config.yml` (Recommended)
+
+Add the `email` section to your Pangolin configuration file.
+
+**Edit `gateway-vps/config/config.yml`:**
+
+```yaml
+# Pangolin Configuration
+
+server:
+  secret: "your-server-secret"
+
+app:
+  dashboard_url: "https://pangolin.yourdomain.com"
+  license_key: "your-enterprise-license-key"
+
+domains:
+  primary:
+    base_domain: "yourdomain.com"
+    cert_resolver: "letsencrypt"
+
+gerbil:
+  base_endpoint: "your-vps-ip"
+
+# highlight-start
+# SMTP Email Configuration
+email:
+  smtp_host: "172.18.0.1"        # Docker bridge gateway (host's Postfix)
+  smtp_port: 25                   # Standard SMTP port
+  smtp_user: "pangolin"           # Linux user for SASL auth
+  smtp_pass: "your-smtp-password" # Password set with `passwd pangolin`
+  smtp_secure: false              # No TLS to local Postfix
+  smtp_tls_reject_unauthorized: false  # Skip cert verification for local relay
+  no_reply: "noreply@yourdomain.com"   # Must match a Proton Mail address/alias
+# highlight-end
+
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true
+  disable_user_create_org: true
+```
+
+### Option 2: Using Environment Variables
+
+For enhanced security, you can set the SMTP password via environment variable instead of storing it in the config file.
+
+**In `.env`:**
+
+```bash
+# SMTP Configuration
+EMAIL_SMTP_PASS=your-smtp-password
+```
+
+**In `config.yml`:**
+
+```yaml
+email:
+  smtp_host: "172.18.0.1"
+  smtp_port: 25
+  smtp_user: "pangolin"
+  # smtp_pass is read from EMAIL_SMTP_PASS environment variable
+  smtp_secure: false
+  smtp_tls_reject_unauthorized: false
+  no_reply: "noreply@yourdomain.com"
+```
+
+---
+
+## Configuration Reference
+
+| Setting | Type | Description |
+|---------|------|-------------|
+| `smtp_host` | string | SMTP server hostname/IP. Use `172.18.0.1` for Docker host |
+| `smtp_port` | number | SMTP port (typically `25`, `465`, or `587`) |
+| `smtp_user` | string | Username for SMTP authentication |
+| `smtp_pass` | string | Password for SMTP authentication |
+| `smtp_secure` | boolean | Use TLS/SSL (`true` for port 465, `false` for 25/587) |
+| `smtp_tls_reject_unauthorized` | boolean | Reject invalid TLS certificates (set `false` for local relay) |
+| `no_reply` | string | Default sender email address |
+
+---
+
+## Applying the Configuration
+
+After updating `config.yml`, restart the Pangolin container:
+
+```bash
+cd ~/infrastructure/gateway-vps
+docker compose restart pangolin
+```
+
+Verify the configuration loaded correctly:
+
+```bash
+docker compose logs pangolin | grep -i email
+```
+
+---
+
+## Zitadel SMTP Configuration
+
+Zitadel SMTP is configured via the web console, not via config files.
+
+### Configure via Zitadel Console
+
+1. Log in to **Zitadel Console** at `https://auth.yourdomain.com`
+2. Navigate to **Instance Settings** (gear icon in top-right)
+3. Go to **Notification Settings** → **SMTP**
+4. Configure the following:
+
+| Setting | Value |
+|---------|-------|
+| **SMTP Host** | `172.18.0.1` |
+| **SMTP Port** | `25` |
+| **TLS Mode** | `None` / `Disabled` |
+| **Username** | `zitadel` |
+| **Password** | Password set with `passwd zitadel` |
+| **Sender Address** | `noreply@yourdomain.com` |
+| **Sender Name** | `Zitadel Identity` |
+
+5. Click **Test** to send a test email
+6. Click **Save**
+
+:::note Sender Address
+The sender address **must** match an active email address or alias configured in your Proton Mail account.
+:::
+
+---
+
+## Email Features Enabled
+
+With SMTP configured, the following features become available:
+
+### Pangolin (Enterprise Edition)
+
+| Feature | Description |
+|---------|-------------|
+| **User Invitations** | Send email invitations with signup links |
+| **Password Reset** | Email-based password recovery |
+| **2FA Notifications** | Security alerts for MFA changes |
+| **Email Whitelist OTP** | One-time passwords for resource access |
+| **Email Verification** | Verify user email addresses |
+
+### Zitadel
+
+| Feature | Description |
+|---------|-------------|
+| **User Registration** | Welcome emails for new users |
+| **Password Reset** | Self-service password recovery |
+| **Email Verification** | Verify user email addresses |
+| **2FA Setup** | Security notifications |
+
+---
+
+## Testing SMTP
+
+### Test from VPS Host
+
+```bash
+# Send a test email via Postfix
+echo "Test email from Gateway VPS" | mail -s "SMTP Test" your-email@example.com
+
+# Check mail logs
+tail -f /var/log/mail.log
+```
+
+### Test from Pangolin Container
+
+```bash
+# Enter the Pangolin container
+docker compose exec pangolin sh
+
+# Install mailutils if needed and test (or use curl)
+# The application will send emails automatically when triggered
+exit
+```
+
+### Test via Pangolin UI
+
+1. Go to **Settings** → **Users**
+2. Click **Add User** → **Invite**
+3. Enter an email address
+4. If SMTP is configured, the "Send invitation email" checkbox will be enabled
+5. Send the invitation and verify the email is received
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### "Email client not configured"
+
+**Cause:** Missing or invalid `email` section in `config.yml`
+
+**Solution:** Verify the email configuration exists and is properly formatted:
+
+```bash
+# Check config file
+cat gateway-vps/config/config.yml | grep -A 10 "email:"
+```
+
+#### Connection Refused
+
+**Cause:** Postfix not listening on Docker bridge interface
+
+**Solution:** Check Postfix configuration:
+
+```bash
+# On VPS host
+sudo postconf | grep inet_interfaces
+# Should show: inet_interfaces = all
+
+# Check mynetworks includes Docker subnet
+sudo postconf | grep mynetworks
+# Should include: 172.18.0.0/16
+```
+
+#### Authentication Failed
+
+**Cause:** SASL authentication not working
+
+**Solution:** Verify SASL is running and user exists:
+
+```bash
+# Check SASL daemon
+sudo systemctl status saslauthd
+
+# Test authentication manually
+testsaslauthd -u pangolin -p yourpassword -s smtp
+```
+
+#### Email Not Delivered
+
+**Cause:** Sender address not matching Proton account
+
+**Solution:** Ensure `no_reply` address is configured as an alias in Proton Mail:
+
+1. Log in to Proton Mail
+2. Go to **Settings** → **Identity and Addresses**
+3. Add `noreply@yourdomain.com` as an alias
+
+### Check Logs
+
+```bash
+# Pangolin logs
+docker compose logs pangolin | grep -i "email\|smtp"
+
+# Postfix logs (on host)
+tail -f /var/log/mail.log
+
+# Proton Bridge logs (on host)
+tail -f /var/log/proton-bridge/bridge.log
+```
+
+---
+
+## Security Considerations
+
+1. **Use dedicated SMTP users** — Create separate users (`pangolin`, `zitadel`) for each service
+2. **Strong passwords** — Use unique, strong passwords for SMTP authentication
+3. **Network isolation** — Postfix only accepts connections from `mynetworks`
+4. **TLS to Proton** — The Postfix → Proton Bridge connection uses TLS encryption
+5. **Environment variables** — Store sensitive passwords in `.env` rather than config files
+
+---
+
+## Next Steps
+
+- [Post-Deployment Setup](./post-deployment) — Complete Pangolin dashboard configuration
+- [Configure SSO](/docs/post-deployment/configure-sso) — Set up identity provider integration
+- [Expose Services](/docs/post-deployment/expose-services) — Add resources in Pangolin

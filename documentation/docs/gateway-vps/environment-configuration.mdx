@@ -90,6 +90,18 @@ openssl rand -base64 32 | tr -d '\n' | cut -c1-32
 | `WG_PORT_1` | ❌ | Primary WireGuard port | `51820` |
 | `WG_PORT_2` | ❌ | Secondary WireGuard port | `21820` |
 
+### SMTP Configuration (Optional)
+
+For email functionality (invitations, password resets, 2FA notifications). See [SMTP Setup](./smtp-setup) for full configuration.
+
+| Variable | Required | Description | Example |
+|----------|----------|-------------|---------|
+| `EMAIL_SMTP_PASS` | ❌ | SMTP password (alternative to config.yml) | `your-smtp-password` |
+
+:::note
+Most SMTP settings are configured in `config/config.yml` rather than environment variables. Use `EMAIL_SMTP_PASS` for enhanced security to avoid storing passwords in config files.
+:::
+
 ---
 
 ## Complete .env Example
@@ -128,6 +140,10 @@ POSTGRES_DB=zitadel
 # === WireGuard Ports ===
 WG_PORT_1=51820
 WG_PORT_2=21820
+
+# === SMTP (Optional) ===
+# Password for SMTP authentication (configured in config.yml)
+# EMAIL_SMTP_PASS=your-smtp-password
 ```
 
 ---

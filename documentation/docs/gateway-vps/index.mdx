@@ -21,6 +21,15 @@ The Gateway VPS is the public-facing component of your infrastructure. It handle
 | **Traefik** | `traefik:v3.6.6` | Edge router, SSL termination |
 | **PostgreSQL** | `postgres:17-alpine` | Database for Zitadel |
 
+### Host Services (Optional)
+
+| Service | Purpose |
+|---------|---------|
+| **Proton Mail Bridge** | Encrypted email sending via Proton Mail |
+| **Postfix** | Local SMTP relay with SASL authentication |
+
+See [SMTP Configuration](./smtp-setup) for email setup details.
+
 ---
 
 ## Quick Setup
@@ -83,3 +92,4 @@ gateway-vps/
 1. **[Environment Configuration](./environment-configuration)** — Detailed env var setup
 2. **[Zitadel Setup](./zitadel-setup)** — Configure identity provider
 3. **[Post-Deployment](./post-deployment)** — Complete setup in Pangolin dashboard
+4. **[SMTP Configuration](./smtp-setup)** — Enable email notifications (optional)

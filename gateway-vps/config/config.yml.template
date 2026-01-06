@@ -20,3 +20,21 @@ domains:
 gerbil:
   # The public IP of this server, used by WireGuard clients to connect.
   base_endpoint: "${VPS_PUBLIC_IP}"
+
+# SMTP Email Configuration (Optional)
+# Connects to Postfix relay on Docker host for sending transactional emails
+# Uncomment and configure if you have SMTP relay set up (see mail/README.md)
+# email:
+#   smtp_host: "172.18.0.1"                   # Docker bridge gateway (host's Postfix)
+#   smtp_port: 25                             # Standard SMTP port
+#   smtp_user: "pangolin"                     # Linux user for SASL auth
+#   smtp_pass: "${PANGOLIN_EMAIL_SMTP_PASS}"  # Password - or use EMAIL_SMTP_PASS env var
+#   smtp_secure: false                        # No TLS to local Postfix
+#   smtp_tls_reject_unauthorized: false       # Skip cert verification for local relay
+#   no_reply: "noreply@${DOMAIN_ROOT}"        # Must match a Proton Mail address/alias
+
+# Feature Flags
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true
+  disable_user_create_org: true

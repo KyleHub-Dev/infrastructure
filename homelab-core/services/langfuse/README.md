@@ -35,7 +35,7 @@ To enable Single Sign-On (SSO) with Zitadel:
     *   In the Project, click **New**.
     *   Name: `Langfuse Web`
     *   Type: **Web**
-    *   Auth Method: **Code** (PKCE is recommended, but Langfuse backend uses Code flow).
+    *   Auth Method: **Code** (Officially recommended and secure enough for this setup).
     *   **Redirect URIs**:
         *   `https://langfuse.kylehub.dev/api/auth/callback/zitadel`
         *   *(Note: The suffix `zitadel` matches the `AUTH_CUSTOM_ID` variable in `.env`)*.

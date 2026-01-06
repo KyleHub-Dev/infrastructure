@@ -57,36 +57,37 @@ Before configuring SSO:
 ### 1. Edit Resource
 
 1. Navigate to **Sites** → Your site → **Resources**
-2. Click on the resource to edit
-3. Scroll to **Authentication** section
+2. Click on the resource to edit (e.g., your Documentation site)
+3. Navigate to the **Authentifizierung** (Authentication) tab.
 
-### 2. Configure Authentication
+### 2. Configure Access Control
 
-| Setting | Description |
+Configure the following settings to enforce Zitadel authentication:
+
+| Setting | Action |
 |---------|-------------|
-| **Require Authentication** | Toggle ON |
-| **Identity Provider** | Select `Zitadel` |
+| **Plattform SSO verwenden** | Toggle **ON** |
+| **Standard Identitätsanbieter** | Select **Zitadel** |
 
-### 3. Configure Role Requirements (Optional)
+### 3. Restricting Access by Role
 
-To require specific roles:
+To ensure only specific users (like Administrators) can access the resource:
 
-| Setting | Description |
-|---------|-------------|
-| **Required Roles** | List of roles that grant access |
-| **Role Match** | `Any` (one role) or `All` (all roles) |
+1. In the **Rollen (Roles)** dropdown, select the roles that should have access (e.g., `ADMIN`).
+2. If you want to allow specific individuals regardless of their role, you can add them in the **Benutzer (Users)** dropdown.
+3. Click **Zugriffskontrollen speichern** (Save Access Controls).
 
-Example:
-```
-Required Roles: ADMIN, HOMELAB
-Role Match: Any
-```
+:::tip Validation
+Pangolin checks for the role key (e.g., `ADMIN`) in the token provided by Zitadel. Ensure this role is assigned to your user in the Zitadel project authorizations.
+:::
 
-This allows users with `ADMIN` OR `HOMELAB` roles.
+---
 
-### 4. Save Changes
+## The "Regeln" (Rules) Tab
 
-Click **Save**. Changes take effect immediately.
+For standard role-based access control, you **can leave the Regeln tab empty**. This section is intended for advanced scenarios, such as:
+- Mapping internal organization IDs.
+- Complex JMESPath extractions for multi-tenant environments.
 
 ---
 

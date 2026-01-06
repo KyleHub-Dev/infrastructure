@@ -133,28 +133,42 @@ This application represents **Pangolin's OIDC integration**. Pangolin will use t
 2. Configure:
    - **Name**: `KyleHub-Auth` (represents Pangolin)
    - **Type**: Web
-   - **Authentication Method**: PKCE (Recommended for better security)
+   - **Authentication Method**: Code (Officially recommended and secure enough for this setup)
 
-3. Add Redirect URIs (where Zitadel returns the user after login):
-   ```
-   https://pangolin.yourdomain.com/auth/callback
-   https://pangolin.yourdomain.com/api/v1/auth/idp/callback
-   ```
+3. **Leave Redirect URIs blank** for now. We'll come back to this once the Identity Provider is created in Pangolin.
 
-4. Add Post-Logout URIs (where user is sent after logout):
-   ```
-   https://pangolin.yourdomain.com
-   ```
+4. Click **Create** and securely save the **Client ID** and **Client Secret**.
+   :::warning Save Credentials
+   Make sure to save these somewhere secure - you won't be able to see the Client Secret again.
+   :::
 
-5. **Save** and copy the **Client ID** and **Client Secret**
+---
 
-:::tip Save Credentials
-Store the Client ID and Client Secret securely. You'll use them in [Post-Deployment Setup](./post-deployment#3-configure-identity-provider) to configure Pangolin's identity provider.
+## Token Configuration
+
+After creating the application, you need to configure how tokens are generated to ensure Pangolin can read user roles and identification.
+
+1. Navigate to your application (**KyleHub-Auth**) and click **Token settings**.
+
+2. Configure the following:
+   - **Auth Token Type**: `JWT`
+   - ✅ **User roles inside ID Token**
+   - ✅ **User Info inside ID Token**
+
+3. Click **Save**.
+
+4. **Project Level Settings**:
+   - Go to **Projects** → **KyleHub** → **Settings**.
+   - Enable ✅ **Return user roles during authentication** (Assert Roles).
+   - Enable ✅ **Only authorized users can authenticate** (Recommended for security).
+
+:::note Why these settings?
+Enabling **User roles inside ID Token** and **User Info inside ID Token** allows Zitadel to include necessary user profile claims (including `preferred_username`) and roles in the ID token. Enabling **Return user roles** ensures those roles are actually sent during the login flow.
 :::
 
-:::note Application Purpose
-This application is **not for users to log into directly**—it's for Pangolin to authenticate users. Users will see Zitadel's login UI at `https://auth.yourdomain.com`, then be returned to their requested resource in Pangolin after successful authentication.
-:::
+4. Open **URLs** (bottom of the application page or via the project menu) and make note of:
+   - `Authorization Endpoint`
+   - `Token Endpoint`
 
 ---
 
@@ -162,17 +176,17 @@ This application is **not for users to log into directly**—it's for Pangolin t
 
 ### Create Category Roles
 
-Create roles for different access levels. You can use uppercase names if your custom implementation requires them:
+Create roles for different access levels. It is highly recommended to use **Title Case** (e.g., `Admin`) to match Pangolin's internal default roles, allowing for automatic mapping:
 
 1. Go to **Projects** → **KyleHub** → **Roles**
 2. Create these roles:
 
 | Role Key | Display Name | Description |
 |----------|--------------|-------------|
-| `ADMIN` | Administrator | Full access to all services |
-| `HOMELAB` | Homelab Access | Access to homelab services |
-| `SERVICES` | Services | Access to general services |
-| `DEV` | Developer | Access to development tools |
+| `Admin` | Administrator | Full access to all services |
+| `Member` | Member | General access to services |
+| `Homelab` | Homelab | Access to homelab services |
+| `Dev` | Developer | Access to development tools |
 
 ### Assign Roles to Users
 
@@ -180,24 +194,6 @@ Create roles for different access levels. You can use uppercase names if your cu
 2. Navigate to **Authorizations**
 3. Add authorization for the `KyleHub` project
 4. Select appropriate roles
-
----
-
-## Token Configuration
-
-Configure how tokens include role information:
-
-1. Go to **Projects** → **KyleHub** → **Settings**
-2. Enable:
-   - ✅ **Assert Roles on Authentication**
-   - ✅ **Include Roles in User Info**
-
-3. Go to **Applications** → **KyleHub-Auth** → **Token Settings**
-4. Enable:
-   - ✅ **Add User Roles to Access Token**
-   - ✅ **Add User Roles to ID Token**
-
-This ensures Pangolin can read user roles from the token.
 
 ---
 
@@ -220,41 +216,70 @@ Click **Add Identity Provider** and configure:
 | **Client Secret** | From Zitadel |
 | **Authorization URL** | `https://auth.yourdomain.com/oauth/v2/authorize` |
 | **Token URL** | `http://auth.yourdomain.com:8080/oauth/v2/token` |
-| **Scopes** | `openid profile email` |
+| **Scopes** | `openid profile email offline_access` |
+| **Identifier Path** | `preferred_username` |
+
+:::tip Refresh Tokens
+The `offline_access` scope allows Pangolin to request **Refresh Tokens**, which provides longer-lived sessions without requiring frequent re-authentication. Ensure you also enable the **Refresh Token** checkbox in Zitadel's OIDC Configuration.
+:::
 
 :::warning URL Configuration
-- **Authorization URL**: Use external HTTPS (user's browser)
-- **Token URL**: Use internal HTTP with port 8080 (server-side)
+- **Authorization URL**: Must be the **external HTTPS URL**. This is handled by the user's browser.
+- **Token URL**: Use your **domain name with the internal port** (`http://auth.yourdomain.com:8080`). 
 
-This prevents issues with Cloudflare proxy blocking API calls.
+**Why use the domain and not the container name?** 
+Zitadel requires the correct `Host` header (e.g., `auth.yourdomain.com`) to identify your instance. If you use `http://zitadel:8080`, Zitadel will fail to find your instance and return an `IAM.NotFound` error. 
+
+To solve this without a separate DNS server, we use a **Docker Network Alias** in your `compose.yaml`:
+
+```yaml
+  zitadel:
+    # ...
+    networks:
+      default:
+        aliases:
+          - auth.yourdomain.com
+```
+
+This allows Pangolin to resolve `auth.yourdomain.com` directly to the Zitadel container while maintaining the correct `Host` header.
 :::
 
 ### 3. Configure Token Mapping
 
+To ensure Pangolin can extract user roles and identify which organization they belong to, you need to configure the **Organization Policies**.
+
+1. In Pangolin Admin, go to **Identity Providers** → **Zitadel**.
+2. Navigate to the **Organization Policies** tab.
+3. In the **Default Mappings (Optional)** section, configure the following:
+
 | Field | Value |
 |-------|-------|
-| **Identifier Path** | `sub` |
-| **Email Path** | `email` |
-| **Name Path** | `name` |
-| **Roles Claim Path** | `"urn:zitadel:iam:org:project:roles"` |
+| **Default Role Mapping** | `"urn:zitadel:iam:org:project:roles"` |
+| **Default Organization Mapping** | `true` |
+
+:::note Why "true" for Organization Mapping?
+In simple setups, returning `true` tells Pangolin to accept the user into the current organization context without requiring a specific ID match. This is the easiest way to grant access to all users authenticated via your Zitadel instance.
+:::
 
 :::tip JMESPath Syntax
-Wrap the roles claim path in quotes due to the colons in the path.
+Make sure to wrap the roles claim path in **double quotes** (`"`) because it contains special characters (colons).
 :::
+
+4. Click **Save Default Mappings**.
 
 ### 4. Save and Copy Callback URL
 
-After saving, copy the generated **Callback URL** from Pangolin.
+After clicking **Create Identity Provider**, go to the **General** tab of the newly created provider and copy the **Redirect URL** (Callback URL).
 
 ### 5. Update Zitadel Redirect URIs
 
 Go back to Zitadel → **Applications** → **KyleHub-Auth** → **Redirect Settings**.
 
-Add the Pangolin callback URL to the redirect URIs.
+1. Add the URL you copied to the **Redirect URIs**.
+2. Click the **+** button.
+3. Click **Save**.
 
----
-
-## Testing Authentication
+Your configuration is now complete. You can now add an external user to Pangolin or log in using Zitadel SSO if "Auto Provision Users" is enabled.
 
 ### 1. Create a Test User
 
@@ -281,7 +306,7 @@ Check that roles appear in Pangolin user settings after login.
 ### Login redirects but fails
 
 - Verify Redirect URIs match exactly
-- Check Token URL uses internal port 8080
+- Check Token URL uses the domain name and internal port: `http://auth.yourdomain.com:8080/oauth/v2/token`
 - Verify DNS resolves correctly from within containers
 
 ### Roles not appearing

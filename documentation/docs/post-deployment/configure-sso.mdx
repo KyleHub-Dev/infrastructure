@@ -78,11 +78,11 @@ To require specific roles:
 
 Example:
 ```
-Required Roles: admin, homelab
+Required Roles: ADMIN, HOMELAB
 Role Match: Any
 ```
 
-This allows users with `admin` OR `homelab` roles.
+This allows users with `ADMIN` OR `HOMELAB` roles.
 
 ### 4. Save Changes
 
@@ -98,14 +98,14 @@ Use broad category roles:
 
 | Role | Access |
 |------|--------|
-| `admin` | All services |
-| `homelab` | Homelab services |
-| `dev` | Development tools |
-| `media` | Media services |
+| `ADMIN` | All services |
+| `HOMELAB` | Homelab services |
+| `DEV` | Development tools |
+| `MEDIA` | Media services |
 
 **Pangolin Configuration:**
 ```
-Required Roles: homelab
+Required Roles: HOMELAB
 ```
 
 ### Service-Specific Access
@@ -114,13 +114,13 @@ Use granular service roles:
 
 | Role | Access |
 |------|--------|
-| `access_proxmox` | Proxmox only |
-| `access_grafana` | Grafana only |
-| `access_portainer` | Portainer only |
+| `ACCESS_PROXMOX` | Proxmox only |
+| `ACCESS_GRAFANA` | Grafana only |
+| `ACCESS_PORTAINER` | Portainer only |
 
 **Pangolin Configuration:**
 ```
-Required Roles: access_proxmox
+Required Roles: ACCESS_PROXMOX
 ```
 
 ### Combined Access
@@ -128,13 +128,13 @@ Required Roles: access_proxmox
 Allow multiple role patterns:
 
 ```
-Required Roles: admin, access_proxmox
+Required Roles: ADMIN, ACCESS_PROXMOX
 Role Match: Any
 ```
 
 This grants access to:
-- Users with `admin` role (full access)
-- Users with `access_proxmox` role (specific access)
+- Users with `ADMIN` role (full access)
+- Users with `ACCESS_PROXMOX` role (specific access)
 
 ---
 
@@ -221,13 +221,12 @@ graph LR
    auth_url = https://auth.yourdomain.com/oauth/v2/authorize
    token_url = https://auth.yourdomain.com/oauth/v2/token
    api_url = https://auth.yourdomain.com/oidc/v1/userinfo
-   role_attribute_path = contains("urn:zitadel:iam:org:project:roles".*, 'admin') && 'Admin' || 'Viewer'
-   ```
+       role_attribute_path = contains("urn:zitadel:iam:org:project:roles".*, 'ADMIN') && 'Admin' || 'Viewer'   ```
 
 ### Portainer Example
 
 1. **Pangolin Resource:**
-   - Authentication: SSO with `homelab` role (basic access gate)
+   - Authentication: SSO with `HOMELAB` role (basic access gate)
 
 2. **Portainer Configuration:**
    - Settings → Authentication → OAuth
@@ -262,7 +261,7 @@ graph LR
 ### Test Role Enforcement
 
 1. Create test user with limited roles
-2. Assign only `access_service_a` role
+2. Assign only `ACCESS_SERVICE_A` role
 3. Verify:
    - ✅ Can access `service-a.yourdomain.com`
    - ❌ Cannot access `service-b.yourdomain.com`

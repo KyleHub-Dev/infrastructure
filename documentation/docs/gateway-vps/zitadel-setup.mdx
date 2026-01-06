@@ -123,7 +123,7 @@ This application represents **Pangolin's OIDC integration**. Pangolin will use t
 2. Configure:
    - **Name**: `KyleHub-Auth` (represents Pangolin)
    - **Type**: Web
-   - **Authentication Method**: Code (PKCE optional)
+   - **Authentication Method**: PKCE (Recommended for better security)
 
 3. Add Redirect URIs (where Zitadel returns the user after login):
    ```
@@ -152,17 +152,17 @@ This application is **not for users to log into directly**—it's for Pangolin t
 
 ### Create Category Roles
 
-Create roles for different access levels:
+Create roles for different access levels. You can use uppercase names if your custom implementation requires them:
 
 1. Go to **Projects** → **KyleHub** → **Roles**
 2. Create these roles:
 
 | Role Key | Display Name | Description |
 |----------|--------------|-------------|
-| `admin` | Administrator | Full access to all services |
-| `homelab` | Homelab Access | Access to homelab services |
-| `services` | Services | Access to general services |
-| `dev` | Developer | Access to development tools |
+| `ADMIN` | Administrator | Full access to all services |
+| `HOMELAB` | Homelab Access | Access to homelab services |
+| `SERVICES` | Services | Access to general services |
+| `DEV` | Developer | Access to development tools |
 
 ### Assign Roles to Users
 
@@ -250,7 +250,7 @@ Add the Pangolin callback URL to the redirect URIs.
 
 1. In Zitadel, go to **Users** → **Create User**
 2. Fill in details and set a password
-3. Assign the `admin` role via Authorizations
+3. Assign the `ADMIN` role via Authorizations
 
 ### 2. Test Login Flow
 

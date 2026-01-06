@@ -70,7 +70,46 @@ This step connects Pangolin to Zitadel for authentication.
 
 ---
 
-## 4. Create Your First Site
+## 4. Expose Documentation Site
+
+The Gateway VPS includes a built-in documentation site. Create a resource to expose it.
+
+### Create Documentation Resource
+
+1. Navigate to **Sites** → **Gateway** (or create a new site for local services)
+2. Click **Add Resource**
+3. Configure:
+
+| Field | Value |
+|-------|-------|
+| **Name** | Documentation |
+| **Subdomain** | `docs` |
+| **Domain** | `yourdomain.com` |
+
+### Configure Target
+
+Since the docs container runs on the same Docker network:
+
+| Host | Port |
+|------|------|
+| `docs` | `80` |
+
+### Save and Verify
+
+1. Click **Save**
+2. Wait for SSL certificate provisioning
+3. Open `https://docs.yourdomain.com`
+
+:::tip Rebuilding Documentation
+When you update documentation, rebuild the container:
+```bash
+docker compose build docs && docker compose up -d docs
+```
+:::
+
+---
+
+## 5. Create Your First Site
 
 Sites are logical groupings for resources (services).
 
@@ -97,7 +136,7 @@ You'll need this for the homelab deployment.
 
 ---
 
-## 5. Verify Services
+## 6. Verify Services
 
 ### Check Zitadel
 
@@ -123,7 +162,7 @@ docker compose logs traefik -f
 
 ---
 
-## 6. DNS Verification
+## 7. DNS Verification
 
 Ensure all subdomains resolve correctly:
 
@@ -145,7 +184,7 @@ If using Cloudflare:
 
 ---
 
-## 7. Firewall Configuration
+## 8. Firewall Configuration
 
 ### VPS Firewall Rules
 
@@ -179,7 +218,7 @@ sudo ufw enable
 
 ---
 
-## 8. Health Checks
+## 9. Health Checks
 
 ### Container Health
 

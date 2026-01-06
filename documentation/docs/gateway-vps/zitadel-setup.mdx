@@ -215,7 +215,7 @@ Click **Add Identity Provider** and configure:
 | **Client ID** | From Zitadel |
 | **Client Secret** | From Zitadel |
 | **Authorization URL** | `https://auth.yourdomain.com/oauth/v2/authorize` |
-| **Token URL** | `http://auth.yourdomain.com:8080/oauth/v2/token` |
+| **Token URL** | `https://auth.yourdomain.com/oauth/v2/token` |
 | **Scopes** | `openid profile email offline_access` |
 | **Identifier Path** | `preferred_username` |
 
@@ -224,24 +224,27 @@ The `offline_access` scope allows Pangolin to request **Refresh Tokens**, which 
 :::
 
 :::warning URL Configuration
-- **Authorization URL**: Must be the **external HTTPS URL**. This is handled by the user's browser.
-- **Token URL**: Use your **domain name with the internal port** (`http://auth.yourdomain.com:8080`). 
+- **Authorization URL**: Must be the **external HTTPS URL** (e.g., `https://auth.yourdomain.com/oauth/v2/authorize`). This is used by the browser.
+- **Token URL**: Use the **HTTPS URL** (e.g., `https://auth.yourdomain.com/oauth/v2/token`). This is a server-to-server call from Pangolin to Zitadel.
 
-**Why use the domain and not the container name?** 
-Zitadel requires the correct `Host` header (e.g., `auth.yourdomain.com`) to identify your instance. If you use `http://zitadel:8080`, Zitadel will fail to find your instance and return an `IAM.NotFound` error. 
+**Bypassing Cloudflare WAF/Bot Protection:**
 
-To solve this without a separate DNS server, we use a **Docker Network Alias** in your `compose.yaml`:
+Since the Token URL is called from your server (not the browser), Cloudflare might block it as "bot traffic." To keep this traffic internal while maintaining HTTPS, add a **network alias** to the `gerbil` service in your `compose.yaml`:
 
 ```yaml
-  zitadel:
-    # ...
-    networks:
-      default:
-        aliases:
-          - auth.yourdomain.com
+gerbil:
+  # ... existing config ...
+  networks:
+    default:
+      aliases:
+        - ${ZITADEL_DOMAIN}  # e.g., auth.yourdomain.com
 ```
 
-This allows Pangolin to resolve `auth.yourdomain.com` directly to the Zitadel container while maintaining the correct `Host` header.
+**How this works:**
+1. Pangolin calls `https://auth.yourdomain.com/oauth/v2/token`
+2. Docker resolves `auth.yourdomain.com` to the `gerbil` container (via the alias)
+3. Traefik (running in gerbil's network) terminates SSL and routes to Zitadel internally
+4. The request never leaves your VPS, bypassing Cloudflare entirely
 :::
 
 ### 3. Configure Token Mapping
@@ -303,11 +306,31 @@ Check that roles appear in Pangolin user settings after login.
 
 ## Troubleshooting
 
-### Login redirects but fails
+### Login redirects but fails / "NoCode" error
 
-- Verify Redirect URIs match exactly
-- Check Token URL uses the domain name and internal port: `http://auth.yourdomain.com:8080/oauth/v2/token`
-- Verify DNS resolves correctly from within containers
+- Verify Redirect URIs match exactly in both Zitadel and Pangolin.
+- Ensure the **Token URL** uses `https://` (not `http://`). Protocol mismatch causes session state issues.
+- Clear browser cookies and try in an Incognito/Private window.
+- Verify the **Client Secret** in Pangolin matches the one in Zitadel. If unsure, regenerate it in Zitadel.
+
+### "Errors.IAM.NotFound" in Zitadel logs
+
+This error occurs when Zitadel receives a request with a `Host` header it doesn't recognize.
+
+**Example log:**
+```
+error="unable to get instance by domain: instanceDomain zitadel, publicHostname zitadel"
+```
+
+**Cause:** Calling Zitadel using the container name (`http://zitadel:8080`) sends `Host: zitadel`, which Zitadel doesn't recognize.
+
+**Fix:** Use the actual domain name in the Token URL (e.g., `https://auth.yourdomain.com/oauth/v2/token`). The network alias on the `gerbil` service ensures this resolves internally.
+
+### Cloudflare blocking token requests
+
+If Cloudflare's WAF or Bot Protection blocks server-to-server token requests:
+
+**Fix:** Add the network alias to your `gerbil` service (see URL Configuration section above). This routes traffic through Traefik internally, bypassing Cloudflare.
 
 ### Roles not appearing
 

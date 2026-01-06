@@ -1,0 +1,588 @@
+---
+title: Troubleshooting
+sidebar_position: 10
+description: Common issues and solutions for KyleHub Infrastructure
+---
+
+# Troubleshooting Guide
+
+This guide covers common issues and their solutions for the KyleHub Infrastructure platform.
+
+---
+
+## Quick Diagnostics
+
+### Health Check Commands
+
+```bash
+# Gateway VPS
+cd gateway-vps
+docker compose ps
+docker compose logs --tail=50
+
+# Homelab
+cd homelab-core
+docker compose ps
+docker compose logs --tail=50
+```
+
+### Key Endpoints
+
+| Service | Health Check |
+|---------|--------------|
+| Pangolin | `curl https://pangolin.yourdomain.com/api/v1/` |
+| Zitadel | `curl https://auth.yourdomain.com/.well-known/openid-configuration` |
+| Traefik | Check dashboard at `http://localhost:8080` (if enabled) |
+
+---
+
+## Gateway VPS Issues
+
+### Pangolin Won't Start
+
+**Symptoms:**
+- Container restarts repeatedly
+- "Error: missing required configuration"
+
+**Solutions:**
+
+1. **Check environment variables:**
+   ```bash
+   grep -E "^[A-Z].*=$" .env  # Find empty values
+   ```
+
+2. **Regenerate config:**
+   ```bash
+   ./init_config.sh
+   cat config/config.yml
+   ```
+
+3. **Check logs:**
+   ```bash
+   docker compose logs pangolin | head -100
+   ```
+
+4. **Verify database is ready:**
+   ```bash
+   docker compose ps zitadel_db
+   ```
+
+---
+
+### Zitadel Database Errors
+
+**Symptoms:**
+- "Connection refused to database"
+- Zitadel stuck in restart loop
+
+**Solutions:**
+
+1. **Check PostgreSQL status:**
+   ```bash
+   docker compose ps zitadel_db
+   docker compose logs zitadel_db
+   ```
+
+2. **Verify database directory:**
+   ```bash
+   ls -la auth/data/postgres/
+   ```
+
+3. **Reset database (destructive):**
+   ```bash
+   docker compose down
+   rm -rf auth/data/postgres/*
+   docker compose up -d
+   ```
+
+---
+
+### SSL Certificate Errors
+
+**Symptoms:**
+- Browser shows certificate warning
+- "Certificate not found" in Traefik logs
+
+**Solutions:**
+
+1. **Check Traefik logs:**
+   ```bash
+   docker compose logs traefik | grep -i "certificate\|acme\|error"
+   ```
+
+2. **Verify DNS:**
+   ```bash
+   dig +short pangolin.yourdomain.com
+   dig +short auth.yourdomain.com
+   ```
+
+3. **Check acme.json permissions:**
+   ```bash
+   ls -la config/letsencrypt/acme.json
+   # Should be 600
+   chmod 600 config/letsencrypt/acme.json
+   ```
+
+4. **Verify Cloudflare settings:**
+   - SSL mode: Full (Strict)
+   - Proxy status: Orange (proxied)
+
+5. **Check rate limits:**
+   - Let's Encrypt has rate limits
+   - Wait 1 hour if hitting limits
+
+---
+
+### "502 Bad Gateway"
+
+**Symptoms:**
+- Services unreachable
+- Traefik returns 502
+
+**Solutions:**
+
+1. **Check if service is running:**
+   ```bash
+   docker compose ps
+   ```
+
+2. **Check service health:**
+   ```bash
+   docker compose logs <service-name>
+   ```
+
+3. **Verify routing labels:**
+   ```bash
+   docker inspect <container> | grep -A50 Labels
+   ```
+
+4. **Test internal connectivity:**
+   ```bash
+   docker exec traefik wget -qO- http://pangolin:3002
+   ```
+
+---
+
+## Homelab Issues
+
+### NEWT Won't Connect
+
+**Symptoms:**
+- NEWT container running but not connected
+- "Tunnel not established" errors
+
+**Solutions:**
+
+1. **Check NEWT token:**
+   ```bash
+   docker compose logs newt | grep -i "token\|error"
+   ```
+
+2. **Verify VPS firewall:**
+   - Port 51820/udp open
+   - Port 21820/udp open
+
+3. **Test outbound connectivity:**
+   ```bash
+   docker exec newt ping pangolin.yourdomain.com
+   ```
+
+4. **Check NEWT configuration:**
+   ```bash
+   docker compose config | grep -A10 newt
+   ```
+
+5. **Restart NEWT:**
+   ```bash
+   docker compose restart newt
+   ```
+
+---
+
+### Services Unreachable Through Tunnel
+
+**Symptoms:**
+- NEWT connected but services return errors
+- "Connection refused" from Pangolin
+
+**Solutions:**
+
+1. **Check service is running:**
+   ```bash
+   docker compose ps
+   ```
+
+2. **Test local connectivity:**
+   ```bash
+   docker exec newt curl http://service:port
+   ```
+
+3. **Verify network configuration:**
+   ```bash
+   docker network ls
+   docker network inspect homelab-net
+   ```
+
+4. **Check service is on correct network:**
+   ```yaml
+   services:
+     my-service:
+       networks:
+         - homelab-net  # Same as NEWT
+   ```
+
+---
+
+### Container Permission Errors
+
+**Symptoms:**
+- "Permission denied" errors
+- NEWT can't create interfaces
+
+**Solutions:**
+
+1. **Add required capabilities:**
+   ```yaml
+   services:
+     newt:
+       cap_add:
+         - NET_ADMIN
+       sysctls:
+         - net.ipv4.ip_forward=1
+   ```
+
+2. **For Proxmox LXC:**
+   - Use privileged container
+   - Or add specific capabilities to config
+
+---
+
+## Authentication Issues
+
+### Login Redirects But Fails
+
+**Symptoms:**
+- Redirect to Zitadel works
+- Login succeeds but redirect fails
+
+**Solutions:**
+
+1. **Verify redirect URIs match:**
+   - Check Pangolin callback URL
+   - Compare with Zitadel application settings
+   - Must match exactly (including trailing slashes)
+
+2. **Check Token URL configuration:**
+   ```
+   Token URL: http://zitadel:8080/oauth/v2/token
+   # Use internal URL, not external
+   ```
+
+3. **Verify clocks are synchronized:**
+   ```bash
+   date  # Check on both servers
+   ```
+
+---
+
+### Roles Not Working
+
+**Symptoms:**
+- User logged in but "Unauthorized"
+- Role-based access denied
+
+**Solutions:**
+
+1. **Verify role assignment in Zitadel:**
+   - Users → User → Authorizations
+   - Check role is assigned to correct project
+
+2. **Enable role assertion:**
+   - Projects → KyleHub → Settings
+   - Enable "Assert Roles on Authentication"
+
+3. **Check token settings:**
+   - Applications → KyleHub-Auth → Token Settings
+   - Enable "Add User Roles to Access Token"
+
+4. **Verify role claim path in Pangolin:**
+   ```
+   Roles Claim Path: "urn:zitadel:iam:org:project:roles"
+   # Note: Must be in quotes due to colons
+   ```
+
+---
+
+### "Invalid Token" Errors
+
+**Symptoms:**
+- Token validation fails
+- "Token expired" or "invalid signature"
+
+**Solutions:**
+
+1. **Check clock synchronization:**
+   ```bash
+   timedatectl status
+   ```
+
+2. **Verify Zitadel issuer URL:**
+   - Must match between token and validation
+
+3. **Check client ID/secret:**
+   - Regenerate if necessary
+
+4. **Review token expiration:**
+   - Zitadel → Applications → Token Settings
+
+---
+
+## DNS Issues
+
+### Services Not Resolving
+
+**Symptoms:**
+- DNS lookups fail
+- "Host not found" errors
+
+**Solutions:**
+
+1. **Check DNS records:**
+   ```bash
+   dig +short service.yourdomain.com
+   ```
+
+2. **Verify Cloudflare settings:**
+   - Check A record exists
+   - Verify proxy status (orange/gray)
+
+3. **Check wildcard DNS:**
+   - `*.yourdomain.com` should point to VPS
+
+4. **Wait for propagation:**
+   - New records may take 5-10 minutes
+
+---
+
+### Internal DNS Resolution
+
+**Symptoms:**
+- Services can't reach each other by name
+- Works with IP but not hostname
+
+**Solutions:**
+
+1. **For Docker:**
+   - Services on same network use container names
+   ```yaml
+   networks:
+     - shared-network
+   ```
+
+2. **For AdGuard Home:**
+   - Add DNS rewrite for internal resolution
+   - Domain: `auth.yourdomain.com`
+   - Answer: `192.168.x.x` (internal IP)
+
+---
+
+## Network Issues
+
+### Firewall Blocking Traffic
+
+**Symptoms:**
+- Connections timeout
+- Services unreachable from internet
+
+**Solutions:**
+
+1. **Check VPS firewall (UFW):**
+   ```bash
+   sudo ufw status
+   ```
+
+2. **Required ports:**
+   | Port | Protocol | Purpose |
+   |------|----------|---------|
+   | 22 | TCP | SSH |
+   | 80 | TCP | HTTP |
+   | 443 | TCP | HTTPS |
+   | 51820 | UDP | WireGuard |
+   | 21820 | UDP | WireGuard |
+
+3. **Check Cloudflare firewall:**
+   - Security → WAF
+   - Review blocked requests
+
+---
+
+### WireGuard Tunnel Issues
+
+**Symptoms:**
+- NEWT can't establish tunnel
+- Intermittent disconnections
+
+**Solutions:**
+
+1. **Verify WireGuard ports open:**
+   ```bash
+   nc -zvu vps.ip 51820
+   ```
+
+2. **Check ISP blocking:**
+   - Some ISPs block WireGuard
+   - Try secondary port (21820)
+
+3. **Enable keepalive:**
+   ```yaml
+   environment:
+     - WG_PERSISTENT_KEEPALIVE=25
+   ```
+
+---
+
+## Performance Issues
+
+### Slow Service Response
+
+**Symptoms:**
+- High latency through tunnel
+- Timeouts on requests
+
+**Solutions:**
+
+1. **Check MTU settings:**
+   ```yaml
+   environment:
+     - WG_MTU=1420
+   ```
+
+2. **Monitor resource usage:**
+   ```bash
+   docker stats
+   ```
+
+3. **Check VPS resources:**
+   - CPU usage
+   - Memory usage
+   - Network saturation
+
+---
+
+## Logging and Debugging
+
+### Enable Debug Logging
+
+**Traefik:**
+```yaml
+command:
+  - "--log.level=DEBUG"
+```
+
+**Pangolin:**
+```yaml
+environment:
+  - LOG_LEVEL=debug
+```
+
+### View Specific Logs
+
+```bash
+# Last 100 lines
+docker compose logs --tail=100 <service>
+
+# Follow logs
+docker compose logs -f <service>
+
+# Logs with timestamps
+docker compose logs -t <service>
+
+# Filter by time
+docker compose logs --since 1h <service>
+```
+
+### Access Log Files
+
+```bash
+# Traefik access logs
+cat gateway-vps/config/traefik/logs/access.log
+
+# Filter errors
+grep "500\|502\|503\|504" access.log
+```
+
+---
+
+## Recovery Procedures
+
+### Full Stack Restart
+
+```bash
+# Gateway VPS
+cd gateway-vps
+docker compose down
+docker compose up -d
+
+# Homelab
+cd homelab-core
+docker compose down
+docker compose up -d
+```
+
+### Database Recovery
+
+If Zitadel database is corrupted:
+
+```bash
+# Stop services
+docker compose down
+
+# Backup existing data
+mv auth/data/postgres auth/data/postgres.bak
+
+# Start fresh
+docker compose up -d
+```
+
+⚠️ **Warning:** This will reset all Zitadel data.
+
+### Configuration Reset
+
+```bash
+# Regenerate config from .env
+./init_config.sh
+
+# Restart affected services
+docker compose restart pangolin
+```
+
+---
+
+## Getting Help
+
+### Collect Diagnostic Information
+
+Before asking for help, gather:
+
+```bash
+# System info
+uname -a
+docker --version
+docker compose version
+
+# Container status
+docker compose ps
+
+# Recent logs
+docker compose logs --tail=50 > logs.txt
+
+# Configuration (remove secrets)
+docker compose config | grep -v "PASSWORD\|SECRET\|TOKEN" > config.txt
+```
+
+### Resources
+
+- [Pangolin Documentation](https://docs.digpangolin.com/)
+- [Zitadel Documentation](https://zitadel.com/docs)
+- [Traefik Documentation](https://doc.traefik.io/traefik/)
+- [Docker Documentation](https://docs.docker.com/)

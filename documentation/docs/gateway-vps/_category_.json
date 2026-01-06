@@ -1,0 +1,8 @@
+{
+  "label": "Gateway VPS",
+  "position": 3,
+  "link": {
+    "type": "doc",
+    "id": "gateway-vps/index"
+  }
+}

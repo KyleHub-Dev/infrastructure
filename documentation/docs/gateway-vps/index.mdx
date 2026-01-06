@@ -1,0 +1,85 @@
+---
+title: Gateway VPS Overview
+sidebar_position: 1
+description: Overview of the Gateway VPS deployment
+---
+
+# Gateway VPS Setup
+
+The Gateway VPS is the public-facing component of your infrastructure. It handles all ingress traffic, authentication, and tunnel management.
+
+---
+
+## Components
+
+| Service | Image | Purpose |
+|---------|-------|---------|
+| **Pangolin** | `fosrl/pangolin:ee-latest` | Zero Trust gateway, reverse proxy |
+| **Zitadel** | `ghcr.io/zitadel/zitadel:v4.7.1` | Identity provider (OIDC) |
+| **Zitadel Login** | `ghcr.io/zitadel/zitadel-login:v4.7.1` | Login UI (v2) |
+| **Gerbil** | `fosrl/gerbil:latest` | WireGuard tunnel server |
+| **Traefik** | `traefik:v3.6.6` | Edge router, SSL termination |
+| **PostgreSQL** | `postgres:17-alpine` | Database for Zitadel |
+
+---
+
+## Quick Setup
+
+### 1. Clone and Navigate
+
+```bash
+git clone https://github.com/KyleHub-Dev/infrastructure.git
+cd infrastructure/gateway-vps
+```
+
+### 2. Configure Environment
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+### 3. Generate Configuration
+
+```bash
+./init_config.sh
+```
+
+### 4. Deploy
+
+```bash
+docker compose up -d
+```
+
+---
+
+## Directory Structure
+
+```
+gateway-vps/
+├── compose.yaml           # Main Docker Compose file
+├── .env.example           # Environment template
+├── .env                   # Your configuration (gitignored)
+├── init_config.sh         # Config generator script
+│
+├── config/
+│   ├── config.yml.template  # Pangolin config template
+│   ├── config.yml           # Generated Pangolin config
+│   ├── letsencrypt/         # SSL certificates
+│   ├── db/                  # Database files
+│   └── traefik/
+│       ├── traefik_config.yml   # Traefik static config
+│       └── dynamic_config.yml   # Traefik dynamic config
+│
+└── auth/
+    └── data/
+        └── postgres/        # Zitadel database data
+```
+
+---
+
+## Next Steps
+
+1. **[Environment Configuration](./environment-configuration)** — Detailed env var setup
+2. **[Zitadel Setup](./zitadel-setup)** — Configure identity provider
+3. **[Post-Deployment](./post-deployment)** — Complete setup in Pangolin dashboard

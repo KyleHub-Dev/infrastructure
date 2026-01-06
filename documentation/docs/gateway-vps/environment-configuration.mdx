@@ -1,0 +1,207 @@
+---
+title: Environment Configuration
+sidebar_position: 2
+description: Complete guide to configuring the Gateway VPS environment variables
+---
+
+# Environment Configuration
+
+This guide covers all environment variables required for the Gateway VPS deployment.
+
+---
+
+## Quick Start
+
+```bash
+cd gateway-vps
+cp .env.example .env
+nano .env
+```
+
+---
+
+## Environment Variables Reference
+
+### General Configuration
+
+| Variable | Required | Description | Example |
+|----------|----------|-------------|---------|
+| `DOMAIN_ROOT` | ✅ | Your root domain | `kylehub.dev` |
+| `PANGOLIN_SUBDOMAIN` | ✅ | Subdomain for Pangolin dashboard | `pangolin` |
+| `PANGOLIN_DASHBOARD_URL` | ✅ | Full URL to Pangolin | `https://pangolin.kylehub.dev` |
+| `VPS_PUBLIC_IP` | ✅ | Public IPv4 of this VPS | `203.0.113.50` |
+
+#### Finding Your VPS IP
+
+```bash
+curl ifconfig.io
+```
+
+### Security Secrets
+
+| Variable | Required | Description | How to Generate |
+|----------|----------|-------------|-----------------|
+| `PANGOLIN_SERVER_SECRET` | ✅ | Session encryption key | `openssl rand -hex 32` |
+| `PANGOLIN_LICENSE_KEY` | ⚠️ | Enterprise license (if using EE) | From Pangolin |
+
+### SSL / Let's Encrypt
+
+| Variable | Required | Description | Example |
+|----------|----------|-------------|---------|
+| `ACME_EMAIL` | ✅ | Email for cert expiration notices | `admin@kylehub.dev` |
+
+### Cloudflare (for DNS Challenge)
+
+Required if your VPS is behind Cloudflare proxy (orange cloud):
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `CF_API_EMAIL` | ⚠️ | Your Cloudflare account email |
+| `CF_DNS_API_TOKEN` | ⚠️ | Cloudflare API token with DNS edit |
+
+#### Creating a Cloudflare API Token
+
+1. Go to [Cloudflare Profile > API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+2. Click **Create Token**
+3. Use the **Edit zone DNS** template
+4. Select your domain under Zone Resources
+5. Copy the token to your `.env` file
+
+### Zitadel Configuration
+
+| Variable | Required | Description | How to Generate |
+|----------|----------|-------------|-----------------|
+| `ZITADEL_DOMAIN` | ✅ | Domain for Zitadel | `auth.kylehub.dev` |
+| `ZITADEL_MASTERKEY` | ✅ | 32-char encryption key | See below |
+| `POSTGRES_USER` | ✅ | Database username | `zitadel` |
+| `POSTGRES_PASSWORD` | ✅ | Database password | Strong password |
+| `POSTGRES_DB` | ✅ | Database name | `zitadel` |
+
+#### Generating Zitadel Masterkey
+
+```bash
+openssl rand -base64 32 | tr -d '\n' | cut -c1-32
+```
+
+### WireGuard / Gerbil
+
+| Variable | Required | Description | Default |
+|----------|----------|-------------|---------|
+| `WG_PORT_1` | ❌ | Primary WireGuard port | `51820` |
+| `WG_PORT_2` | ❌ | Secondary WireGuard port | `21820` |
+
+---
+
+## Complete .env Example
+
+```bash
+# === General Configuration ===
+DOMAIN_ROOT=kylehub.dev
+PANGOLIN_SUBDOMAIN=pangolin
+PANGOLIN_DASHBOARD_URL=https://pangolin.kylehub.dev
+VPS_PUBLIC_IP=203.0.113.50
+
+# === Security Secrets ===
+# Generate with: openssl rand -hex 32
+PANGOLIN_SERVER_SECRET=your_64_char_hex_string_here
+
+# Enterprise license (leave empty for Community Edition)
+PANGOLIN_LICENSE_KEY=
+
+# === SSL / Let's Encrypt ===
+ACME_EMAIL=admin@kylehub.dev
+
+# === Cloudflare (if using DNS challenge) ===
+CF_API_EMAIL=admin@kylehub.dev
+CF_DNS_API_TOKEN=your_cloudflare_api_token
+
+# === Zitadel Configuration ===
+ZITADEL_DOMAIN=auth.kylehub.dev
+# Generate with: openssl rand -base64 32 | tr -d '\n' | cut -c1-32
+ZITADEL_MASTERKEY=YourExact32CharacterKeyHereXyZ
+
+# Database
+POSTGRES_USER=zitadel
+POSTGRES_PASSWORD=VerySecurePasswordHere
+POSTGRES_DB=zitadel
+
+# === WireGuard Ports ===
+WG_PORT_1=51820
+WG_PORT_2=21820
+```
+
+---
+
+## Generating the Config
+
+After configuring `.env`, run the config generator:
+
+```bash
+./init_config.sh
+```
+
+This script:
+1. Reads your `.env` file
+2. Substitutes variables into `config/config.yml.template`
+3. Creates `config/config.yml`
+
+**Output:**
+```
+Successfully generated config/config.yml from .env values.
+Dashboard URL set to: https://pangolin.kylehub.dev
+```
+
+---
+
+## Validating Configuration
+
+Before deploying, verify your configuration:
+
+### 1. Check .env is complete
+
+```bash
+# Should show no empty required values
+grep -E "^[A-Z].*=$" .env
+```
+
+### 2. Verify config was generated
+
+```bash
+cat config/config.yml
+```
+
+### 3. Test DNS resolution
+
+```bash
+# Should resolve to your VPS IP
+dig +short pangolin.yourdomain.com
+dig +short auth.yourdomain.com
+```
+
+---
+
+## DNS Configuration
+
+Before deploying, create these DNS records in Cloudflare:
+
+| Type | Name | Value | Proxy |
+|------|------|-------|-------|
+| A | `pangolin` | Your VPS IP | Orange (Proxied) |
+| A | `auth` | Your VPS IP | Orange (Proxied) |
+| A | `*` | Your VPS IP | Orange (Proxied) |
+
+The wildcard record allows Pangolin to create subdomains for services automatically.
+
+:::tip Cloudflare SSL Mode
+Set SSL/TLS encryption mode to **Full (Strict)** in Cloudflare dashboard.
+:::
+
+---
+
+## Next Steps
+
+Once your environment is configured:
+
+1. **Deploy the stack**: `docker compose up -d`
+2. **[Complete Zitadel setup](./zitadel-setup)** — Configure identity provider
+3. **[Post-deployment configuration](./post-deployment)** — Finish setup in Pangolin

@@ -1,0 +1,237 @@
+---
+title: Post-Deployment Setup
+sidebar_position: 4
+description: Complete the Gateway VPS setup in the Pangolin dashboard
+---
+
+# Post-Deployment Setup
+
+After deploying the Gateway VPS stack, complete the configuration through the Pangolin dashboard.
+
+---
+
+## 1. Access Pangolin Dashboard
+
+### Get the Setup Token
+
+```bash
+docker compose logs pangolin | grep -i "token"
+```
+
+Copy the setup token from the logs.
+
+### Open the Dashboard
+
+1. Navigate to `https://pangolin.yourdomain.com`
+2. Enter the setup token
+3. You'll be prompted to create an admin account
+
+---
+
+## 2. Initial Setup Wizard
+
+### Create Admin Account
+
+| Field | Description |
+|-------|-------------|
+| **Email** | Your admin email |
+| **Password** | Strong password |
+| **Organization** | e.g., `KyleHub` |
+
+### Configure Organization
+
+1. Enter organization name
+2. Set primary domain
+3. Configure notification preferences (optional)
+
+---
+
+## 3. Configure Identity Provider
+
+This step connects Pangolin to Zitadel for authentication.
+
+### Add Zitadel as Identity Provider
+
+1. Go to **Admin** → **Identity Providers**
+2. Click **Add Identity Provider**
+3. Configure (see [Zitadel Setup](./zitadel-setup) for details):
+
+| Setting | Value |
+|---------|-------|
+| Name | Zitadel |
+| Type | OIDC |
+| Client ID | From Zitadel |
+| Client Secret | From Zitadel |
+| Authorization URL | `https://auth.yourdomain.com/oauth/v2/authorize` |
+| Token URL | `http://auth.yourdomain.com:8080/oauth/v2/token` |
+
+4. Save and copy the callback URL
+5. Add callback URL to Zitadel's redirect URIs
+
+---
+
+## 4. Create Your First Site
+
+Sites are logical groupings for resources (services).
+
+### Create a Homelab Site
+
+1. Navigate to **Sites** in the sidebar
+2. Click **Create Site**
+3. Configure:
+   - **Name**: `Homelab`
+   - **Type**: Select **NEWT** (for tunnel connection)
+   - **Description**: Optional
+
+4. Click **Create**
+
+### Copy NEWT Configuration
+
+After creating the site:
+
+1. Open the site settings
+2. Navigate to **NEWT** tab
+3. Copy the **NEWT Token** or configuration
+
+You'll need this for the homelab deployment.
+
+---
+
+## 5. Verify Services
+
+### Check Zitadel
+
+1. Open `https://auth.yourdomain.com`
+2. Verify you can access the login page
+3. Test login with your admin user
+
+### Check Pangolin API
+
+```bash
+curl -I https://pangolin.yourdomain.com/api/v1/
+```
+
+Should return `200 OK` or redirect.
+
+### Check Traefik
+
+View Traefik logs to verify routing:
+
+```bash
+docker compose logs traefik -f
+```
+
+---
+
+## 6. DNS Verification
+
+Ensure all subdomains resolve correctly:
+
+```bash
+# These should all resolve to your VPS IP
+dig +short pangolin.yourdomain.com
+dig +short auth.yourdomain.com
+```
+
+### Cloudflare Settings
+
+If using Cloudflare:
+
+| Setting | Recommended Value |
+|---------|-------------------|
+| SSL Mode | Full (Strict) |
+| Always HTTPS | Enabled |
+| Minimum TLS | 1.2 |
+
+---
+
+## 7. Firewall Configuration
+
+### VPS Firewall Rules
+
+Configure your VPS firewall (UFW, iptables, or cloud firewall):
+
+| Port | Protocol | Source | Description |
+|------|----------|--------|-------------|
+| 22 | TCP | Your IP | SSH access |
+| 80 | TCP | Cloudflare IPs | HTTP |
+| 443 | TCP | Cloudflare IPs | HTTPS |
+| 51820 | UDP | Any | WireGuard |
+| 21820 | UDP | Any | WireGuard (backup) |
+
+### UFW Example
+
+```bash
+# Allow SSH from your IP only
+sudo ufw allow from YOUR_IP to any port 22
+
+# Allow Cloudflare IPs for HTTP/HTTPS
+# (Add all Cloudflare IPs from https://www.cloudflare.com/ips/)
+sudo ufw allow from 173.245.48.0/20 to any port 80,443 proto tcp
+
+# Allow WireGuard
+sudo ufw allow 51820/udp
+sudo ufw allow 21820/udp
+
+# Enable firewall
+sudo ufw enable
+```
+
+---
+
+## 8. Health Checks
+
+### Container Health
+
+```bash
+docker compose ps
+```
+
+All containers should show `healthy` or `running`.
+
+### Service Endpoints
+
+| Service | URL | Expected |
+|---------|-----|----------|
+| Pangolin | `https://pangolin.yourdomain.com` | Dashboard |
+| Zitadel | `https://auth.yourdomain.com` | Login page |
+| API | `https://pangolin.yourdomain.com/api/v1/` | JSON response |
+
+---
+
+## Common Issues
+
+### Pangolin container keeps restarting
+
+1. Check logs: `docker compose logs pangolin`
+2. Verify `.env` has all required values
+3. Ensure `config.yml` was generated: `cat config/config.yml`
+
+### Zitadel database errors
+
+1. Check PostgreSQL is running: `docker compose ps zitadel_db`
+2. View database logs: `docker compose logs zitadel_db`
+3. Ensure data directory exists: `ls -la auth/data/postgres/`
+
+### SSL certificate errors
+
+1. Check Traefik logs: `docker compose logs traefik`
+2. Verify DNS records point to VPS
+3. Ensure Cloudflare API token is correct
+4. Check `letsencrypt/acme.json` permissions: `ls -la config/letsencrypt/`
+
+### Cannot access dashboard
+
+1. Verify Cloudflare DNS is proxied (orange cloud)
+2. Check VPS firewall allows port 443
+3. Test direct IP access (temporarily)
+
+---
+
+## Next Steps
+
+Your Gateway VPS is now configured. Continue with:
+
+1. **[Homelab Setup](/docs/homelab)** — Deploy NEWT and services
+2. **[Expose Services](/docs/post-deployment/expose-services)** — Add resources in Pangolin
+3. **[Configure SSO](/docs/post-deployment/configure-sso)** — Protect services with authentication

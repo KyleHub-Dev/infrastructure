@@ -1,0 +1,8 @@
+{
+  "label": "Homelab Setup",
+  "position": 4,
+  "link": {
+    "type": "doc",
+    "id": "homelab/index"
+  }
+}

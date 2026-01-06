@@ -1,0 +1,280 @@
+---
+title: Zitadel Domain Configuration
+sidebar_position: 4
+description: Configure the Zitadel domain after deployment
+---
+
+# Zitadel Domain Configuration
+
+After deploying the infrastructure, you need to ensure Zitadel is properly configured in Pangolin and accessible via its custom domain.
+
+---
+
+## Overview
+
+Zitadel runs on the Gateway VPS and needs to be:
+
+1. **Accessible externally** via `https://auth.yourdomain.com`
+2. **Accessible internally** from Pangolin for token validation
+3. **Registered** as an Identity Provider in Pangolin
+
+---
+
+## Verify Zitadel is Running
+
+### Check Container Status
+
+```bash
+cd gateway-vps
+docker compose ps zitadel zitadel_login
+```
+
+Both should show `healthy` or `running`.
+
+### Check Logs
+
+```bash
+docker compose logs zitadel | tail -50
+```
+
+Look for:
+```
+server is running
+```
+
+---
+
+## DNS Configuration
+
+### Required DNS Records
+
+| Type | Name | Value | Proxy |
+|------|------|-------|-------|
+| A | `auth` | VPS IP | ✅ Orange |
+
+### Verify DNS Resolution
+
+```bash
+dig +short auth.yourdomain.com
+```
+
+Should return your VPS IP or Cloudflare proxy IP.
+
+---
+
+## Traefik Routing
+
+Zitadel needs proper routing through Traefik. The compose file should already configure this, but verify:
+
+### Check Zitadel Labels
+
+In `gateway-vps/compose.yaml`, Zitadel should have Traefik labels:
+
+```yaml
+zitadel:
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.zitadel.rule=Host(`auth.yourdomain.com`)"
+    - "traefik.http.routers.zitadel.entrypoints=websecure"
+    - "traefik.http.routers.zitadel.tls.certresolver=letsencrypt"
+    - "traefik.http.services.zitadel.loadbalancer.server.port=8080"
+```
+
+### Check Zitadel Login Labels
+
+The Login v2 sidecar also needs routing:
+
+```yaml
+zitadel_login:
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.zitadel-login.rule=Host(`auth.yourdomain.com`) && PathPrefix(`/ui/v2/login`)"
+    - "traefik.http.routers.zitadel-login.entrypoints=websecure"
+    - "traefik.http.routers.zitadel-login.tls.certresolver=letsencrypt"
+    - "traefik.http.services.zitadel-login.loadbalancer.server.port=3000"
+```
+
+---
+
+## Test External Access
+
+### Access Zitadel Console
+
+1. Open `https://auth.yourdomain.com` in your browser
+2. You should see the Zitadel login page
+3. If you see a certificate error, check Traefik logs
+
+### Test API Endpoint
+
+```bash
+curl https://auth.yourdomain.com/.well-known/openid-configuration
+```
+
+Should return OIDC discovery document.
+
+---
+
+## Configure in Pangolin Dashboard
+
+### Add Zitadel Domain as Resource
+
+If you want Zitadel accessible through Pangolin's routing:
+
+1. **Navigate to Resources**
+2. **Add Resource:**
+   - Name: `Zitadel Console`
+   - Subdomain: `auth`
+   - Target: `zitadel:8080`
+   - Protocol: HTTP
+   - Auth: None (Zitadel handles its own auth)
+
+### Configure Identity Provider
+
+Ensure Zitadel is registered as an Identity Provider:
+
+1. **Go to Admin → Identity Providers**
+2. **Add or verify Zitadel configuration**
+
+See [Zitadel Setup](/docs/gateway-vps/zitadel-setup) for detailed configuration.
+
+---
+
+## Internal DNS Resolution
+
+### Why Internal DNS Matters
+
+When Pangolin validates tokens, it needs to reach Zitadel. If both are on the same Docker network, use internal addresses.
+
+### Token URL Configuration
+
+In Pangolin Identity Provider settings:
+
+| URL Type | Value | Why |
+|----------|-------|-----|
+| Authorization URL | `https://auth.yourdomain.com/oauth/v2/authorize` | Browser access (external) |
+| Token URL | `http://zitadel:8080/oauth/v2/token` | Backend access (internal) |
+
+Using the internal container name (`zitadel`) for the Token URL:
+- Avoids Cloudflare proxy issues
+- Faster token validation
+- Works even if external DNS fails
+
+---
+
+## Custom Domain in Zitadel
+
+### Set Instance Domain
+
+1. Log in to Zitadel as admin
+2. Go to **Settings** → **Domain**
+3. Verify or add your domain
+
+### Verify Domain Ownership
+
+If Zitadel requires domain verification:
+
+1. Add the TXT record Zitadel provides
+2. Wait for DNS propagation
+3. Click verify in Zitadel
+
+---
+
+## Environment Variables
+
+Ensure these are set in `gateway-vps/.env`:
+
+```bash
+# Zitadel domain (without protocol)
+ZITADEL_DOMAIN=auth.yourdomain.com
+
+# Passed to Zitadel container
+# ZITADEL_EXTERNALDOMAIN=${ZITADEL_DOMAIN}
+# ZITADEL_EXTERNALPORT=443
+# ZITADEL_EXTERNALSECURE=true
+```
+
+---
+
+## Troubleshooting
+
+### "Connection refused" on Token URL
+
+**Cause:** Pangolin can't reach Zitadel internally.
+
+**Solutions:**
+1. Verify both are on the same Docker network
+2. Use container name in Token URL: `http://zitadel:8080/...`
+3. Check Zitadel is healthy: `docker compose ps zitadel`
+
+### SSL Certificate Errors
+
+**Cause:** Certificate not provisioned or invalid.
+
+**Solutions:**
+1. Check Traefik logs: `docker compose logs traefik`
+2. Verify DNS points to VPS
+3. Check `letsencrypt/acme.json` exists and has content
+4. Wait for rate limits if hit
+
+### "Invalid issuer" in Tokens
+
+**Cause:** Zitadel's external domain doesn't match token validation.
+
+**Solutions:**
+1. Verify `ZITADEL_EXTERNALDOMAIN` matches your domain
+2. Restart Zitadel after changing domain config
+3. Clear browser cookies and try again
+
+### Zitadel Console Shows Wrong Domain
+
+**Cause:** Initial configuration used different domain.
+
+**Solutions:**
+1. Update `ZITADEL_EXTERNALDOMAIN` in `.env`
+2. Restart Zitadel: `docker compose restart zitadel zitadel_login`
+3. May need to reset database for clean start
+
+---
+
+## Verifying Complete Setup
+
+### Checklist
+
+```
+□ DNS
+  □ auth.yourdomain.com resolves correctly
+  □ SSL certificate valid (no browser warnings)
+
+□ External Access
+  □ Zitadel console accessible
+  □ OIDC discovery endpoint returns JSON
+  □ Can log in as admin
+
+□ Internal Access
+  □ Pangolin can reach Zitadel Token URL
+  □ Token validation succeeds
+  □ SSO login flow works end-to-end
+
+□ Pangolin Integration
+  □ Identity Provider configured
+  □ Callback URLs match
+  □ Roles appear in tokens
+```
+
+### Test SSO Flow
+
+1. Enable SSO on a test resource
+2. Open incognito browser
+3. Access the resource
+4. Verify redirect to `auth.yourdomain.com`
+5. Log in
+6. Verify redirect back to resource
+7. Verify access granted
+
+---
+
+## Next Steps
+
+1. **[Configure SSO](./configure-sso)** — Protect services with authentication
+2. **Create roles** — Set up role-based access in Zitadel console
+3. **Enable MFA** — Configure multi-factor authentication in Zitadel settings

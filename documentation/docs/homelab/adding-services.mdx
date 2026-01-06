@@ -1,0 +1,306 @@
+---
+title: Adding Services
+sidebar_position: 3
+description: Deploy additional services to your homelab
+---
+
+# Adding Services
+
+This guide covers how to add new services to your homelab and expose them through Pangolin.
+
+---
+
+## Overview
+
+The workflow for adding a new service:
+
+```mermaid
+flowchart LR
+    A[Create Service] --> B[Deploy Locally]
+    B --> C[Test Internally]
+    C --> D[Add to Pangolin]
+    D --> E[Configure Auth]
+    E --> F[Access via Subdomain]
+```
+
+---
+
+## Step 1: Create Service Configuration
+
+### Option A: Add to Main Compose
+
+Add the service to `homelab-core/compose.yaml`:
+
+```yaml
+services:
+  # ... existing services ...
+  
+  my-new-service:
+    image: my-service:latest
+    restart: unless-stopped
+    environment:
+      - CONFIG_VAR=value
+    volumes:
+      - my-service-data:/data
+    networks:
+      - homelab-net
+
+volumes:
+  my-service-data:
+```
+
+### Option B: Separate Compose File
+
+Create `homelab-core/services/my-service/compose.yaml`:
+
+```yaml
+services:
+  my-service:
+    image: my-service:latest
+    restart: unless-stopped
+    environment:
+      - CONFIG_VAR=value
+    volumes:
+      - ./data:/data
+    networks:
+      - homelab-net
+
+networks:
+  homelab-net:
+    external: true
+```
+
+---
+
+## Step 2: Deploy Locally
+
+### Main Compose
+
+```bash
+cd homelab-core
+docker compose up -d my-new-service
+```
+
+### Separate Compose
+
+```bash
+cd homelab-core/services/my-service
+docker compose up -d
+```
+
+---
+
+## Step 3: Test Internally
+
+Verify the service is running:
+
+```bash
+# Check container status
+docker compose ps
+
+# View logs
+docker compose logs my-service
+
+# Test connectivity (from NEWT container)
+docker exec newt curl http://my-service:8080
+```
+
+---
+
+## Step 4: Add to Pangolin
+
+### Create Resource
+
+1. Log in to Pangolin dashboard
+2. Navigate to **Sites** → Your homelab site
+3. Click **Resources** → **Add Resource**
+
+### Configure Resource
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Name** | Display name | `My Service` |
+| **Subdomain** | URL subdomain | `myservice` |
+| **Protocol** | HTTP or HTTPS | `http` |
+| **Target** | Internal address | `my-service:8080` |
+| **Port** | Target port | `8080` |
+
+### Authentication Options
+
+| Option | Description |
+|--------|-------------|
+| **None** | Public access |
+| **SSO Required** | Zitadel login required |
+| **Role Required** | Specific role needed |
+
+---
+
+## Step 5: Verify Access
+
+Open `https://myservice.yourdomain.com` in your browser.
+
+---
+
+## Example Services
+
+### Langfuse (Included)
+
+LLM observability platform:
+
+```yaml
+langfuse-web:
+  image: docker.io/langfuse/langfuse:3
+  restart: always
+  ports:
+    - 3000:3000
+  environment:
+    - DATABASE_URL=postgresql://...
+    - NEXTAUTH_URL=https://langfuse.yourdomain.com
+```
+
+**Pangolin Configuration:**
+- Subdomain: `langfuse`
+- Target: `langfuse-web:3000`
+- Auth: SSO with `services` role
+
+### AdGuard Home
+
+Network-wide ad blocking:
+
+```yaml
+adguard:
+  image: adguard/adguardhome:latest
+  restart: unless-stopped
+  ports:
+    - 53:53/tcp
+    - 53:53/udp
+    - 3000:3000
+  volumes:
+    - ./work:/opt/adguardhome/work
+    - ./conf:/opt/adguardhome/conf
+```
+
+**Pangolin Configuration:**
+- Subdomain: `adguard`
+- Target: `adguard:3000`
+- Auth: SSO with `admin` role
+
+### Portainer
+
+Docker management UI:
+
+```yaml
+portainer:
+  image: portainer/portainer-ce:latest
+  restart: unless-stopped
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - portainer_data:/data
+```
+
+**Pangolin Configuration:**
+- Subdomain: `portainer`
+- Target: `portainer:9000`
+- Auth: SSO with `admin` role
+
+### Grafana
+
+Monitoring dashboards:
+
+```yaml
+grafana:
+  image: grafana/grafana:latest
+  restart: unless-stopped
+  environment:
+    - GF_SERVER_ROOT_URL=https://grafana.yourdomain.com
+    - GF_AUTH_GENERIC_OAUTH_ENABLED=true
+    # Add OIDC config for Zitadel
+  volumes:
+    - grafana_data:/var/lib/grafana
+```
+
+**Pangolin Configuration:**
+- Subdomain: `grafana`
+- Target: `grafana:3000`
+- Auth: Direct OIDC (Grafana handles auth)
+
+---
+
+## Service Checklist
+
+When adding a new service:
+
+```
+□ Docker
+  □ Create compose file or add to main compose
+  □ Configure environment variables
+  □ Set up volumes for persistence
+  □ Join homelab-net network
+
+□ Local Testing
+  □ Container starts successfully
+  □ Logs show no errors
+  □ Internal connectivity works
+
+□ Pangolin
+  □ Create resource with correct target
+  □ Configure subdomain
+  □ Set authentication level
+  □ Test external access
+
+□ Documentation
+  □ Add to services list
+  □ Document environment variables
+  □ Note backup requirements
+```
+
+---
+
+## Networking Tips
+
+### Service Discovery
+
+Services on the same Docker network can communicate by container name:
+
+```yaml
+networks:
+  homelab-net:
+    driver: bridge
+
+services:
+  service-a:
+    networks:
+      - homelab-net
+  
+  service-b:
+    networks:
+      - homelab-net
+    # Can reach service-a as http://service-a:port
+```
+
+### External Services
+
+For services outside Docker (VMs, LXC containers):
+
+```yaml
+# In Pangolin resource configuration
+Target: 192.168.10.50:8080  # Use IP address
+```
+
+### HTTPS Backends
+
+If the service requires HTTPS internally:
+
+```yaml
+# In Pangolin resource configuration
+Protocol: https
+Skip Certificate Verify: true  # For self-signed certs
+```
+
+---
+
+## Next Steps
+
+1. **[Configure SSO](/docs/post-deployment/configure-sso)** — Protect services with Zitadel
+2. **Set up backups** — Configure volume backups for persistence
+3. **Add monitoring** — Consider adding Prometheus/Grafana stack

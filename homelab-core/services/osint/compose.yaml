@@ -1,0 +1,55 @@
+services:
+  # 1. TOR PROXY - The gateway to the Dark Web
+  tor-proxy:
+    image: osminogin/tor-simple
+    container_name: osint-tor
+    restart: always
+    ports:
+      - "127.0.0.1:9050:9050" # Localhost only for security
+    networks:
+      - osint-net
+
+  # 2. SPIDERFOOT - The Central Intelligence Dashboard
+  spiderfoot:
+    image: smicallef/spiderfoot:latest
+    container_name: osint-spiderfoot
+    restart: unless-stopped
+    ports:
+      - "${SPIDERFOOT_PORT:-5001}:5001"
+    volumes:
+      - ./data/spiderfoot:/var/lib/spiderfoot
+    networks:
+      - osint-net
+
+  # 3. REPORT VIEWER - Browse your results (HTML/PDF) easily
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: osint-viewer
+    restart: unless-stopped
+    ports:
+      - "${FILEBROWSER_PORT:-8080}:80"
+    volumes:
+      - ./data/reports:/srv  # View the reports folder
+      - ./filebrowser.db:/database.db
+    networks:
+      - osint-net
+    command: --noauth # WARNING: Only for local/secure homelab. Use auth for public servers.
+
+  # 4. TOOL RUNNER - The engine for Maigret/OnionSearch
+  # This container sits idle until we execute commands on it
+  osint-tools:
+    build: 
+      context: ./tools
+      dockerfile: Dockerfile.tools
+    container_name: osint-runner
+    entrypoint: ["tail", "-f", "/dev/null"] # Keeps container alive
+    volumes:
+      - ./data/reports:/app/reports
+    depends_on:
+      - tor-proxy
+    networks:
+      - osint-net
+
+networks:
+  osint-net:
+    driver: bridge

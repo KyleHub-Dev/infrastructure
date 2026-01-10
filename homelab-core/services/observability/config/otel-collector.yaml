@@ -1,0 +1,78 @@
+receivers:
+  # Receive OTLP from applications
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  # Collect Docker container logs (optional)
+  filelog:
+    include:
+      - /var/log/containers/*.log
+    include_file_path: true
+    operators:
+      # Parse Docker JSON log format
+      - type: json_parser
+        timestamp:
+          parse_from: attributes.time
+          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+      # Extract container name
+      - type: regex_parser
+        regex: '/var/log/containers/(?P<container_name>[^_]+)_.*\.log'
+        parse_from: attributes["log.file.path"]
+      - type: move
+        from: attributes.container_name
+        to: resource["service.name"]
+
+processors:
+  # Batch for efficiency
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  
+  # Add environment label
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: ${ENVIRONMENT}
+        action: insert
+  
+  # Memory limiter (prevent OOM)
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+exporters:
+  # Export logs to Loki
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    labels:
+      attributes:
+        service.name: "service"
+        level: "level"
+      resource:
+        deployment.environment: "environment"
+  
+  # Export metrics for Prometheus scraping
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: otel
+  
+  # Debug output (disable in production)
+  # debug:
+  #   verbosity: detailed
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp, filelog]
+      processors: [memory_limiter, batch, resource]
+      exporters: [loki]
+    
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]

@@ -1,0 +1,22 @@
+FROM python:3.9-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    gcc \
+    libxml2-dev \
+    libxslt-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Maigret (Username Enumeration)
+RUN pip install maigret
+
+# Install OnionSearch (Dark Web Search)
+RUN pip install onionsearch
+
+# Create reports directory
+RUN mkdir -p /app/reports
+
+CMD ["/bin/bash"]

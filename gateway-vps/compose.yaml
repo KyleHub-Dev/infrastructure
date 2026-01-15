@@ -70,7 +70,7 @@ services:
 
   # --- Zitadel Identity Provider ---
   zitadel:
-    image: ghcr.io/zitadel/zitadel:v4.7.1
+    image: ghcr.io/zitadel/zitadel:v4.9.1
     restart: always
     container_name: zitadel
     command: 'start-from-init --masterkey "${ZITADEL_MASTERKEY}"'
@@ -117,7 +117,7 @@ services:
 
   # --- Zitadel Login V2 (Sidecar) ---
   zitadel_login:
-    image: ghcr.io/zitadel/zitadel-login:v4.7.1
+    image: ghcr.io/zitadel/zitadel-login:v4.9.1
     restart: always
     container_name: zitadel_login
     environment:

@@ -175,6 +175,32 @@ The plugin auto-discovers all OIDC endpoints via `<base_url>/.well-known/openid-
 1. Open your panel in an incognito/private window
 2. The login page should now show a **Zitadel** button
 3. Click it, authenticate with Zitadel, and confirm you're redirected back to the panel
+   
+### Step 6: Roles & Permissions (Important)
+
+**What can a "Standard User" do?**
+By default, a new user created via OIDC has **no administrative access**. They can only:
+- Log in to the panel.
+- View and manage **servers explicitly assigned to them** (as owner or subuser).
+- Manage their own account details (API keys, SSH keys).
+- They **cannot** create new servers (unless an admin allows it).
+- They **cannot** access the Admin Control Panel.
+
+**Do I need to create roles in Zitadel?**
+No. By default, the plugin uses OIDC for **authentication** only (verifying who the user is). It does not automatically sync **authorization** (roles/permissions) from Zitadel to Pelican.
+
+- **Standard Users:** Any user who can authenticate via Zitadel (and is granted access to the Project in Zitadel) will be created as a standard user in Pelican.
+- **Admins:** You must **manually** grant "Root Admin" or specific permissions to a user inside the Pelican Panel after they have logged in for the first time.
+  1. Login as your initial admin account (from Part 1).
+  2. Go to **Admin -> Users**.
+  3. Find the user created via Zitadel.
+  4. Toggle **Root Admin** to "Yes" or assign specific permissions.
+
+**Restricting Access:**
+If you want to prevent unauthorized Zitadel users from logging in, use **Zitadel Project Grants**:
+1. In Zitadel, go to your Project -> "Grants".
+2. Only add the specific users or organizations you want to have access to the panel.
+3. Users without a grant will be denied by Zitadel before they even reach Pelican.
 
 ---
 

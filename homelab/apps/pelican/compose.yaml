@@ -50,9 +50,9 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - pelican-db-data:/var/lib/mysql
     healthcheck:
@@ -87,7 +87,8 @@ services:
     restart: always
     environment:
       - PANGOLIN_ENDPOINT=${PANGOLIN_SERVER}
-      - NEWT_ID=${NEWT_TOKEN}
+      - NEWT_ID=${NEWT_ID}
+      - NEWT_SECRET=${NEWT_SECRET}
     cap_add:
       - NET_ADMIN
     sysctls:

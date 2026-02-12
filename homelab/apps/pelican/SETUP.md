@@ -9,23 +9,25 @@ Complete setup guide for a self-hosted Pelican Panel with Zitadel OIDC authentic
 ## Architecture Overview
 
 ```
-                    Internet
-                       |
-              ┌────────┴────────┐
-              │  Pangolin Gateway│
-              │  (VPS / Cloud)   │
-              └────────┬────────┘
-                       │ WireGuard Tunnel
-              ┌────────┴────────┐
-              │   NEWT Agent     │
-              └────────┬────────┘
-                       │ pelican-net
-        ┌──────────────┼──────────────┐
-        │              │              │
-   ┌────┴────┐   ┌─────┴─────┐  ┌────┴────┐
-   │  Panel  │   │  MariaDB  │  │  Redis  │
-   │  :80    │   │  :3306    │  │  :6379  │
-   └─────────┘   └───────────┘  └─────────┘
+                         Internet
+                            |
+               ┌────────────┼────────────┐
+               │                         │
+    ┌──────────┴──────────┐    ┌─────────┴─────────┐
+    │  Pangolin Gateway   │    │  DNS A Record      │
+    │  (Panel traffic)    │    │  wings.kylehub.dev │
+    └──────────┬──────────┘    └─────────┬─────────┘
+               │ WireGuard Tunnel        │ Direct (port 443)
+    ┌──────────┴──────────┐    ┌─────────┴─────────┐
+    │   NEWT Agent        │    │   Wings (host)     │
+    └──────────┬──────────┘    │   :443 (TLS)      │
+               │ pelican-net   │   + game ports     │
+    ┌──────────┼──────────┐    └───────────────────┘
+    │          │          │
+┌───┴───┐ ┌───┴────┐ ┌───┴───┐
+│ Panel │ │MariaDB │ │ Redis │
+│  :80  │ │ :3306  │ │ :6379 │
+└───────┘ └────────┘ └───────┘
 ```
 
 ---
@@ -206,7 +208,42 @@ If you want to prevent unauthorized Zitadel users from logging in, use **Zitadel
 
 ## Part 3: Wings (Game Node) Setup
 
-If you want to run game servers on the same host as the panel, use the included `setup-wings.sh` script.
+Wings runs as a native systemd service on the host (not in a container). Because the Panel enforces SSL for all node connections, **you cannot use an IP address** as the node FQDN — you need a domain with a valid TLS certificate.
+
+### Why not `127.0.0.1` or a raw IP?
+
+- The Panel requires SSL for node connections: *"You cannot connect to an IP Address over SSL"*
+- `127.0.0.1` would resolve to the Panel container's own loopback, not the host
+- The Podman bridge IP is a private address that can't get a public SSL certificate
+
+### Step 1: Create a DNS Record for Wings
+
+Create an **A record** in your DNS provider (e.g., Cloudflare) pointing to your server's public IP:
+
+```
+wings.kylehub.dev  →  <your-server-public-ip>
+```
+
+> **Important (Cloudflare):** Set the record to **DNS only** (grey cloud), not Proxied. Cloudflare proxy does not support the WebSocket and non-HTTP traffic that Wings and game servers require.
+
+### Step 2: Open Firewall Ports
+
+Wings needs port 443 for its API (HTTPS), and game servers need their allocated ports:
+
+```bash
+# Wings API (HTTPS with Let's Encrypt)
+sudo firewall-cmd --permanent --add-port=443/tcp
+
+# Game server port range (adjust to match your Panel allocations)
+sudo firewall-cmd --permanent --add-port=25565-25665/tcp
+sudo firewall-cmd --permanent --add-port=25565-25665/udp
+
+sudo firewall-cmd --reload
+```
+
+### Step 3: Run the Setup Script
+
+The script installs Wings, sets up certbot for automatic SSL, and configures the systemd service.
 
 > **Note:** The script uses Podman with a Docker socket symlink. Ensure `podman-docker` is installed for compatibility with game eggs.
 
@@ -214,18 +251,133 @@ If you want to run game servers on the same host as the panel, use the included 
 sudo bash setup-wings.sh
 ```
 
-After the script completes:
+The script will prompt you for the Wings domain (e.g., `wings.kylehub.dev`) and an email for Let's Encrypt.
+
+### Step 4: Configure the Node in the Panel
 
 1. Log into the Pelican Panel
 2. Go to **Admin -> Nodes -> Create New**
-3. Set the FQDN to `127.0.0.1` (same host) or the LAN IP
-4. After creating the node, go to its **Configuration** tab
-5. Copy the generated YAML and save it to `/etc/pelican/config.yml`
-6. Start Wings:
+3. Set the **FQDN** to your Wings domain (e.g., `wings.kylehub.dev`)
+4. Set **Communicate Over SSL** to **Use SSL Connection**
+5. Set **Behind Proxy** to **Not Behind Proxy** (Wings terminates TLS directly)
+6. After creating the node, go to its **Configuration** tab
+7. Copy the generated YAML and save it to `/etc/pelican/config.yml`
+8. **Edit** `/etc/pelican/config.yml` to add the SSL certificate paths:
+
+```yaml
+api:
+  host: 0.0.0.0
+  port: 443
+  ssl:
+    enabled: true
+    cert: /etc/letsencrypt/live/<your-wings-domain>/fullchain.pem
+    key: /etc/letsencrypt/live/<your-wings-domain>/privkey.pem
+```
+
+9. Start Wings:
 
 ```bash
 sudo systemctl enable --now wings
 ```
+
+### Step 5: Verify Wings Connectivity
+
+```bash
+# Check Wings is running
+sudo systemctl status wings
+
+# Check Wings logs
+sudo journalctl -u wings -f
+
+# Verify SSL cert is valid
+curl -I https://wings.kylehub.dev:443
+```
+
+In the Panel, the node should show as **Online** on the Nodes page.
+
+---
+
+## Part 4: Game Server DNS (SRV Records)
+
+Players can connect to your game servers using a clean domain like `modded-mc.kylehub.dev` instead of `203.0.113.50:25565`. This uses a combination of an **A record** (for the IP) and an **SRV record** (for the port).
+
+> **Note:** SRV-based service discovery works for **Minecraft Java Edition**. Bedrock Edition does not support SRV records — players must enter the IP and port manually.
+
+### Step 1: Create an A Record
+
+In Cloudflare (or your DNS provider), create an A record for the subdomain:
+
+| Type | Name | Content | Proxy |
+|------|------|---------|-------|
+| A | `modded-mc` | `<your-server-public-ip>` | **DNS only** (grey cloud) |
+
+This makes `modded-mc.kylehub.dev` resolve to your server's IP.
+
+### Step 2: Create an SRV Record
+
+Create an SRV record that tells Minecraft clients which port to use:
+
+| Field | Value |
+|-------|-------|
+| **Type** | SRV |
+| **Name** | `_minecraft._tcp.modded-mc` |
+| **Priority** | 0 |
+| **Weight** | 0 |
+| **Port** | `25565` |
+| **Target** | `modded-mc.kylehub.dev` |
+
+In Cloudflare's dashboard, the form looks like:
+
+| Field | Value |
+|-------|-------|
+| **Service** | `_minecraft` |
+| **Protocol** | `_tcp` |
+| **Name** | `modded-mc` |
+| **Priority** | 0 |
+| **Weight** | 0 |
+| **Port** | `25565` |
+| **Target** | `modded-mc.kylehub.dev` |
+
+### How It Works
+
+When a player types `modded-mc.kylehub.dev` in the Minecraft server list:
+
+1. The client queries `_minecraft._tcp.modded-mc.kylehub.dev` for an SRV record
+2. DNS responds: connect to `modded-mc.kylehub.dev` on port `25565`
+3. The client resolves `modded-mc.kylehub.dev` via the A record → your server IP
+4. The client connects to `<your-server-ip>:25565`
+
+The player never has to type a port number.
+
+### Multiple Servers
+
+You can repeat this for each game server on a different port:
+
+| Subdomain | SRV Port | Description |
+|-----------|----------|-------------|
+| `modded-mc.kylehub.dev` | 25565 | Modded Minecraft |
+| `vanilla-mc.kylehub.dev` | 25566 | Vanilla Minecraft |
+| `creative-mc.kylehub.dev` | 25567 | Creative server |
+
+Each one needs its own A record (all pointing to the same IP) and its own SRV record (with the specific port).
+
+### Verify
+
+```bash
+# Check the A record resolves
+dig modded-mc.kylehub.dev A
+
+# Check the SRV record
+dig _minecraft._tcp.modded-mc.kylehub.dev SRV
+```
+
+The SRV response should show something like:
+
+```
+_minecraft._tcp.modded-mc.kylehub.dev. 300 IN SRV 0 0 25565 modded-mc.kylehub.dev.
+```
+
+> **Tip:** DNS propagation can take a few minutes. If it doesn't work immediately, wait and retry.
 
 ---
 
@@ -254,3 +406,19 @@ sudo systemctl enable --now wings
 
 - Wings connects via `APP_URL`, so the panel must be reachable from the host
 - If using Pangolin, ensure the host's IP is allowed to access the panel through the gateway
+- Test from the host: `curl -I https://pelican.kylehub.dev`
+
+### Wings node shows offline in the Panel
+
+- Check Wings is running: `sudo systemctl status wings`
+- Check Wings logs: `sudo journalctl -u wings -f`
+- Verify the SSL cert paths in `/etc/pelican/config.yml` match the certbot output
+- Verify the FQDN in the Panel matches your DNS record exactly
+- Ensure port 443 is open: `sudo firewall-cmd --list-ports`
+
+### SSL certificate errors on Wings
+
+- Verify certbot succeeded: `sudo certbot certificates`
+- Renew manually if expired: `sudo certbot renew`
+- Ensure the domain's DNS A record points to the correct public IP (DNS-only, not proxied)
+- Check cert file permissions: Wings runs as root, so this is usually not an issue

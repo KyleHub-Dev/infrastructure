@@ -1,0 +1,107 @@
+services:
+  # ============================================
+  # Pelican Panel - Core Application
+  # ============================================
+  pelican-panel:
+    image: ghcr.io/pelican-dev/panel:latest
+    container_name: pelican-panel
+    restart: always
+    # No ports exposed to the host for maximum security.
+    # Accessible only via the NEWT tunnel.
+    environment:
+      - APP_URL=${APP_URL}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - DB_CONNECTION=mariadb
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - CACHE_STORE=${CACHE_STORE}
+      - SESSION_DRIVER=${SESSION_DRIVER}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+      - MAIL_DRIVER=${MAIL_DRIVER}
+      - MAIL_FROM=${MAIL_FROM}
+      - BEHIND_PROXY=${BEHIND_PROXY:-true}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8}
+      - SKIP_CADDY=${SKIP_CADDY:-false}
+      - XDG_DATA_HOME=/pelican-data
+    volumes:
+      - pelican-data:/pelican-data
+      - pelican-logs:/var/www/html/storage/logs
+    depends_on:
+      pelican-db:
+        condition: service_healthy
+      pelican-cache:
+        condition: service_healthy
+    networks:
+      - pelican-net
+
+  # ============================================
+  # MariaDB - Database
+  # ============================================
+  pelican-db:
+    image: mariadb:10.11
+    container_name: pelican-db
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - pelican-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pelican-net
+
+  # ============================================
+  # Redis - Cache & Queue
+  # ============================================
+  pelican-cache:
+    image: redis:alpine
+    container_name: pelican-cache
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pelican-net
+
+  # ============================================
+  # NEWT - Secure Tunnel Agent
+  # ============================================
+  newt-pelican:
+    image: fosrl/newt:latest
+    container_name: newt-pelican
+    restart: always
+    environment:
+      - PANGOLIN_ENDPOINT=${PANGOLIN_SERVER}
+      - NEWT_ID=${NEWT_TOKEN}
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      - pelican-net
+    depends_on:
+      - pelican-panel
+
+networks:
+  pelican-net:
+    driver: bridge
+
+volumes:
+  pelican-data:
+  pelican-logs:
+  pelican-db-data:

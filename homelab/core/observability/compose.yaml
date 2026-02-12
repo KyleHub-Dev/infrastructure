@@ -80,6 +80,16 @@ services:
       - loki
       - prometheus
 
+  # Dedicated Newt agent for Observability stack
+  newt-observability:
+    image: pangolin/agent:latest
+    restart: always
+    environment:
+      - PANGOLIN_SERVER=https://pangolin.kylehub.dev
+      # - PANGOLIN_TOKEN=${OBSERVABILITY_NEWT_TOKEN}
+    networks:
+      - observability
+
 networks:
   observability:
     driver: bridge

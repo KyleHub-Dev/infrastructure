@@ -160,6 +160,16 @@ services:
     networks:
       - homelab-net
 
+  # Dedicated Newt agent for Langfuse stack
+  newt-langfuse:
+    image: pangolin/agent:latest
+    restart: always
+    environment:
+      - PANGOLIN_SERVER=https://pangolin.kylehub.dev
+      # - PANGOLIN_TOKEN=${LANGFUSE_NEWT_TOKEN}
+    networks:
+      - homelab-net
+
 networks:
   homelab-net:
     driver: bridge

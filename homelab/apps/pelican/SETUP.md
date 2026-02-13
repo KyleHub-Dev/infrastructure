@@ -19,24 +19,32 @@ Complete setup guide for a self-hosted Pelican Panel with Zitadel OIDC authentic
     └──────────┬──────────┘    └─────────┬─────────┘
                │ WireGuard Tunnel        │ Direct (port 443)
     ┌──────────┴──────────┐    ┌─────────┴─────────┐
-    │   NEWT Agent        │    │   Wings (host)     │
+    │   NEWT Agent        │    │   Wings (systemd)  │
     └──────────┬──────────┘    │   :443 (TLS)      │
                │ pelican-net   │   + game ports     │
-    ┌──────────┼──────────┐    └───────────────────┘
-    │          │          │
-┌───┴───┐ ┌───┴────┐ ┌───┴───┐
-│ Panel │ │MariaDB │ │ Redis │
-│  :80  │ │ :3306  │ │ :6379 │
-└───────┘ └────────┘ └───────┘
+    ┌──────────┼──────────┐    └─────────┬─────────┘
+    │          │          │              │ Docker API
+┌───┴───┐ ┌───┴────┐ ┌───┴───┐    ┌─────┴─────┐
+│ Panel │ │MariaDB │ │ Redis │    │ Game      │
+│  :80  │ │ :3306  │ │ :6379 │    │ Servers   │
+└───────┘ └────────┘ └───────┘    └───────────┘
+   Panel Host (Podman)             Wings Host (Docker)
 ```
 
 ---
 
 ## Prerequisites
 
-- Docker and Docker Compose installed on the host
+**Panel host:**
+- Podman and Podman Compose installed (`podman-compose`)
 - A Pangolin Gateway with a site configured for the panel domain
 - A Zitadel instance (for OIDC, configured in Part 2)
+
+**Wings host (dedicated machine):**
+- Docker Engine (CE) — Wings orchestrates game server containers via the Docker API
+- A public IP with a domain name (for Let's Encrypt SSL)
+
+> **Why two different runtimes?** The panel is a standard web app stack where Podman's rootless containers work great. Wings, however, is a Docker orchestrator — it creates, destroys, and attaches to game server containers via the Docker API. Podman's Docker socket emulation has compatibility gaps that cause silent failures (e.g., stuck installs). Use Docker Engine on Wings hosts for reliable operation.
 
 ---
 
@@ -83,20 +91,20 @@ Copy the NEWT ID and Secret into your `.env` file.
 ### 5. Start the Stack
 
 ```bash
-docker compose up -d
+podman-compose up -d --build
 ```
 
 ### 6. Verify
 
 ```bash
 # Check all containers are healthy
-docker compose ps
+podman-compose ps
 
 # Check panel logs for errors
-docker compose logs pelican-panel
+podman-compose logs pelican-panel
 
 # Check NEWT connection
-docker compose logs newt-pelican
+podman-compose logs newt-pelican
 ```
 
 The panel should now be accessible at your `APP_URL`. The first visit will prompt you to create an admin account using the `ADMIN_EMAIL` address.
@@ -204,19 +212,113 @@ If you want to prevent unauthorized Zitadel users from logging in, use **Zitadel
 2. Only add the specific users or organizations you want to have access to the panel.
 3. Users without a grant will be denied by Zitadel before they even reach Pelican.
 
+### Recommended Roles & Permissions
+
+Pelican has two permission layers: **Admin Roles** (access to the Admin panel for managing infrastructure) and **Subuser Permissions** (per-server permissions for what a user can do on an assigned server).
+
+#### Admin Roles (Admin -> Roles)
+
+Create these in **Admin -> Roles**. Only needed for users who manage panel infrastructure.
+
+**Server Admin** — for a secondary admin account (full admin access with safety guardrails):
+
+| Model | viewList | view | create | update | delete |
+|-------|----------|------|--------|--------|--------|
+| Server | x | x | x | x | x |
+| Node | x | x | | x | |
+| Egg | x | x | x | x | x |
+| User | x | x | x | x | |
+| Allocation | x | x | x | x | x |
+| Database | x | x | x | x | x |
+| DatabaseHost | x | x | | x | |
+| Mount | x | x | x | x | x |
+| ApiKey | x | x | x | x | x |
+| Role | x | x | | | |
+| Webhook | x | x | x | x | x |
+
+> This allows full management but prevents deleting users, nodes, or modifying roles — keeping those as root-only safeguards.
+
+#### Subuser Permission Sets (per-server)
+
+Assign these when adding users to a server via **Server -> Subusers -> Add**.
+
+**Normal User** — casual friends who just want to play:
+
+- **Control:** console, start, stop, restart
+- **Files:** read, read-content
+- **Backups:** read, download
+- **Activity:** read
+- **Startup:** read
+
+**Friend** — users who manage their own assigned server (change modpacks, manage files, reinstall):
+
+- **Control:** console, start, stop, restart
+- **Files:** read, read-content, create, update, delete, archive, sftp
+- **Backups:** read, create, delete, download, restore
+- **Schedules:** read, create, update, delete
+- **Startup:** read, update
+- **Settings:** rename, description, reinstall
+- **Activity:** read
+- **Allocation:** read
+
+**Power User** — trusted friends with full server control:
+
+- Everything from **Friend**, plus:
+- **Users:** read, create, update, delete (can manage subusers on their server)
+- **Database:** read, create, update, delete, view-password
+- **Allocation:** read, create, update, delete
+- **Startup:** read, update, docker-image (can switch Docker images)
+
+#### Summary
+
+| Role | Type | Who | Key abilities |
+|------|------|-----|--------------|
+| Root Admin | Admin role | Primary admin | Everything |
+| Server Admin | Admin role | Secondary admin | Full admin minus delete users/nodes/roles |
+| Normal User | Subuser perms | Casual friends | Play, view console, read files |
+| Friend | Subuser perms | Friends with a server | Manage files, reinstall, backups, SFTP |
+| Power User | Subuser perms | Trusted friends | Full server control, manage subusers, databases |
+
 ---
 
 ## Part 3: Wings (Game Node) Setup
 
-Wings runs as a native systemd service on the host (not in a container). Because the Panel enforces SSL for all node connections, **you cannot use an IP address** as the node FQDN — you need a domain with a valid TLS certificate.
+Wings runs as a native systemd service on a **dedicated host** (not in a container). It manages game server containers via Docker Engine. Because the Panel enforces SSL for all node connections, **you cannot use an IP address** as the node FQDN — you need a domain with a valid TLS certificate.
+
+> **Container runtime:** Wings requires **Docker Engine (CE)** on the host. Wings orchestrates game server containers (pulling images, creating/destroying containers, streaming logs) via the Docker API. Do not use Podman on the Wings host — its Docker socket emulation has compatibility gaps that cause silent failures like stuck installs.
 
 ### Why not `127.0.0.1` or a raw IP?
 
 - The Panel requires SSL for node connections: *"You cannot connect to an IP Address over SSL"*
 - `127.0.0.1` would resolve to the Panel container's own loopback, not the host
-- The Podman bridge IP is a private address that can't get a public SSL certificate
+- Private addresses can't get a public SSL certificate
 
-### Step 1: Create a DNS Record for Wings
+### Step 1: Install Docker Engine
+
+Install Docker CE on the Wings host (Ubuntu example):
+
+```bash
+# Install prerequisites
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+
+# Add Docker's official GPG key and repository
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# Enable and start Docker
+sudo systemctl enable --now docker
+
+# Verify
+sudo docker version
+```
+
+### Step 2: Create a DNS Record for Wings
 
 Create an **A record** in your DNS provider (e.g., Cloudflare) pointing to your server's public IP:
 
@@ -226,26 +328,24 @@ wings.kylehub.dev  →  <your-server-public-ip>
 
 > **Important (Cloudflare):** Set the record to **DNS only** (grey cloud), not Proxied. Cloudflare proxy does not support the WebSocket and non-HTTP traffic that Wings and game servers require.
 
-### Step 2: Open Firewall Ports
+### Step 3: Open Firewall Ports
 
 Wings needs port 443 for its API (HTTPS), and game servers need their allocated ports:
 
 ```bash
 # Wings API (HTTPS with Let's Encrypt)
-sudo firewall-cmd --permanent --add-port=443/tcp
+sudo ufw allow 443/tcp
 
 # Game server port range (adjust to match your Panel allocations)
-sudo firewall-cmd --permanent --add-port=25565-25665/tcp
-sudo firewall-cmd --permanent --add-port=25565-25665/udp
-
-sudo firewall-cmd --reload
+sudo ufw allow 25565:25665/tcp
+sudo ufw allow 25565:25665/udp
 ```
 
-### Step 3: Run the Setup Script
+> **Note:** If using `firewalld` instead of `ufw`, use `sudo firewall-cmd --permanent --add-port=443/tcp` etc.
+
+### Step 4: Run the Setup Script
 
 The script installs Wings, sets up certbot for automatic SSL, and configures the systemd service.
-
-> **Note:** The script uses Podman with a Docker socket symlink. Ensure `podman-docker` is installed for compatibility with game eggs.
 
 ```bash
 sudo bash setup-wings.sh
@@ -253,7 +353,7 @@ sudo bash setup-wings.sh
 
 The script will prompt you for the Wings domain (e.g., `wings.kylehub.dev`) and an email for Let's Encrypt.
 
-### Step 4: Configure the Node in the Panel
+### Step 5: Configure the Node in the Panel
 
 1. Log into the Pelican Panel
 2. Go to **Admin -> Nodes -> Create New**
@@ -280,7 +380,7 @@ api:
 sudo systemctl enable --now wings
 ```
 
-### Step 5: Verify Wings Connectivity
+### Step 6: Verify Wings Connectivity
 
 ```bash
 # Check Wings is running
@@ -385,28 +485,28 @@ _minecraft._tcp.modded-mc.kylehub.dev. 300 IN SRV 0 0 25565 modded-mc.kylehub.de
 
 ### Panel shows 502 or is unreachable
 
-- Verify NEWT is connected: `docker compose logs newt-pelican`
+- Verify NEWT is connected: `podman-compose logs newt-pelican`
 - Check Pangolin Dashboard to confirm the tunnel is online
 - Ensure the Pangolin site target is `http://pelican-panel:80`
 
 ### Database connection errors
 
-- Verify MariaDB is healthy: `docker compose ps pelican-db`
+- Verify MariaDB is healthy: `podman-compose ps pelican-db`
 - Check that `DB_PASSWORD` in `.env` is set (panel and MariaDB share this variable)
-- View MariaDB logs: `docker compose logs pelican-db`
+- View MariaDB logs: `podman-compose logs pelican-db`
 
 ### OIDC login fails or redirects with error
 
 - Confirm the redirect URI in Zitadel matches exactly: `https://<APP_URL>/auth/oauth/callback/zitadel`
 - Verify "User Info inside ID Token" is enabled in Zitadel token settings
 - Check that the **Base URL** in the plugin matches your Zitadel instance URL (no trailing slash)
-- View panel logs for OAuth errors: `docker compose logs pelican-panel | grep -i oauth`
+- View panel logs for OAuth errors: `podman-compose logs pelican-panel | grep -i oauth`
 
 ### Wings can't connect to the panel
 
-- Wings connects via `APP_URL`, so the panel must be reachable from the host
-- If using Pangolin, ensure the host's IP is allowed to access the panel through the gateway
-- Test from the host: `curl -I https://pelican.kylehub.dev`
+- Wings connects via `APP_URL`, so the panel must be reachable from the Wings host
+- If using Pangolin, ensure the Wings host's IP is allowed to access the panel through the gateway
+- Test from the Wings host: `curl -I https://pelican.kylehub.dev`
 
 ### Wings node shows offline in the Panel
 
@@ -414,7 +514,40 @@ _minecraft._tcp.modded-mc.kylehub.dev. 300 IN SRV 0 0 25565 modded-mc.kylehub.de
 - Check Wings logs: `sudo journalctl -u wings -f`
 - Verify the SSL cert paths in `/etc/pelican/config.yml` match the certbot output
 - Verify the FQDN in the Panel matches your DNS record exactly
-- Ensure port 443 is open: `sudo firewall-cmd --list-ports`
+- Ensure port 443 is open on the Wings host
+
+### Server install stuck on "Installing"
+
+This means the panel dispatched the install job to Wings, but Wings never reported back. Debug on the **Wings host**:
+
+```bash
+# 1. Check Wings logs for errors around the install time
+sudo journalctl -u wings --since "1 hour ago" --no-pager
+
+# 2. Check if Docker is running (Wings requires Docker, not Podman)
+sudo systemctl status docker
+sudo docker version
+
+# 3. Check if the install container exists
+sudo docker ps -a | grep install
+
+# 4. Check if the Docker image was pulled
+sudo docker images
+
+# 5. If an install container exists, check its logs
+sudo docker logs <container-id>
+
+# 6. Test Wings → Panel connectivity (Wings must be able to call back)
+curl -I https://pelican.kylehub.dev
+```
+
+Common causes:
+- **Docker not installed:** Wings requires Docker Engine. Podman's Docker socket emulation has compatibility gaps that cause installs to silently hang.
+- **Docker image pull failed:** Network issues on the Wings host preventing image downloads from `ghcr.io`.
+- **Egg install script stuck:** Some eggs (e.g., CurseForge) download large modpacks during install — check the install container logs.
+- **Wings can't reach the panel:** Wings needs to call back to the panel to report completion.
+
+To retry: use the panel UI **Admin -> Servers -> [server] -> Reinstall** after fixing the underlying issue.
 
 ### SSL certificate errors on Wings
 

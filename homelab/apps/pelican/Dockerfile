@@ -6,3 +6,6 @@ COPY --from=docker.io/library/composer:latest /usr/bin/composer /usr/local/bin/c
 USER root
 RUN chown www-data:www-data /var/www/html/composer.json /var/www/html/composer.lock /var/www/html/vendor
 USER www-data
+
+# Install the OIDC socialite provider required by the generic-oidc-providers plugin
+RUN composer require "kovah/laravel-socialite-oidc:^0.6" --no-interaction

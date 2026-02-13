@@ -26,29 +26,27 @@ Run these checks and report results before proceeding.
 # 1. Check the Panel is reachable from the host
 curl -sSo /dev/null -w "%{http_code}" https://<PANEL_URL>
 
-# 2. Check Podman is running
-systemctl is-active podman.socket
+# 2. Check if Docker Engine is installed and running
+systemctl is-active docker
+docker version
 
-# 3. Check podman-docker is installed (needed for game egg compatibility)
-rpm -q podman-docker 2>/dev/null || dpkg -l podman-docker 2>/dev/null
-
-# 4. Check if Wings is already installed
+# 3. Check if Wings is already installed
 test -f /usr/local/bin/wings && wings --version
 
-# 5. Check if port 443 is already in use (Wings API)
+# 4. Check if port 443 is already in use (Wings API)
 ss -tlnp | grep ':443 '
 
-# 6. Check if port 80 is available (certbot HTTP-01 challenge)
+# 5. Check if port 80 is available (certbot HTTP-01 challenge)
 ss -tlnp | grep ':80 '
 
-# 7. Check if certbot is installed
+# 6. Check if certbot is installed
 command -v certbot
 
-# 8. Get the server's public IP (user needs this for DNS)
+# 7. Get the server's public IP (user needs this for DNS)
 curl -s https://ifconfig.me
 
-# 9. Check firewall status
-systemctl is-active firewalld && firewall-cmd --list-ports
+# 8. Check firewall status
+sudo ufw status 2>/dev/null || (systemctl is-active firewalld && firewall-cmd --list-ports)
 ```
 
 ### Preflight Decision Table
@@ -56,8 +54,7 @@ systemctl is-active firewalld && firewall-cmd --list-ports
 | Check | OK | Action if NOT OK |
 |-------|-----|------------------|
 | Panel reachable | HTTP 200/301/302 | Stop. Panel must be running first. |
-| Podman socket active | `active` | Run `systemctl enable --now podman.socket` |
-| podman-docker installed | package found | **Tell user:** `sudo dnf install podman-docker` (or apt equivalent) |
+| Docker running | `active` + version output | Install Docker Engine (see Phase 3.1). **Do not use Podman** — Wings requires Docker for reliable game server container management. |
 | Wings already installed | binary not found | If found, ask user if they want to reinstall |
 | Port 443 free | no output | If in use, identify what's using it and **ask user** how to proceed |
 | Port 80 free | no output | If in use, certbot standalone won't work. Use `--webroot` or stop the conflicting service temporarily |
@@ -106,16 +103,24 @@ sudo firewall-cmd --permanent --add-port=<GAME_PORTS>/udp
 sudo firewall-cmd --reload
 ```
 
-### 3.2 Podman Socket
+### 3.2 Docker Engine
+
+Wings requires Docker Engine (not Podman) for reliable game server container management.
 
 ```bash
-sudo systemctl enable --now podman.socket
+# Install Docker CE (Ubuntu)
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
-# Create Docker socket symlink if missing (Wings expects Docker API)
-if [ ! -S /var/run/docker.sock ]; then
-    sudo ln -s /run/podman/podman.sock /var/run/docker.sock
-fi
+sudo systemctl enable --now docker
 ```
+
+Verify: `sudo docker version`
 
 ### 3.3 Wings Directories
 
@@ -173,8 +178,8 @@ sudo firewall-cmd --reload
 sudo tee /etc/systemd/system/wings.service > /dev/null <<'EOF'
 [Unit]
 Description=Pelican Wings Daemon
-After=podman.socket
-Requires=podman.socket
+After=docker.service
+Requires=docker.service
 
 [Service]
 User=root

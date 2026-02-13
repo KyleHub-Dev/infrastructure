@@ -1,6 +1,6 @@
 # KyleHub Infrastructure
 
-> **Hybrid Cloud Infrastructure** — Connecting a public VPS gateway with a private homelab through secure tunnels.
+> **Hybrid Cloud Infrastructure** -  Connecting a public VPS gateway with a private homelab through secure tunnels.
 
 [![Documentation](https://img.shields.io/badge/docs-docusaurus-blue)](https://docs.kylehub.dev)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -154,12 +154,12 @@ After both stacks are running, configure services in the Pangolin Dashboard:
 
 Full documentation is available in the `documentation/` folder (Docusaurus) and covers:
 
-- **Getting Started** — Prerequisites, initial setup
-- **Gateway VPS Setup** — Complete VPS deployment guide
-- **Homelab Setup** — Proxmox, networking, NEWT configuration
-- **Post-Deployment** — Pangolin dashboard, Zitadel SSO, service exposure
-- **Services** — Individual service setup guides
-- **Troubleshooting** — Common issues and solutions
+- **Getting Started** -  Prerequisites, initial setup
+- **Gateway VPS Setup** -  Complete VPS deployment guide
+- **Homelab Setup** -  Proxmox, networking, NEWT configuration
+- **Post-Deployment** -  Pangolin dashboard, Zitadel SSO, service exposure
+- **Services** -  Individual service setup guides
+- **Troubleshooting** -  Common issues and solutions
 
 ### Building the Docs
 

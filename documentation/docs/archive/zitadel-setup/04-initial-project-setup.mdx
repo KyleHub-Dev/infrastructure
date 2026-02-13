@@ -11,7 +11,7 @@ tags:
 
 # Bootstrap Your Zitadel Organization and Central Auth Project
 
-With Zitadel running behind Pangolin, the next step is to replace the bootstrap admin with a dedicated organization and centralized authentication project. This creates a clean separation between the installation's default organization and your personal setup, and establishes a single source of truth for all service access—whether through Pangolin's proxy or direct SSO integrations.
+With Zitadel running behind Pangolin, the next step is to replace the bootstrap admin with a dedicated organization and centralized authentication project. This creates a clean separation between the installation's default organization and your personal setup, and establishes a single source of truth for all service access- whether through Pangolin's proxy or direct SSO integrations.
 
 ## 1. Create a dedicated organization
 
@@ -73,7 +73,7 @@ This ensures only the new dedicated account in your organization can administer 
 
 ## 3. Create the Central Authentication Project
 
-Instead of creating separate projects for each service, you'll establish a single **KyleHub** project that serves as the unified identity and access control hub for all services—whether proxied through Pangolin or accessed directly via SSO.
+Instead of creating separate projects for each service, you'll establish a single **KyleHub** project that serves as the unified identity and access control hub for all services- whether proxied through Pangolin or accessed directly via SSO.
 
 ### 3.1 Why a unified project?
 
@@ -99,7 +99,7 @@ Instead of creating separate projects for each service, you'll establish a singl
    - **Grant Types**: Select **Authorization Code** (leave others unchecked unless needed)
    - **Response Types**: Select **Code** (Authorization Code Flow)
    - **Authentication Method**: Select **Basic** (Client ID and Secret)
-6. Leave **Redirect URIs** blank for now—you'll add Pangolin's callback URL in the next guide.
+6. Leave **Redirect URIs** blank for now- you'll add Pangolin's callback URL in the next guide.
 7. Leave **Post Logout URIs** blank (optional).
 8. Click **Create** and securely save the **Client ID** and **Client Secret** that are displayed.
 

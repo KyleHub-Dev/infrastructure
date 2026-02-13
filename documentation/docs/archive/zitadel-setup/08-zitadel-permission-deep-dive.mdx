@@ -102,7 +102,7 @@ Users can hold multiple roles, and Pangolin evaluates all of them:
 |-----------|---------------|----------------|
 | **Infrastructure Admin** | `admin` | Full access to everything via admin bypass rule |
 | **DevOps Engineer** | `homelab` + `dev` | All homelab services + CI/CD + development tools |
-| **Media Family Member** | `media` | Jellyfin, Sonarr, Radarr, Plex—nothing else |
+| **Media Family Member** | `media` | Jellyfin, Sonarr, Radarr, Plex- nothing else |
 | **Finance Manager** | `finance` + `access_nextcloud` | Finance tools + file storage |
 | **External Auditor** | `access_grafana` | Grafana dashboards only (read-only configured in Grafana) |
 | **Temp Contractor** | `access_portainer` | Single service access, easily revoked |
@@ -367,7 +367,7 @@ access_control_rules:
 3. After redirect, open **Server Admin → Sessions** in Pangolin to confirm the user was auto-provisioned with the expected roles.
 4. Test category access: user with `homelab` should access all `*.homelab.yourdomain.com` services.
 5. Test service override: user without `access_proxmox` should be denied to Proxmox even with `homelab`.
-6. Remove a role in Zitadel and repeat—Pangolin should deny access on the next login.
+6. Remove a role in Zitadel and repeat- Pangolin should deny access on the next login.
 
 ### 7.3 Build access rules visually
 
@@ -408,7 +408,7 @@ access_control_rules:
 1. Visit a protected service (for example `https://grafana.yourdomain.com`).
 2. Authenticate through Zitadel.
 3. After redirect, open **Server Admin → Sessions** in Pangolin to confirm the user was auto-provisioned with the expected roles.
-4. Remove a role in Zitadel and repeat—Pangolin should deny access on the next login.
+4. Remove a role in Zitadel and repeat- Pangolin should deny access on the next login.
 
 ## 8. Managing Access Lifecycle
 
@@ -545,7 +545,7 @@ Services using `KyleHub-Auth` directly (Grafana, Proxmox):
 - **Zitadel = source of truth**, services = enforcement points
 - **Start simple**, scale incrementally
 
-With this unified architecture, you maintain a single identity source, reusable permission vocabulary, and consistent enforcement across every service in your infrastructure—whether accessed through Pangolin or direct SSO integration.
+With this unified architecture, you maintain a single identity source, reusable permission vocabulary, and consistent enforcement across every service in your infrastructure- whether accessed through Pangolin or direct SSO integration.
 
 [^zitadel-projects]: [Zitadel Projects console guide](https://zitadel.com/docs/guides/manage/console/projects#project-settings)
 [^zitadel-apps]: [Zitadel Applications token settings](https://zitadel.com/docs/guides/manage/console/applications#token-settings)

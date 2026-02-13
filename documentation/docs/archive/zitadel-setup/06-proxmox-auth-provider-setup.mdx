@@ -98,7 +98,7 @@ openid: zitadel
 
 ## 3. Assign Proxmox Permissions
 
-Proxmox doesn't automatically map OIDC claims to permissions—users created via OIDC start with **no permissions**. You must manually assign them to groups or grant individual permissions.
+Proxmox doesn't automatically map OIDC claims to permissions- users created via OIDC start with **no permissions**. You must manually assign them to groups or grant individual permissions.
 
 ### 3.1 Create a permission group
 
@@ -165,7 +165,7 @@ This approach is useful if you have dozens of users and want role-based permissi
 1. Visit `https://proxmox.yourdomain.com`.
 2. In the login form, select **Realm: zitadel** from the dropdown.
 3. Click **Login**.
-4. You'll be redirected to Zitadel's login page—authenticate with your Zitadel credentials.
+4. You'll be redirected to Zitadel's login page- authenticate with your Zitadel credentials.
 5. After successful authentication, you'll be redirected back to Proxmox.
 
 ### 4.2 Verify user creation
@@ -243,7 +243,7 @@ access_rules:
 **Fix**:
 1. Check the URL in the error message (e.g., `https://proxmox.yourdomain.com/`).
 2. Add it exactly to Zitadel: **Projects → KyleHub → Applications → KyleHub-Auth → Redirect Settings**.
-3. Common pitfall: Trailing slashes—Proxmox may redirect to `https://proxmox.yourdomain.com/` (with slash) even if you configured `https://proxmox.yourdomain.com` (without slash). Add both variants.
+3. Common pitfall: Trailing slashes- Proxmox may redirect to `https://proxmox.yourdomain.com/` (with slash) even if you configured `https://proxmox.yourdomain.com` (without slash). Add both variants.
 
 ### 6.2 User authenticated but sees "Permission Denied"
 
@@ -285,7 +285,7 @@ access_rules:
 
 **Symptom**: User has `admin` role in Zitadel but still has limited permissions in Proxmox.
 
-**Cause**: Proxmox doesn't automatically map OIDC claims to permissions—you must manually assign users to groups.
+**Cause**: Proxmox doesn't automatically map OIDC claims to permissions- you must manually assign users to groups.
 
 **Fix**: Use the manual group assignment (Section 3.2) or automated script (Section 3.3) to sync Zitadel roles to Proxmox permissions.
 

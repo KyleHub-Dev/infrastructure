@@ -11,7 +11,7 @@ tags:
 
 # Zitadel Setup
 
-This guide walks you through setting up **Zitadel**, an open-source identity and access management (IAM) solution, as the central authentication system for your KyleHub platform. You'll configure a **unified authentication architecture** that enables single sign-on (SSO) across all services—from infrastructure tools like Proxmox to applications like Grafana, Portainer, and beyond.
+This guide walks you through setting up **Zitadel**, an open-source identity and access management (IAM) solution, as the central authentication system for your KyleHub platform. You'll configure a **unified authentication architecture** that enables single sign-on (SSO) across all services- from infrastructure tools like Proxmox to applications like Grafana, Portainer, and beyond.
 
 ---
 
@@ -50,7 +50,7 @@ Roles are divided into **category roles** (broad access) and **service roles** (
 | **Category Roles** | `admin`, `homelab`, `media`, `finance`, `dev`, `guest` | Grant access to entire service categories via wildcard rules (e.g., `homelab` → all `*.homelab.yourdomain.com`) |
 | **Service Roles** | `access_grafana`, `access_proxmox`, `access_portainer` | Grant access to specific services, overriding or complementing category roles |
 
-**Example**: A user with the `homelab` role can access all homelab services (Proxmox, Grafana, Portainer), while a user with only `access_grafana` can access only Grafana—even if it's under `homelab.yourdomain.com`.
+**Example**: A user with the `homelab` role can access all homelab services (Proxmox, Grafana, Portainer), while a user with only `access_grafana` can access only Grafana- even if it's under `homelab.yourdomain.com`.
 
 ### 2.3 Integration patterns
 

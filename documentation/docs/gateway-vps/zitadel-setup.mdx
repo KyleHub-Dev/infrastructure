@@ -35,11 +35,11 @@ graph LR
 
 Zitadel provides:
 - **Single Sign-On (SSO)** across all services via OIDC/OAuth2
-- **Authoritative identity** — single source of truth for users and roles
+- **Authoritative identity** -  single source of truth for users and roles
 - **Multi-factor authentication** (MFA)
 - **User self-service** (password reset, profile management)
-- **Role-based access control** (RBAC) — integrated with Pangolin policies
-- **Audit logging** — track all authentication events
+- **Role-based access control** (RBAC) -  integrated with Pangolin policies
+- **Audit logging** -  track all authentication events
 
 ---
 
@@ -76,7 +76,7 @@ Zitadel uses a **Login V2 sidecar** that requires path-based routing. Enable **A
 | Match Path | Type | Host | Port | Priority |
 |------------|------|------|------|----------|
 | `/ui/v2/login` | Prefix | `zitadel_login` | `3000` | **200** |
-| *(empty)* | — | `zitadel` | `8080` | 100 |
+| *(empty)* | -  | `zitadel` | `8080` | 100 |
 
 :::warning Priority Order
 The `/ui/v2/login` route **must have higher priority** (200) than the catch-all route (100) to ensure login requests go to the correct backend.
@@ -86,7 +86,7 @@ The `/ui/v2/login` route **must have higher priority** (200) than the catch-all 
 
 1. Click **Save**
 2. Wait for the SSL certificate to provision
-3. Open `https://auth.yourdomain.com` — you should see the Zitadel login page
+3. Open `https://auth.yourdomain.com` -  you should see the Zitadel login page
 
 ---
 
@@ -366,6 +366,6 @@ If using AdGuard Home for internal DNS, add a rewrite rule:
 
 ## Next Steps
 
-1. **[Configure SSO for services](/docs/service-configuration/configure-sso)** — Protect resources with authentication
-2. **Create more roles** — Add granular access control in Zitadel console
-3. **Enable MFA** — Configure multi-factor authentication in Zitadel settings
+1. **[Configure SSO for services](/docs/service-configuration/configure-sso)** -  Protect resources with authentication
+2. **Create more roles** -  Add granular access control in Zitadel console
+3. **Enable MFA** -  Configure multi-factor authentication in Zitadel settings

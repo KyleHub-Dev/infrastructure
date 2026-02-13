@@ -41,10 +41,10 @@ Complete setup guide for a self-hosted Pelican Panel with Zitadel OIDC authentic
 - A Zitadel instance (for OIDC, configured in Part 2)
 
 **Wings host (dedicated machine):**
-- Docker Engine (CE) — Wings orchestrates game server containers via the Docker API
+- Docker Engine (CE) -  Wings orchestrates game server containers via the Docker API
 - A public IP with a domain name (for Let's Encrypt SSL)
 
-> **Why two different runtimes?** The panel is a standard web app stack where Podman's rootless containers work great. Wings, however, is a Docker orchestrator — it creates, destroys, and attaches to game server containers via the Docker API. Podman's Docker socket emulation has compatibility gaps that cause silent failures (e.g., stuck installs). Use Docker Engine on Wings hosts for reliable operation.
+> **Why two different runtimes?** The panel is a standard web app stack where Podman's rootless containers work great. Wings, however, is a Docker orchestrator -  it creates, destroys, and attaches to game server containers via the Docker API. Podman's Docker socket emulation has compatibility gaps that cause silent failures (e.g., stuck installs). Use Docker Engine on Wings hosts for reliable operation.
 
 ---
 
@@ -220,7 +220,7 @@ Pelican has two permission layers: **Admin Roles** (access to the Admin panel fo
 
 Create these in **Admin -> Roles**. Only needed for users who manage panel infrastructure.
 
-**Server Admin** — for a secondary admin account (full admin access with safety guardrails):
+**Server Admin** -  for a secondary admin account (full admin access with safety guardrails):
 
 | Model | viewList | view | create | update | delete |
 |-------|----------|------|--------|--------|--------|
@@ -236,13 +236,13 @@ Create these in **Admin -> Roles**. Only needed for users who manage panel infra
 | Role | x | x | | | |
 | Webhook | x | x | x | x | x |
 
-> This allows full management but prevents deleting users, nodes, or modifying roles — keeping those as root-only safeguards.
+> This allows full management but prevents deleting users, nodes, or modifying roles -  keeping those as root-only safeguards.
 
 #### Subuser Permission Sets (per-server)
 
 Assign these when adding users to a server via **Server -> Subusers -> Add**.
 
-**Normal User** — casual friends who just want to play:
+**Normal User** -  casual friends who just want to play:
 
 - **Control:** console, start, stop, restart
 - **Files:** read, read-content
@@ -250,7 +250,7 @@ Assign these when adding users to a server via **Server -> Subusers -> Add**.
 - **Activity:** read
 - **Startup:** read
 
-**Friend** — users who manage their own assigned server (change modpacks, manage files, reinstall):
+**Friend** -  users who manage their own assigned server (change modpacks, manage files, reinstall):
 
 - **Control:** console, start, stop, restart
 - **Files:** read, read-content, create, update, delete, archive, sftp
@@ -261,7 +261,7 @@ Assign these when adding users to a server via **Server -> Subusers -> Add**.
 - **Activity:** read
 - **Allocation:** read
 
-**Power User** — trusted friends with full server control:
+**Power User** -  trusted friends with full server control:
 
 - Everything from **Friend**, plus:
 - **Users:** read, create, update, delete (can manage subusers on their server)
@@ -283,9 +283,9 @@ Assign these when adding users to a server via **Server -> Subusers -> Add**.
 
 ## Part 3: Wings (Game Node) Setup
 
-Wings runs as a native systemd service on a **dedicated host** (not in a container). It manages game server containers via Docker Engine. Because the Panel enforces SSL for all node connections, **you cannot use an IP address** as the node FQDN — you need a domain with a valid TLS certificate.
+Wings runs as a native systemd service on a **dedicated host** (not in a container). It manages game server containers via Docker Engine. Because the Panel enforces SSL for all node connections, **you cannot use an IP address** as the node FQDN -  you need a domain with a valid TLS certificate.
 
-> **Container runtime:** Wings requires **Docker Engine (CE)** on the host. Wings orchestrates game server containers (pulling images, creating/destroying containers, streaming logs) via the Docker API. Do not use Podman on the Wings host — its Docker socket emulation has compatibility gaps that cause silent failures like stuck installs.
+> **Container runtime:** Wings requires **Docker Engine (CE)** on the host. Wings orchestrates game server containers (pulling images, creating/destroying containers, streaming logs) via the Docker API. Do not use Podman on the Wings host -  its Docker socket emulation has compatibility gaps that cause silent failures like stuck installs.
 
 ### Why not `127.0.0.1` or a raw IP?
 
@@ -401,7 +401,7 @@ In the Panel, the node should show as **Online** on the Nodes page.
 
 Players can connect to your game servers using a clean domain like `modded-mc.kylehub.dev` instead of `203.0.113.50:25565`. This uses a combination of an **A record** (for the IP) and an **SRV record** (for the port).
 
-> **Note:** SRV-based service discovery works for **Minecraft Java Edition**. Bedrock Edition does not support SRV records — players must enter the IP and port manually.
+> **Note:** SRV-based service discovery works for **Minecraft Java Edition**. Bedrock Edition does not support SRV records -  players must enter the IP and port manually.
 
 ### Step 1: Create an A Record
 
@@ -544,7 +544,7 @@ curl -I https://pelican.kylehub.dev
 Common causes:
 - **Docker not installed:** Wings requires Docker Engine. Podman's Docker socket emulation has compatibility gaps that cause installs to silently hang.
 - **Docker image pull failed:** Network issues on the Wings host preventing image downloads from `ghcr.io`.
-- **Egg install script stuck:** Some eggs (e.g., CurseForge) download large modpacks during install — check the install container logs.
+- **Egg install script stuck:** Some eggs (e.g., CurseForge) download large modpacks during install -  check the install container logs.
 - **Wings can't reach the panel:** Wings needs to call back to the panel to report completion.
 
 To retry: use the panel UI **Admin -> Servers -> [server] -> Reinstall** after fixing the underlying issue.

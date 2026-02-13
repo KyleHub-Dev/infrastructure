@@ -9,7 +9,7 @@ description: Access Pangolin and complete the initial Gateway VPS setup
 After deploying the Gateway VPS stack, complete the configuration through the Pangolin dashboard.
 
 :::info Authentication Architecture
-**Zitadel is your authoritative identity provider.** All user authentication happens through Zitadel's login UI and OIDC protocol. Pangolin delegates authentication to Zitadel—it does not manage user identities. The admin account created below is **only for Pangolin administration**, not user authentication.
+**Zitadel is your authoritative identity provider.** All user authentication happens through Zitadel's login UI and OIDC protocol. Pangolin delegates authentication to Zitadel- it does not manage user identities. The admin account created below is **only for Pangolin administration**, not user authentication.
 :::
 
 :::tip SMTP Configuration
@@ -251,11 +251,11 @@ All containers should show `healthy` or `running`.
 
 Now that Pangolin is configured, set up your identity provider:
 
-1. **[Zitadel Setup](./zitadel-setup)** — Configure Zitadel and integrate it with Pangolin as the identity provider
-2. **[SMTP Configuration](./smtp-setup)** — Enable email notifications (optional)
+1. **[Zitadel Setup](./zitadel-setup)** -  Configure Zitadel and integrate it with Pangolin as the identity provider
+2. **[SMTP Configuration](./smtp-setup)** -  Enable email notifications (optional)
 
 After completing Zitadel setup:
 
-1. **[Homelab Setup](/docs/homelab)** — Deploy NEWT and services
-2. **[Expose Services](/docs/service-configuration/expose-services)** — Add resources in Pangolin
-3. **[Configure SSO](/docs/service-configuration/configure-sso)** — Protect services with authentication
+1. **[Homelab Setup](/docs/homelab)** -  Deploy NEWT and services
+2. **[Expose Services](/docs/service-configuration/expose-services)** -  Add resources in Pangolin
+3. **[Configure SSO](/docs/service-configuration/configure-sso)** -  Protect services with authentication

@@ -1,0 +1,83 @@
+# Development stack -  accessible at http://localhost:8080
+# Usage: podman-compose -f compose.dev.yml --env-file .env.dev up -d --build
+
+services:
+  pelican-panel:
+    build: .
+    image: pelican-panel:dev
+    container_name: pelican-panel-dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      - APP_URL=http://localhost:8080
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@localhost}
+      - DB_CONNECTION=mariadb
+      - DB_HOST=pelican-db-dev
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-pelican}
+      - DB_USERNAME=${DB_USERNAME:-pelican}
+      - DB_PASSWORD=${DB_PASSWORD:-pelican_dev}
+      - REDIS_HOST=pelican-cache-dev
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - MAIL_DRIVER=log
+      - MAIL_FROM=noreply@localhost
+      - BEHIND_PROXY=false
+      - TRUSTED_PROXIES=*
+      - SKIP_CADDY=false
+      - XDG_DATA_HOME=/pelican-data
+    volumes:
+      - pelican-data-dev:/pelican-data
+      - pelican-logs-dev:/var/www/html/storage/logs
+    depends_on:
+      pelican-db-dev:
+        condition: service_healthy
+      pelican-cache-dev:
+        condition: service_healthy
+    networks:
+      - pelican-dev-net
+
+  pelican-db-dev:
+    image: docker.io/library/mariadb:10.11
+    container_name: pelican-db-dev
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-pelican_root_dev}
+      - MYSQL_DATABASE=${DB_DATABASE:-pelican}
+      - MYSQL_USER=${DB_USERNAME:-pelican}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-pelican_dev}
+    volumes:
+      - pelican-db-data-dev:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pelican-dev-net
+
+  pelican-cache-dev:
+    image: docker.io/library/redis:alpine
+    container_name: pelican-cache-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pelican-dev-net
+
+networks:
+  pelican-dev-net:
+    driver: bridge
+
+volumes:
+  pelican-data-dev:
+  pelican-logs-dev:
+  pelican-db-data-dev:

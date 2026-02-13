@@ -79,7 +79,7 @@ Before configuring Pangolin, confirm your Zitadel setup is ready:
 2. Verify **Applications → KyleHub-Auth** exists.
 3. Check **Settings → Role settings** has **Assert roles on authentication** enabled.
 4. Confirm the application's **Token settings** includes roles in ID and access tokens.
-5. Note the **Authorization Endpoint** and **Token Endpoint** from the application's **URLs** tab—you'll need these shortly.
+5. Note the **Authorization Endpoint** and **Token Endpoint** from the application's **URLs** tab- you'll need these shortly.
 
 If any of these are missing, refer back to [Initial Project Setup](./04-initial-project-setup.mdx).
 
@@ -158,7 +158,7 @@ Pangolin grants access based on the roles that Zitadel includes in each ID token
 
 1. In the Zitadel console, open **Projects → KyleHub → Roles**.
 2. Click **New role** for each role you need Pangolin to honor.
-3. Use short, lowercase identifiers—these become the exact strings you will type in Pangolin rules.
+3. Use short, lowercase identifiers- these become the exact strings you will type in Pangolin rules.
 
 Recommended starting roles:
 
@@ -273,7 +273,7 @@ Think of your setup like an apartment building:
 
 #### How Project Grants Work
 
-Without a Project Grant, users in `CustomerA` organization cannot access the application you defined in your `KHOps` organization—even if they have valid Zitadel credentials.
+Without a Project Grant, users in `CustomerA` organization cannot access the application you defined in your `KHOps` organization- even if they have valid Zitadel credentials.
 
 The Project Grant bridges this gap:
 
@@ -283,7 +283,7 @@ The Project Grant bridges this gap:
 4. Their authentication token includes the claim: `"urn:zitadel:iam:org:name": "CustomerA"`
 5. Pangolin reads this claim and routes them to the `CustomerA` organization automatically
 
-**Result**: One application, many tenants, automatic routing—true multi-tenancy.
+**Result**: One application, many tenants, automatic routing- true multi-tenancy.
 
 #### Onboarding a New Tenant
 
@@ -341,7 +341,7 @@ In a **multi-tenant setup**, resources can be:
 - **Shared across all organizations** (e.g., common services accessible to all tenants)
 - **Organization-specific** (e.g., dedicated instances per customer)
 
-Access control is always role-based—Pangolin checks if the authenticated user has the required role in their Zitadel token, regardless of which organization they belong to.
+Access control is always role-based- Pangolin checks if the authenticated user has the required role in their Zitadel token, regardless of which organization they belong to.
 
 ### 7.1 Access your organization's resources
 
@@ -698,7 +698,7 @@ To debug role mapping issues:
 
 1. Navigate to **Server Admin → Users** in Pangolin.
 2. Find your test user.
-3. Check the **Roles** field—it should show all roles from the Zitadel token.
+3. Check the **Roles** field- it should show all roles from the Zitadel token.
 4. Grant a new role in Zitadel (e.g., add `media` to the user).
 5. Force the user to re-authenticate (log out and log back in).
 6. Verify the new role appears in Pangolin's user details.
@@ -823,9 +823,9 @@ Your unified authentication system is now operational. To expand and refine:
   1. Define a role in Zitadel (e.g., `access_newservice`)
   2. Create/import the resource in Pangolin
   3. Add an access rule referencing the role name
-  4. Grant users the role in Zitadel—done!
+  4. Grant users the role in Zitadel- done!
   
-  **No need to create the role in Pangolin**—just type it in the access rule.
+  **No need to create the role in Pangolin**- just type it in the access rule.
 
 - **Expand role taxonomy**: Add new category roles (e.g., `iot`, `gaming`) in Zitadel, then reference them in resource rules.
 - **Direct SSO integration**: Configure services like Grafana, Proxmox, or other OIDC-capable apps to authenticate directly against Zitadel (see [Extending SSO to Services](./09-extending-sso-to-services.mdx)).

@@ -320,16 +320,16 @@ tail -f /var/log/proton-bridge/bridge.log
 
 ## Security Considerations
 
-1. **Use dedicated SMTP users** — Create separate users (`pangolin`, `zitadel`) for each service
-2. **Strong passwords** — Use unique, strong passwords for SMTP authentication
-3. **Network isolation** — Postfix only accepts connections from `mynetworks`
-4. **TLS to Proton** — The Postfix → Proton Bridge connection uses TLS encryption
-5. **Environment variables** — Store sensitive passwords in `.env` rather than config files
+1. **Use dedicated SMTP users** -  Create separate users (`pangolin`, `zitadel`) for each service
+2. **Strong passwords** -  Use unique, strong passwords for SMTP authentication
+3. **Network isolation** -  Postfix only accepts connections from `mynetworks`
+4. **TLS to Proton** -  The Postfix → Proton Bridge connection uses TLS encryption
+5. **Environment variables** -  Store sensitive passwords in `.env` rather than config files
 
 ---
 
 ## Next Steps
 
-- [Zitadel Setup](./zitadel-setup) — Configure identity provider
-- [Configure SSO](/docs/service-configuration/configure-sso) — Set up identity provider integration
-- [Expose Services](/docs/service-configuration/expose-services) — Add resources in Pangolin
+- [Zitadel Setup](./zitadel-setup) -  Configure identity provider
+- [Configure SSO](/docs/service-configuration/configure-sso) -  Set up identity provider integration
+- [Expose Services](/docs/service-configuration/expose-services) -  Add resources in Pangolin

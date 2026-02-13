@@ -18,12 +18,12 @@ Self-hosted Pelican game server panel deployment with Zitadel OIDC authenticatio
 
 ## Key Files
 
-- `Dockerfile` — Extends official Pelican Panel image; adds Composer and installs the OIDC socialite provider
-- `compose.yaml` — Four services: `pelican-panel`, `pelican-db` (MariaDB 10.11), `pelican-cache` (Redis), `newt-pelican` (tunnel)
-- `.env` / `.env.example` — All configuration including DB creds, Pangolin tunnel config, app URL
-- `SETUP.md` — Full deployment guide (panel, OIDC, Wings, DNS)
-- `WINGS-RUNBOOK.md` — Agent-executable 7-phase Wings setup runbook
-- `setup-wings.sh` — Automated Wings installation script (Docker Engine, certbot, systemd)
+- `Dockerfile` -  Extends official Pelican Panel image; adds Composer and installs the OIDC socialite provider
+- `compose.yaml` -  Four services: `pelican-panel`, `pelican-db` (MariaDB 10.11), `pelican-cache` (Redis), `newt-pelican` (tunnel)
+- `.env` / `.env.example` -  All configuration including DB creds, Pangolin tunnel config, app URL
+- `SETUP.md` -  Full deployment guide (panel, OIDC, Wings, DNS)
+- `WINGS-RUNBOOK.md` -  Agent-executable 7-phase Wings setup runbook
+- `setup-wings.sh` -  Automated Wings installation script (Docker Engine, certbot, systemd)
 
 ## Commands
 
@@ -56,5 +56,5 @@ sudo journalctl -u wings -f
 - Rootless Podman compatibility: The Dockerfile explicitly fixes file ownership for overlay copy-up
 - Environment uses `BEHIND_PROXY=true` and `TRUSTED_PROXIES` for Pangolin reverse proxy
 - Volumes: `pelican-data` (app data + plugins), `pelican-logs`, `pelican-db-data`
-- Wings requires an FQDN with SSL — bare IPs won't work for panel-to-node communication
-- Wings requires Docker Engine (not Podman) — Podman's Docker API emulation has gaps that cause silent install failures
+- Wings requires an FQDN with SSL -  bare IPs won't work for panel-to-node communication
+- Wings requires Docker Engine (not Podman) -  Podman's Docker API emulation has gaps that cause silent install failures

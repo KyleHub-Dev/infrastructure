@@ -54,7 +54,7 @@ sudo ufw status 2>/dev/null || (systemctl is-active firewalld && firewall-cmd --
 | Check | OK | Action if NOT OK |
 |-------|-----|------------------|
 | Panel reachable | HTTP 200/301/302 | Stop. Panel must be running first. |
-| Docker running | `active` + version output | Install Docker Engine (see Phase 3.1). **Do not use Podman** — Wings requires Docker for reliable game server container management. |
+| Docker running | `active` + version output | Install Docker Engine (see Phase 3.1). **Do not use Podman** -  Wings requires Docker for reliable game server container management. |
 | Wings already installed | binary not found | If found, ask user if they want to reinstall |
 | Port 443 free | no output | If in use, identify what's using it and **ask user** how to proceed |
 | Port 80 free | no output | If in use, certbot standalone won't work. Use `--webroot` or stop the conflicting service temporarily |
@@ -62,7 +62,7 @@ sudo ufw status 2>/dev/null || (systemctl is-active firewalld && firewall-cmd --
 
 ---
 
-## Phase 2: User Action — DNS Records
+## Phase 2: User Action -  DNS Records
 
 **Tell the user to do the following in Cloudflare (or their DNS provider).**
 The agent cannot do this.
@@ -85,7 +85,7 @@ Wait for the user to confirm, then verify:
 dig +short <WINGS_DOMAIN> A
 ```
 
-The result must match the server's public IP. If not, DNS hasn't propagated yet — wait and retry.
+The result must match the server's public IP. If not, DNS hasn't propagated yet -  wait and retry.
 
 ---
 
@@ -201,7 +201,7 @@ sudo systemctl daemon-reload
 
 ---
 
-## Phase 4: User Action — Create Node in Panel
+## Phase 4: User Action -  Create Node in Panel
 
 **Tell the user to do the following in the Pelican Panel web UI.**
 The agent cannot do this.
@@ -242,7 +242,7 @@ Verify current values:
 grep -A5 'api:' /etc/pelican/config.yml
 ```
 
-Patch the config — replace the `api` block's port and ssl section:
+Patch the config -  replace the `api` block's port and ssl section:
 
 - Set `port: 443`
 - Set `ssl.enabled: true`
@@ -286,7 +286,7 @@ ss -tlnp | grep ':443 '
 
 # 3. SSL handshake works
 curl -sSo /dev/null -w "%{http_code}" https://<WINGS_DOMAIN>:443
-# Expect 401 or 403 (no auth token) — this means Wings is serving TLS correctly
+# Expect 401 or 403 (no auth token) -  this means Wings is serving TLS correctly
 
 # 4. Wings logs show no errors
 sudo journalctl -u wings --no-pager -n 20
@@ -303,7 +303,7 @@ curl -sSo /dev/null -w "%{http_code}" <PANEL_URL>
 | Listening on :443 | wings process shown | Config has wrong port, or port conflict |
 | SSL handshake | HTTP 401/403 | Cert paths wrong in config, or cert not issued |
 | Logs clean | No errors/panics | Read full logs, check config.yml syntax |
-| Panel reachable | HTTP 200/301/302 | Wings can't reach Panel — check DNS/firewall from host |
+| Panel reachable | HTTP 200/301/302 | Wings can't reach Panel -  check DNS/firewall from host |
 
 **Tell the user:** Check the Pelican Panel → Admin → Nodes. The node should now show as **Online**.
 

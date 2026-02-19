@@ -55,7 +55,7 @@ mkdir -p /etc/pelican /var/lib/pelican
 
 # 3. Download Wings Binary
 echo "Downloading Wings..."
-curl -L -o /usr/local/bin/wings "https://github.com/pelican-dev/wings/releases/latest/download/wings_linux_amd64"
+curl -L -o /usr/local/bin/wings "https://github.com/pelican-dev/wings/releases/download/v1.0.0-beta24/wings_linux_amd64"
 chmod +x /usr/local/bin/wings
 
 # 4. Install certbot and obtain SSL certificate

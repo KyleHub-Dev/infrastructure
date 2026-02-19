@@ -1,4 +1,4 @@
-FROM ghcr.io/pelican-dev/panel:latest
+FROM ghcr.io/pelican-dev/panel:v1.0.0-beta33
 COPY --from=docker.io/library/composer:latest /usr/bin/composer /usr/local/bin/composer
 
 # Fix ownership for composer-writable files so plugin installation works

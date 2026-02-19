@@ -132,7 +132,7 @@ sudo mkdir -p /etc/pelican /var/lib/pelican
 
 ```bash
 sudo curl -L -o /usr/local/bin/wings \
-    "https://github.com/pelican-dev/wings/releases/latest/download/wings_linux_amd64"
+    "https://github.com/pelican-dev/wings/releases/download/v1.0.0-beta24/wings_linux_amd64"
 sudo chmod +x /usr/local/bin/wings
 ```
 

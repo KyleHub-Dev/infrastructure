@@ -1,0 +1,32 @@
+{
+  "index": "osint_documents",
+  "primaryKey": "id",
+  "searchableAttributes": [
+    "entity_value",
+    "target_entity",
+    "raw_content",
+    "tool_source"
+  ],
+  "filterableAttributes": [
+    "investigation_id",
+    "tool_source",
+    "entity_type",
+    "target_entity",
+    "expires_at"
+  ],
+  "sortableAttributes": [
+    "indexed_at",
+    "expires_at"
+  ],
+  "displayedAttributes": [
+    "id",
+    "investigation_id",
+    "target_entity",
+    "tool_source",
+    "entity_type",
+    "entity_value",
+    "raw_content",
+    "indexed_at",
+    "expires_at"
+  ]
+}

@@ -1,67 +1,166 @@
+# ============================================================
+#  OSINT Platform — Full Stack (Podman Compose)
+# ============================================================
+#  Runtime:   Podman (rootless)
+#  Ingress:   NEWT tunnel only (no exposed ports)
+#  Auth:      Pangolin IAP → Remote-User header
+#  Stack:     FastAPI · Celery · Redis · Neo4j · Meilisearch
+# ============================================================
+
 services:
-  # 1. TOR PROXY - Outgoing only, no exposed ports
-  tor-proxy:
-    image: osminogin/tor-simple
-    container_name: osint-tor
-    restart: always
-    networks:
-      - osint-net
 
-  # 2. SPIDERFOOT - Central Intelligence Dashboard
-  spiderfoot:
-    image: smicallef/spiderfoot:latest
-    container_name: osint-spiderfoot
-    restart: unless-stopped
-    volumes:
-      - ./data/spiderfoot:/var/lib/spiderfoot
-    networks:
-      - osint-net
-
-  # 3. REPORT VIEWER - Browse results (HTML/PDF)
-  filebrowser:
-    image: filebrowser/filebrowser:latest
-    container_name: osint-viewer
-    restart: unless-stopped
-    volumes:
-      - ./data/reports:/srv
-      - ./filebrowser.db:/database.db
-    networks:
-      - osint-net
-    command: --noauth # Auth handled by Pangolin
-
-  # 4. TOOL RUNNER - CLI engine for Maigret, Sherlock, Holehe, Toutatis
-  osint-tools:
+  # ── API Gateway ────────────────────────────────────────────
+  api:
     build:
-      context: ./tools
-      dockerfile: Dockerfile.tools
-    container_name: osint-runner
-    entrypoint: ["tail", "-f", "/dev/null"]
-    volumes:
-      - ./data/reports:/app/reports
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: osint-api
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_AUTH=${NEO4J_AUTH}
+      - MEILI_URL=http://meilisearch:7700
+      - AUTH_HEADER=${AUTH_HEADER:-Remote-User}
+      - DEFAULT_TTL_DAYS=${DEFAULT_TTL_DAYS:-365}
     depends_on:
+      - redis
+      - neo4j
+      - meilisearch
+    networks:
+      - osint-net
+
+  # ── Frontend (React + Sigma.js) ────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: osint-frontend
+    restart: unless-stopped
+    networks:
+      - osint-net
+
+  # ── Redis (Celery Broker + Result Backend) ─────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: osint-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - osint-net
+
+  # ── Neo4j (Graph Database) ────────────────────────────────
+  neo4j:
+    image: neo4j:5-community
+    container_name: osint-neo4j
+    restart: unless-stopped
+    environment:
+      - NEO4J_AUTH=${NEO4J_AUTH}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_server_memory_heap_initial__size=256m
+      - NEO4J_server_memory_heap_max__size=512m
+    volumes:
+      - neo4j-data:/data
+      - ./config/neo4j/init.cypher:/var/lib/neo4j/import/init.cypher:ro
+    networks:
+      - osint-net
+
+  # ── Meilisearch (Document Store & Full-Text Search) ────────
+  meilisearch:
+    image: getmeili/meilisearch:v1
+    container_name: osint-meili
+    restart: unless-stopped
+    environment:
+      - MEILI_ENV=production
+      - MEILI_NO_ANALYTICS=true
+    volumes:
+      - meili-data:/meili_data
+    networks:
+      - osint-net
+
+  # ── Celery Workers — OSINT Tool Analyzers ──────────────────
+
+  worker-maigret:
+    build:
+      context: .
+      dockerfile: workers/maigret/Dockerfile
+    container_name: osint-worker-maigret
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_AUTH=${NEO4J_AUTH}
+      - MEILI_URL=http://meilisearch:7700
+      - TOR_SOCKS_PROXY=${TOR_SOCKS_PROXY:-socks5://tor-proxy:9050}
+    command: celery -A worker worker -Q queue_username --concurrency=2 --loglevel=info
+    depends_on:
+      - redis
       - tor-proxy
     networks:
       - osint-net
 
-  # 5. SOCIAL ANALYZER - Identity and Social Media Profiling Dashboard
-  social-analyzer:
-    image: qeeqbox/social-analyzer:latest
-    container_name: osint-social-analyzer
+  worker-holehe:
+    build:
+      context: .
+      dockerfile: workers/holehe/Dockerfile
+    container_name: osint-worker-holehe
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_AUTH=${NEO4J_AUTH}
+      - MEILI_URL=http://meilisearch:7700
+    command: celery -A worker worker -Q queue_email --concurrency=2 --loglevel=info
+    depends_on:
+      - redis
+    networks:
+      - osint-net
+
+  worker-theharvester:
+    build:
+      context: .
+      dockerfile: workers/theharvester/Dockerfile
+    container_name: osint-worker-harvester
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_AUTH=${NEO4J_AUTH}
+      - MEILI_URL=http://meilisearch:7700
+    command: celery -A worker worker -Q queue_domain --concurrency=2 --loglevel=info
+    depends_on:
+      - redis
+    networks:
+      - osint-net
+
+  worker-social:
+    build:
+      context: .
+      dockerfile: workers/social-analyzer/Dockerfile
+    container_name: osint-worker-social
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_AUTH=${NEO4J_AUTH}
+      - MEILI_URL=http://meilisearch:7700
+    command: celery -A worker worker -Q queue_username --concurrency=2 --loglevel=info
+    depends_on:
+      - redis
+    networks:
+      - osint-net
+
+  # ── Tor SOCKS5 Proxy (outbound anonymization) ─────────────
+  tor-proxy:
+    image: osminogin/tor-simple
+    container_name: osint-tor
     restart: unless-stopped
     networks:
       - osint-net
 
-  # 6. BLACKBIRD - Fast Username Enumeration Web UI
-  blackbird:
-    image: p1ngul1n0/blackbird:latest
-    container_name: osint-blackbird
-    restart: unless-stopped
-    command: python blackbird.py --web
-    networks:
-      - osint-net
-
-  # 7. NEWT TUNNEL - Single tunnel for the entire stack
-  # Configure routes in Pangolin to reach each service
+  # ── NEWT Tunnel (sole ingress into the stack) ──────────────
   newt:
     image: fosrl/newt:latest
     container_name: osint-newt
@@ -73,6 +172,13 @@ services:
     networks:
       - osint-net
 
+# ── Volumes ──────────────────────────────────────────────────
+volumes:
+  redis-data:
+  neo4j-data:
+  meili-data:
+
+    # ── Network ──────────────────────────────────────────────────
 networks:
   osint-net:
     driver: bridge

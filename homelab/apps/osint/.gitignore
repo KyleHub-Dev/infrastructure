@@ -1,0 +1,44 @@
+# Environment
+.env
+
+# Data volumes (persisted via Docker volumes, not in git)
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# uv
+.python-version
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# pnpm
+.pnpm-store/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Neo4j data
+neo4j-data/
+
+# Meilisearch data
+meili-data/
+
+# Redis data
+redis-data/
+
+# Logs
+*.log
+logs/

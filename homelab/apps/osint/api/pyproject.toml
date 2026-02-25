@@ -1,0 +1,15 @@
+[project]
+name = "osint-api"
+version = "0.1.0"
+description = "OSINT Platform — FastAPI API Gateway"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.34,<1.0",
+    "celery[redis]>=5.4,<6.0",
+    "redis>=5.0,<6.0",
+    "neo4j>=5.0,<6.0",
+    "meilisearch>=0.31,<1.0",
+    "pydantic>=2.0,<3.0",
+    "pydantic-settings>=2.0,<3.0",
+]

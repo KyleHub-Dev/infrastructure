@@ -1,52 +1,75 @@
 services:
-  # 1. TOR PROXY - The gateway to the Dark Web
+  # 1. TOR PROXY - Outgoing only, no exposed ports
   tor-proxy:
     image: osminogin/tor-simple
     container_name: osint-tor
     restart: always
-    ports:
-      - "127.0.0.1:9050:9050" # Localhost only for security
     networks:
       - osint-net
 
-  # 2. SPIDERFOOT - The Central Intelligence Dashboard
+  # 2. SPIDERFOOT - Central Intelligence Dashboard
   spiderfoot:
     image: smicallef/spiderfoot:latest
     container_name: osint-spiderfoot
     restart: unless-stopped
-    ports:
-      - "${SPIDERFOOT_PORT:-5001}:5001"
     volumes:
       - ./data/spiderfoot:/var/lib/spiderfoot
     networks:
       - osint-net
 
-  # 3. REPORT VIEWER - Browse your results (HTML/PDF) easily
+  # 3. REPORT VIEWER - Browse results (HTML/PDF)
   filebrowser:
     image: filebrowser/filebrowser:latest
     container_name: osint-viewer
     restart: unless-stopped
-    ports:
-      - "${FILEBROWSER_PORT:-8080}:80"
     volumes:
-      - ./data/reports:/srv  # View the reports folder
+      - ./data/reports:/srv
       - ./filebrowser.db:/database.db
     networks:
       - osint-net
-    command: --noauth # WARNING: Only for local/secure homelab. Use auth for public servers.
+    command: --noauth # Auth handled by Pangolin
 
-  # 4. TOOL RUNNER - The engine for Maigret/OnionSearch
-  # This container sits idle until we execute commands on it
+  # 4. TOOL RUNNER - CLI engine for Maigret, Sherlock, Holehe, Toutatis
   osint-tools:
-    build: 
+    build:
       context: ./tools
       dockerfile: Dockerfile.tools
     container_name: osint-runner
-    entrypoint: ["tail", "-f", "/dev/null"] # Keeps container alive
+    entrypoint: ["tail", "-f", "/dev/null"]
     volumes:
       - ./data/reports:/app/reports
     depends_on:
       - tor-proxy
+    networks:
+      - osint-net
+
+  # 5. SOCIAL ANALYZER - Identity and Social Media Profiling Dashboard
+  social-analyzer:
+    image: qeeqbox/social-analyzer:latest
+    container_name: osint-social-analyzer
+    restart: unless-stopped
+    networks:
+      - osint-net
+
+  # 6. BLACKBIRD - Fast Username Enumeration Web UI
+  blackbird:
+    image: p1ngul1n0/blackbird:latest
+    container_name: osint-blackbird
+    restart: unless-stopped
+    command: python blackbird.py --web
+    networks:
+      - osint-net
+
+  # 7. NEWT TUNNEL - Single tunnel for the entire stack
+  # Configure routes in Pangolin to reach each service
+  newt:
+    image: fosrl/newt:latest
+    container_name: osint-newt
+    restart: unless-stopped
+    environment:
+      - NEWT_ID=${NEWT_ID}
+      - NEWT_SECRET=${NEWT_SECRET}
+      - NEWT_ENDPOINT=${PANGOLIN_ENDPOINT}
     networks:
       - osint-net
 

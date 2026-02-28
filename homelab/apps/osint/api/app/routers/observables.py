@@ -51,14 +51,18 @@ def _format_observable(raw: dict) -> ObservableResponse:
     else:
         created_at = datetime.utcnow()
 
+    entity_type = raw.get("entity_type") or "Person"
+    tool_source = raw.get("tool_source") or "unknown"
+    investigation_id = raw.get("investigation_id") or ""
+
     return ObservableResponse(
         id=raw["id"],
-        entity_type=raw.get("entity_type", "Observable"),
-        value=raw.get("value", ""),
+        entity_type=entity_type,
+        value=raw.get("value") or "",
         metadata=metadata,
-        tool_source=raw.get("tool_source", "unknown"),
+        tool_source=tool_source,
         confidence=raw.get("confidence") or 0.5,
-        investigation_id=raw.get("investigation_id", ""),
+        investigation_id=investigation_id,
         created_at=created_at,
         expires_at=expires_at,
     )
@@ -115,7 +119,7 @@ async def trigger_pivot_analysis(observable_id: str, request: Request):
     if not observable_type:
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot pivot on entity type '{entity_type}' — no analyzers registered",
+            detail=f"Cannot pivot on entity type '{entity_type}' - no analyzers registered",
         )
 
     investigation_id = raw.get("investigation_id", "")

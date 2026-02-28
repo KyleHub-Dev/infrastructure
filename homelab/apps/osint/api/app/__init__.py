@@ -1,1 +1,1 @@
-# OSINT Platform — API Package
+# OSINT Platform - API Package

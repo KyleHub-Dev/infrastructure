@@ -1,4 +1,4 @@
-# OSINT Platform — Deployment & Operations Guide
+# OSINT Platform - Deployment & Operations Guide
 
 ## Prerequisites
 
@@ -48,8 +48,8 @@ podman compose up -d --build
 podman compose ps
 
 # View logs
-podman compose logs -f api
-podman compose logs -f worker-maigret
+podman compose logs -f osint-api
+podman compose logs -f osint-worker-maigret
 ```
 
 ### 4. Initialize Neo4j Schema
@@ -57,7 +57,7 @@ podman compose logs -f worker-maigret
 On first run, apply the graph schema constraints:
 
 ```bash
-podman compose exec neo4j cypher-shell -u neo4j -p 'your-password' < config/neo4j/init.cypher
+podman compose exec osint-neo4j cypher-shell -u neo4j -p 'your-password' < config/neo4j/init.cypher
 ```
 
 ## Operations
@@ -69,12 +69,12 @@ podman compose exec neo4j cypher-shell -u neo4j -p 'your-password' < config/neo4
 podman compose ps
 
 # Worker queue depth
-podman compose exec redis redis-cli LLEN queue_username
-podman compose exec redis redis-cli LLEN queue_email
-podman compose exec redis redis-cli LLEN queue_domain
+podman compose exec osint-redis redis-cli LLEN queue_username
+podman compose exec osint-redis redis-cli LLEN queue_email
+podman compose exec osint-redis redis-cli LLEN queue_domain
 
 # Neo4j node count
-podman compose exec neo4j cypher-shell -u neo4j -p 'your-password' \
+podman compose exec osint-neo4j cypher-shell -u neo4j -p 'your-password' \
   "MATCH (n) RETURN labels(n) AS type, count(n) AS count ORDER BY count DESC"
 ```
 
@@ -84,28 +84,28 @@ To add more concurrency for a specific tool:
 
 ```bash
 # Scale maigret workers to 3 containers
-podman compose up -d --scale worker-maigret=3
+podman compose up -d --scale osint-worker-maigret=3
 ```
 
 ### Updating a Single Worker
 
 ```bash
 # Rebuild and restart only the maigret worker
-podman compose build worker-maigret
-podman compose up -d worker-maigret
+podman compose build osint-worker-maigret
+podman compose up -d osint-worker-maigret
 ```
 
 ### Backup
 
 ```bash
 # Neo4j dump
-podman compose exec neo4j neo4j-admin database dump neo4j --to-path=/data/backups/
+podman compose exec osint-neo4j neo4j-admin database dump neo4j --to-path=/data/backups/
 
 # Meilisearch snapshot
 curl -X POST http://localhost:7700/snapshots  # (from inside osint-net)
 
 # Redis AOF
-podman compose exec redis redis-cli BGSAVE
+podman compose exec osint-redis redis-cli BGSAVE
 ```
 
 ### GDPR Data Purge
@@ -113,7 +113,7 @@ podman compose exec redis redis-cli BGSAVE
 Expired data is automatically purged by the Celery Beat scheduler. To manually trigger:
 
 ```bash
-podman compose exec api python -m app.services.gdpr --purge-expired
+podman compose exec osint-api python -m app.services.gdpr --purge-expired
 ```
 
 ## Resource Estimates
@@ -144,4 +144,4 @@ podman compose exec api python -m app.services.gdpr --purge-expired
 1. Create `workers/your-tool/` with `Containerfile`, `requirements.txt`, `analyzer.py`
 2. Extend `WorkerBase` in your analyzer (see `workers/base/worker_base.py`)
 3. Add the service to `compose.yaml` listening on the appropriate queue
-4. Rebuild: `podman compose build worker-your-tool && podman compose up -d`
+4. Rebuild: `podman compose build osint-worker-your-tool && podman compose up -d`

@@ -6,11 +6,13 @@ and graph queries for the Sigma.js frontend.
 
 import hashlib
 import logging
+import time
 import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
 from neo4j import GraphDatabase
+from neo4j.exceptions import ServiceUnavailable
 
 from app.config import settings
 
@@ -29,14 +31,25 @@ class Neo4jService:
     def __init__(self) -> None:
         self._driver = None
 
-    def connect(self) -> None:
-        """Initialize the Neo4j driver."""
+    def connect(self, max_retries: int = 10, retry_delay: float = 3.0) -> None:
+        """Initialize the Neo4j driver, retrying until the server is reachable."""
         self._driver = GraphDatabase.driver(
             settings.neo4j_uri,
             auth=(settings.neo4j_user, settings.neo4j_password),
         )
-        self._driver.verify_connectivity()
-        logger.info("Connected to Neo4j at %s", settings.neo4j_uri)
+        for attempt in range(1, max_retries + 1):
+            try:
+                self._driver.verify_connectivity()
+                logger.info("Connected to Neo4j at %s", settings.neo4j_uri)
+                return
+            except ServiceUnavailable:
+                if attempt == max_retries:
+                    raise
+                logger.warning(
+                    "Neo4j not ready (attempt %d/%d), retrying in %.0fs...",
+                    attempt, max_retries, retry_delay,
+                )
+                time.sleep(retry_delay)
 
     def close(self) -> None:
         """Close the Neo4j driver."""
@@ -313,7 +326,7 @@ class Neo4jService:
         """Get neighborhood of a node up to N hops, returned in Sigma.js format."""
         depth = min(depth, 3)  # Cap at 3 hops to prevent expensive queries
 
-        # Plain Cypher variable-length path — no APOC dependency
+        # Plain Cypher variable-length path - no APOC dependency
         node_results = self.execute_read(
             """
             MATCH (inv:Investigation)-[:CONTAINS]->(start)

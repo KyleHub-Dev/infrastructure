@@ -28,10 +28,11 @@ class WorkerBase(ABC):
     TOOL_NAME: str = "unknown"
 
     def __init__(self):
-        self.neo4j_uri = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
+        self.neo4j_uri = os.environ.get("NEO4J_URI", "bolt://osint-neo4j:7687")
         neo4j_auth = os.environ.get("NEO4J_AUTH", "neo4j/changeme")
         self.neo4j_user, self.neo4j_password = neo4j_auth.split("/", 1)
-        self.meili_url = os.environ.get("MEILI_URL", "http://meilisearch:7700")
+        self.meili_url = os.environ.get("MEILI_URL", "http://osint-meili:7700")
+        self.meili_master_key = os.environ.get("MEILI_MASTER_KEY", "")
         self.default_ttl_days = int(os.environ.get("DEFAULT_TTL_DAYS", "365"))
         self.tor_proxy = os.environ.get("TOR_SOCKS_PROXY", "")
 
@@ -42,7 +43,7 @@ class WorkerBase(ABC):
         )
 
     def _get_meili_client(self):
-        return meilisearch.Client(self.meili_url)
+        return meilisearch.Client(self.meili_url, self.meili_master_key)
 
     def calculate_ttl_ms(self, ttl_days: int | None = None) -> int:
         """Calculate a TTL timestamp in milliseconds for GDPR storage limitation."""
@@ -61,22 +62,36 @@ class WorkerBase(ABC):
         )
 
     def persist_to_graph(self, discoveries: list[dict], investigation_id: str):
-        """Write normalized discoveries as nodes and edges to Neo4j."""
+        """Write normalized discoveries as nodes and edges to Neo4j.
+
+        Creates CONTAINS relationships from the Investigation node to each
+        discovered entity so graph queries can traverse them.
+        """
         driver = self._get_neo4j_driver()
         try:
             with driver.session() as session:
                 for discovery in discoveries:
+                    params = {
+                        "target_value": discovery["target_entity"],
+                        "entity_value": discovery["entity_value"],
+                        "entity_type": discovery["entity_type"],
+                        "tool_source": discovery["tool_source"],
+                        "confidence": discovery.get("confidence_score", 0.5),
+                        "investigation_id": investigation_id,
+                        "ttl": discovery["ttl_timestamp"],
+                        "metadata": json.dumps(discovery.get("entity_metadata", {})),
+                    }
+
+                    # Create/merge nodes and relationships
                     session.run(
                         """
-                        MERGE (target {value: $target_value})
-                        ON CREATE SET target:Observable,
-                                      target.created_at = timestamp()
+                        MATCH (inv:Investigation {id: $investigation_id})
 
-                        MERGE (entity {value: $entity_value})
+                        MERGE (target:Observable {value: $target_value})
+                        ON CREATE SET target.created_at = timestamp()
+
+                        MERGE (entity:Observable {value: $entity_value})
                         ON CREATE SET entity.created_at = timestamp()
-
-                        // Set the appropriate label dynamically via APOC
-                        CALL apoc.create.addLabels(entity, [$entity_type]) YIELD node
 
                         MERGE (target)-[r:ASSOCIATED_WITH]->(entity)
                         SET r.tool_source = $tool_source,
@@ -87,18 +102,23 @@ class WorkerBase(ABC):
                         SET entity.ttl = $ttl,
                             entity.tool_source = $tool_source,
                             entity.investigation_id = $investigation_id,
+                            entity.confidence = $confidence,
                             entity.metadata = $metadata
+
+                        MERGE (inv)-[:CONTAINS]->(target)
+                        MERGE (inv)-[:CONTAINS]->(entity)
                         """,
-                        {
-                            "target_value": discovery["target_entity"],
-                            "entity_value": discovery["entity_value"],
-                            "entity_type": discovery["entity_type"],
-                            "tool_source": discovery["tool_source"],
-                            "confidence": discovery.get("confidence_score", 0.5),
-                            "investigation_id": investigation_id,
-                            "ttl": discovery["ttl_timestamp"],
-                            "metadata": json.dumps(discovery.get("entity_metadata", {})),
-                        },
+                        params,
+                    )
+
+                    # Set entity type label via APOC (separate query for Neo4j 5 compat)
+                    session.run(
+                        """
+                        MATCH (entity:Observable {value: $entity_value})
+                        CALL apoc.create.addLabels(entity, [$entity_type]) YIELD node
+                        RETURN node
+                        """,
+                        params,
                     )
         finally:
             driver.close()
@@ -139,30 +159,74 @@ class WorkerBase(ABC):
         """
         ...
 
+    def _mark_worker_done(self, investigation_id: str, failed: bool = False):
+        """Atomically increment the worker completion counter.
+
+        When all expected workers have reported in, sets the investigation
+        status to 'completed' (or 'failed' if all workers failed).
+        """
+        driver = self._get_neo4j_driver()
+        try:
+            with driver.session() as session:
+                field = "failed_workers" if failed else "completed_workers"
+                session.run(
+                    f"""
+                    MATCH (inv:Investigation {{id: $id}})
+                    SET inv.{field} = coalesce(inv.{field}, 0) + 1,
+                        inv.updated_at = $now
+                    WITH inv
+                    WHERE (coalesce(inv.completed_workers, 0) + coalesce(inv.failed_workers, 0))
+                          >= inv.expected_workers
+                    SET inv.status = CASE
+                        WHEN coalesce(inv.completed_workers, 0) = 0 THEN 'failed'
+                        ELSE 'completed'
+                    END
+                    """,
+                    {"id": investigation_id, "now": datetime.utcnow().isoformat()},
+                )
+        finally:
+            driver.close()
+
     def execute(self, observable: str, investigation_id: str, ttl_days: int | None = None, **kwargs):
         """Full execution pipeline: analyze → normalize → persist."""
-        # 1. Run the tool
-        raw_output = self.analyze(observable, **kwargs)
+        try:
+            # 1. Run the tool
+            raw_output = self.analyze(observable, **kwargs)
 
-        # 2. Index raw output
-        self.persist_to_meili(raw_output, investigation_id, observable)
+            # 2. Index raw output
+            self.persist_to_meili(raw_output, investigation_id, observable)
 
-        # 3. Normalize
-        discoveries = self.normalize(raw_output, observable, investigation_id)
+            # 3. Normalize
+            discoveries = self.normalize(raw_output, observable, investigation_id)
 
-        # 4. Apply TTL to each discovery
-        ttl_ms = self.calculate_ttl_ms(ttl_days)
-        for d in discoveries:
-            d["ttl_timestamp"] = ttl_ms
+            # 4. Apply TTL to each discovery
+            ttl_ms = self.calculate_ttl_ms(ttl_days)
+            for d in discoveries:
+                d["ttl_timestamp"] = ttl_ms
 
-        # 5. Persist normalized graph data
-        self.persist_to_graph(discoveries, investigation_id)
+            # 5. Persist normalized graph data
+            self.persist_to_graph(discoveries, investigation_id)
 
-        logger.info(
-            "[%s] Completed: %d discoveries for '%s' in investigation %s",
-            self.TOOL_NAME,
-            len(discoveries),
-            observable,
-            investigation_id,
-        )
-        return {"tool": self.TOOL_NAME, "discoveries": len(discoveries)}
+            # 6. Mark this worker as done (last worker sets status)
+            self._mark_worker_done(investigation_id)
+
+            logger.info(
+                "[%s] Completed: %d discoveries for '%s' in investigation %s",
+                self.TOOL_NAME,
+                len(discoveries),
+                observable,
+                investigation_id,
+            )
+            return {"tool": self.TOOL_NAME, "discoveries": len(discoveries)}
+        except Exception:
+            logger.exception(
+                "[%s] Failed for '%s' in investigation %s",
+                self.TOOL_NAME,
+                observable,
+                investigation_id,
+            )
+            try:
+                self._mark_worker_done(investigation_id, failed=True)
+            except Exception:
+                logger.exception("Failed to mark worker as failed")
+            raise

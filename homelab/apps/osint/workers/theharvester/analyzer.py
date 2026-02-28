@@ -1,4 +1,4 @@
-"""TheHarvester OSINT worker — domain-level reconnaissance.
+"""TheHarvester OSINT worker - domain-level reconnaissance.
 
 Extracts emails, subdomains, and employee names associated with
 a target domain from search engines, PGP key servers, and APIs.
@@ -12,8 +12,8 @@ from worker_base import WorkerBase
 
 app = Celery("worker")
 app.config_from_object({
-    "broker_url": __import__("os").environ.get("REDIS_URL", "redis://redis:6379/0"),
-    "result_backend": __import__("os").environ.get("REDIS_URL", "redis://redis:6379/0"),
+    "broker_url": __import__("os").environ.get("REDIS_URL", "redis://osint-redis:6379/0"),
+    "result_backend": __import__("os").environ.get("REDIS_URL", "redis://osint-redis:6379/0"),
     "task_serializer": "json",
     "accept_content": ["json"],
 })
@@ -101,7 +101,7 @@ class TheHarvesterWorker(WorkerBase):
 worker = TheHarvesterWorker()
 
 
-@app.task(name="workers.theharvester.analyzer.analyze_domain", queue="queue_domain")
+@app.task(name="workers.theharvester.analyzer.analyze_domain", queue="queue_harvester")
 def analyze_domain(observable: str, investigation_id: str, ttl_days: int | None = None):
     """Celery task: run TheHarvester domain reconnaissance."""
     return worker.execute(observable, investigation_id, ttl_days)

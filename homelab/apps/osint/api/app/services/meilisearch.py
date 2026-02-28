@@ -15,7 +15,9 @@ class MeilisearchService:
 
     def connect(self):
         """Initialize the Meilisearch client and ensure index exists."""
-        self._client = meilisearch.Client(settings.meili_url)
+        self._client = meilisearch.Client(
+            settings.meili_url, settings.meili_master_key
+        )
 
         # Create or get the documents index
         try:

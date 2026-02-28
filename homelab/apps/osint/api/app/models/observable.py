@@ -1,4 +1,4 @@
-"""Observable entity models — normalized OSINT data schema.
+"""Observable entity models - normalized OSINT data schema.
 
 Inspired by the Unified Cyber Ontology (UCO) and MISP Core Format
 for semantic interoperability across the intelligence graph.

@@ -44,7 +44,7 @@ async def get_node_neighbors(
 ):
     """Get the neighborhood of a specific node (1–3 hops).
 
-    Used for interactive graph exploration — clicking a node loads
+    Used for interactive graph exploration - clicking a node loads
     its connections without fetching the entire investigation graph.
     """
     user: str = request.state.user

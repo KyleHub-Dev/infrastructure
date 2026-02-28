@@ -1,4 +1,4 @@
-"""OSINT Platform — API Gateway
+"""OSINT Platform - API Gateway
 
 FastAPI application serving as the central API for the OSINT platform.
 Handles authentication (via Pangolin Remote-User), investigation management,
@@ -16,6 +16,7 @@ from app.config import settings
 from app.routers import graph, investigations, observables
 from app.services.meilisearch import meili_service
 from app.services.neo4j import neo4j_service
+from app.services.seed import seed_if_empty
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,7 +30,8 @@ async def lifespan(app: FastAPI):
     """Manage service connections on startup/shutdown."""
     neo4j_service.connect()
     meili_service.connect()
-    logger.info("OSINT API started — Neo4j and Meilisearch connected")
+    seed_if_empty()
+    logger.info("OSINT API started - Neo4j and Meilisearch connected")
     yield
     neo4j_service.close()
     logger.info("OSINT API shutting down")
@@ -50,7 +52,7 @@ app.add_middleware(RemoteUserMiddleware, header_name=settings.auth_header)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restricted by NEWT tunnel — only Pangolin can reach this
+    allow_origins=["*"],  # Restricted by NEWT tunnel - only Pangolin can reach this
     allow_methods=["*"],
     allow_headers=["*"],
 )

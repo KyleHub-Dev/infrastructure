@@ -1,4 +1,4 @@
-"""Investigation models — GDPR-compliant case management."""
+"""Investigation models - GDPR-compliant case management."""
 
 from datetime import datetime
 from enum import Enum
@@ -37,7 +37,7 @@ class InvestigationCreate(BaseModel):
     query: str = Field(..., description="The target data point (username, email, domain, etc.)")
     observable_type: ObservableType
     legal_basis: LegalBasis = Field(..., description="GDPR legal basis for this investigation")
-    purpose: str = Field(..., min_length=10, description="Specific purpose of this investigation")
+    purpose: str = Field(..., min_length=2, description="Specific purpose of this investigation")
     justification: str = Field(
         ...,
         min_length=20,

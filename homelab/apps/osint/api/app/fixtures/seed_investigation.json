@@ -1,0 +1,3022 @@
+{
+  "investigation": {
+    "purpose": "Myself",
+    "legal_basis": "legitimate_interest",
+    "query": "KyleDerZweite",
+    "created_at": "2026-02-28T10:12:53.948396",
+    "created_by": "demo@osint.local",
+    "observable_type": "username",
+    "ttl": 1780049573948,
+    "expected_workers": 2,
+    "completed_workers": 2,
+    "updated_at": "2026-02-28T10:17:25.940590",
+    "ttl_days": 90,
+    "id": "inv-66c55026ce05",
+    "failed_workers": 0,
+    "justification": "Search myself for app test",
+    "status": "completed"
+  },
+  "nodes": [
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OnanistovNet\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 160941}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722672,
+        "ttl": 1780049720140,
+        "value": "https://onanistov.net/search.php?keywords=&terms=all&author=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"facebook.com\", \"title\": \"Facebook\", \"type\": \"Computers Electronics and Technology > Social Networks and Online Communities\", \"country\": \"United States\", \"rank\": 6, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"noarchive\", \"name\": \"bingbot\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845921,
+        "ttl": 1780049845368,
+        "value": "https://facebook.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"dailymotion.com\", \"title\": \"Dailymotion\", \"type\": \"Arts and Entertainment > TV Movies and Streaming\", \"country\": \"United States\", \"rank\": 334, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"en-US\", \"name\": \"language\"}, {\"content\": \"a87a0d996fe5f70f\", \"name\": \"y_key\"}, {\"content\": \"42E38E6C5CF3C253563039FCD6F3F775\", \"name\": \"msvalidate.01\"}, {\"property\": \"fb:app_id\", \"content\": \"96937694899\"}, {\"content\": \"True\", \"name\": \"HandheldFriendly\"}, {\"content\": \"320\", \"name\": \"MobileOptimized\"}, {\"content\": \"no\", \"name\": \"msapplication-tap-highlight\"}, {\"content\": \"yes\", \"name\": \"apple-mobile-web-app-capable\"}, {\"content\": \"black-translucent\", \"name\": \"apple-mobile-web-app-status-bar-style\"}, {\"content\": \"//static.neon-ssr.dailymotion.com/neon-user-ssr/static/favicons/browserconfig.fbdd071bdb27bd01d466.xml\", \"name\": \"msapplication-config\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845909,
+        "ttl": 1780049845368,
+        "value": "https://dailymotion.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"career.habr.com\", \"title\": \"Хабр Карьера\", \"type\": \"Computers Electronics and Technology > Computers Electronics and Technology\", \"country\": \"Russia\", \"rank\": 1848, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"С помощью Хабр Карьеры работодатели находят себе специалистов, а соискатели — работу в самых разных сферах IT-индустрии: программирование, верстка, дизайн, менеджмент, веб-аналитика, маркетинг и других.\", \"name\": \"description\"}, {\"property\": \"og:title\", \"content\": \"Хабр Карьера\"}, {\"property\": \"og:image\", \"content\": \"https://career.habr.com/images/career_share.png\"}, {\"property\": \"og:description\", \"content\": \"С помощью Хабр Карьеры работодатели находят себе специалистов, а соискатели — работу в самых разных сферах IT-индустрии: программирование, верстка, дизайн, менеджмент, веб-аналитика, маркетинг и других.\"}, {\"content\": \"Хабр Карьера\", \"name\": \"twitter:title\"}, {\"content\": \"https://career.habr.com/images/career_share.png\", \"name\": \"twitter:image\"}, {\"content\": \"С помощью Хабр Карьеры работодатели находят себе специалистов, а соискатели — работу в самых разных сферах IT-индустрии: программирование, верстка, дизайн, менеджмент, веб-аналитика, маркетинг и других.\", \"name\": \"twitter:description\"}, {\"content\": \"@habr_career\", \"name\": \"twitter:site\"}, {\"content\": \"@habr_career\", \"name\": \"twitter:creator\"}, {\"content\": \"summary\", \"name\": \"twitter:card\"}, {\"content\": \"authenticity_token\", \"name\": \"csrf-param\"}, {\"content\": \"mxTy2ujHMyEUE3RyqVTi-XjjtMOlKU_ir5dWFq4hcfSH-pStAmKQTTuaBOoL4QXbhtoQ6u8udxVbFqlE6rPBvA\", \"name\": \"csrf-token\"}, {\"content\": \"https://effect.habr.com/a\", \"name\": \"effect_url\"}, {\"content\": \"https://stats.habr.com\", \"name\": \"habr_stats_url\"}, {\"content\": \"telephone=no\", \"name\": \"format-detection\"}, {\"content\": \"4480533c5a4f5ebe\", \"name\": \"yandex-verification\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845898,
+        "ttl": 1780049845368,
+        "value": "https://career.habr.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"wattpad.com\", \"title\": \"KyleDerZweite - Wattpad\", \"type\": \"Arts and Entertainment > Books and Literature\", \"country\": \"India\", \"rank\": 871, \"extracted\": \"unavailable\", \"metadata\": [{\"property\": \"fb:pages\", \"content\": \"127093020051\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845885,
+        "ttl": 1780049845368,
+        "value": "https://wattpad.com/user/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"revealme.com\", \"title\": \"filtered\", \"type\": \"Adult\", \"country\": \"unavailable\", \"rank\": 4580149, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"Live webcam chat with models and celebrities using RevealMe. Best streaming platform of 2026.\", \"name\": \"description\"}, {\"property\": \"og:url\", \"content\": \"https://revealme.com/KyleDerZweite\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"og:title\", \"content\": \"Livecam - RevealMe - Chat with Models and Celebrities - Video Phone Bookings\"}, {\"property\": \"og:description\", \"content\": \"Live webcam chat with models and celebrities using RevealMe. Best streaming platform of 2026.\"}, {\"property\": \"og:image\", \"content\": \"https://s3.eu-west-2.amazonaws.com/media.revealme.vip/media/site/logo_lock_grey_gold.JPG?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUXIQQK2KXDF3DHPH%2F20260228%2Feu-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260228T101603Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Signature=dc2c0275f9666d81f3b87999fb0fff8f2265a65b9aa2e43bc279665a7779d238\"}, {\"content\": \"summary_large_image\", \"name\": \"twitter:card\"}, {\"content\": \"Livecam - RevealMe - Chat with Models and Celebrities - Video Phone Bookings\", \"name\": \"twitter:title\"}, {\"content\": \"Live webcam chat with models and celebrities using RevealMe. Best streaming platform of 2026.\", \"name\": \"twitter:description\"}, {\"content\": \"https://s3.eu-west-2.amazonaws.com/media.revealme.vip/media/site/logo_lock_grey_gold.JPG?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUXIQQK2KXDF3DHPH%2F20260228%2Feu-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260228T101603Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Signature=dc2c0275f9666d81f3b87999fb0fff8f2265a65b9aa2e43bc279665a7779d238\", \"name\": \"twitter:image\"}, {\"content\": \"@RevealMeCom\", \"name\": \"twitter:site\"}, {\"content\": \"@RevealMeCom\", \"name\": \"twitter:creator\"}, {\"content\": \"yes\", \"name\": \"mobile-web-app-capable\"}, {\"content\": \"black\", \"name\": \"apple-mobile-web-app-status-bar-style\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845857,
+        "ttl": 1780049845368,
+        "value": "https://revealme.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"reddit.com\", \"title\": \"Reddit - The heart of the internet\", \"type\": \"Computers Electronics and Technology > Social Networks and Online Communities\", \"country\": \"United States\", \"rank\": 21, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"yes\", \"name\": \"apple-mobile-web-app-capable\"}, {\"content\": \"black\", \"name\": \"apple-mobile-web-app-status-bar-style\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845846,
+        "ttl": 1780049845368,
+        "value": "https://reddit.com/user/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"redbubble.com\", \"title\": \"filtered\", \"type\": \"Arts and Entertainment > Arts and Entertainment\", \"country\": \"United States\", \"rank\": 820, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"summary_large_image\", \"name\": \"twitter:card\"}, {\"content\": \"@redbubble\", \"name\": \"twitter:site\"}, {\"property\": \"fb:app_id\", \"content\": \"237843743897\"}, {\"property\": \"og:description\", \"content\": \"Millions of unique designs by independent artists. Find your thing.\"}, {\"property\": \"og:image\", \"content\": \"/frontend-static/og-image.jpeg\"}, {\"property\": \"og:image:alt\", \"content\": \"Redbubble\"}, {\"property\": \"og:site_name\", \"content\": \"Redbubble\"}, {\"content\": \"/frontend-static/browserconfig.xml\", \"name\": \"msapplication-config\"}, {\"content\": \"Redbubble\", \"name\": \"application-name\"}, {\"property\": \"og:title\", \"content\": \"404 Page Not Found | Redbubble | Redbubble\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845835,
+        "ttl": 1780049845368,
+        "value": "https://redbubble.com/people/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"mintme.com\", \"title\": \"filtered\", \"type\": \"Internet\", \"country\": \"United States\", \"rank\": 25454, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"Create a coin or create a token, launch or create a meme coin for free, and build your own cryptocurrency. Mint a token or coin with our crypto coin maker and coin creator.\", \"name\": \"description\"}, {\"property\": \"og:description\", \"content\": \"Create a coin or create a token, launch or create a meme coin for free, and build your own cryptocurrency. Mint a token or coin with our crypto coin maker and coin creator.\"}, {\"content\": \"mintMe,MINTME,crypto,exchanger,token,dapps\", \"name\": \"keywords\"}, {\"content\": \"mintme\", \"name\": \"author\"}, {\"content\": \"a888f70a3a8a9223205353.Nf4cvYnWWsDEc5mxrHiL0hngnDMFVV4T6k6ZGVAL2VA.AYxT4tGJM-28ReCAwkrcnXS581YobG9HkAzgYwhIkB8DrkqI0O9isfEJyA\", \"name\": \"csrf-token\"}, {\"content\": \"/ms-icon-144x144.png\", \"name\": \"msapplication-TileImage\"}, {\"property\": \"og:title\", \"content\": \"mintMe | create your own token, monetize yourself!\"}, {\"property\": \"og:site_name\", \"content\": \"Mintme\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"og:url\", \"content\": \"https://www.mintme.com/token/KyleDerZweite\"}, {\"property\": \"og:image\", \"content\": \"https://www.mintme.com/build/images/ogImage.ec68da26..png\"}, {\"property\": \"og:image:alt\", \"content\": \"Mintme logo. Create your own token, monetize yourself!\"}, {\"content\": \"summary_large_image\", \"name\": \"twitter:card\"}, {\"content\": \"https://www.mintme.com/token/KyleDerZweite\", \"name\": \"twitter:site\"}, {\"content\": \"Mintme\", \"name\": \"twitter:creator\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845813,
+        "ttl": 1780049845368,
+        "value": "https://mintme.com/token/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"metacritic.com\", \"title\": \"filtered\", \"type\": \"Arts and Entertainment > TV Movies and Streaming\", \"country\": \"United States\", \"rank\": 2375, \"extracted\": \"unavailable\", \"metadata\": [{\"property\": \"fb:admins\", \"content\": \"100001036810388\"}, {\"property\": \"fb:app_id\", \"content\": \"123113677890173\"}, {\"content\": \"Metacritic aggregates music, game, tv, and movie reviews from the leading critics. Only Metacritic.com uses METASCORES, which let you know at a glance how each item was reviewed.\", \"name\": \"description\"}, {\"content\": \"I1kHyfzmmG1fEVjq8GBUgkfCHc6PNtxce1_VyUuJhws\", \"name\": \"google-site-verification\"}, {\"content\": \"https://www.metacritic.com/a/mstile-150.png\", \"name\": \"msapplication-square150x150logo\"}, {\"content\": \"https://www.metacritic.com/a/mstile-310.png\", \"name\": \"msapplication-square310x310logo\"}, {\"content\": \"https://www.metacritic.com/a/mstile-70.png\", \"name\": \"msapplication-square70x70logo\"}, {\"content\": \"https://www.metacritic.com/\", \"name\": \"msapplication-starturl\"}, {\"content\": \"name=Home; action-uri=https://www.metacritic.com/; icon-uri=https://www.metacritic.com/a/img/favicon.ico, name=Forums; action-uri=http://www.metacritic.com/games; icon-uri=https://www.metacritic.com/a/img/favicon.ico, name=News; action-uri=https://www.metacritic.com/movies/; icon-uri=https://www.metacritic.com/a/www/img/favicon.ico, name=Reviews; action-uri=https://www.metacritic.com/tv/; icon-uri=https://www.metacritic.com/a/img/favicon.ico, name=Videos; action-uri=https://www.metacritic.com/music/; icon-uri=https://www.metacritic.com/a/img/favicon.ico\", \"name\": \"msapplication-task\"}, {\"content\": \"https://www.metacritic.com/a/www/img/mstile-144.png\", \"name\": \"msapplication-TileImage\"}, {\"content\": \"Movie Reviews, TV Reviews, Game Reviews, and Music Reviews - Metacritic\", \"name\": \"msapplication-tooltip\"}, {\"content\": \"https://www.metacritic.com/a/www/img/mstile-310x150.png\", \"name\": \"msapplication-wide310x150logo\"}, {\"content\": \"Metacritic aggregates music, game, tv, and movie reviews from the leading critics. Only Metacritic.com uses METASCORES, which let you know at a glance how each item was reviewed.\", \"name\": \"og:description\"}, {\"content\": \"47524839a64b83c951afca9ef6c838e0\", \"name\": \"p:domain_verify\"}, {\"name\": \"twitter:account_id\"}, {\"content\": \"summary_large_image\", \"name\": \"twitter:card\"}, {\"content\": \"@metacritic\", \"name\": \"twitter:site\"}, {\"content\": \"@metacritic\", \"name\": \"twitter:creator\"}, {\"content\": \"e9c11af7e3f3462887573266b46c68a4-9534e2cf24df4963-0\", \"name\": \"sentry-trace\"}, {\"content\": \"sentry-environment=production,sentry-release=metacritic.prod.76ddaf.e7a7c3,sentry-public_key=ec55f8479c054a60a0e7dbad9fab6a6c,sentry-trace_id=e9c11af7e3f3462887573266b46c68a4,sentry-transaction=GET%20%2Fuser%2FKyleDerZweite%2F,sentry-sampled=false\", \"name\": \"baggage\"}, {\"property\": \"og:site_name\", \"content\": \"Metacritic\"}, {\"property\": \"fb:pages\", \"content\": \"7155422274\"}, {\"content\": \"loaded\", \"name\": \"nuxtstatus\"}, {\"name\": \"adtags\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845801,
+        "ttl": 1780049845368,
+        "value": "https://metacritic.com/user/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"mercadolivre.com.br\", \"title\": \"Parece que esta página não existe\", \"type\": \"E-commerce and Shopping > Marketplace\", \"country\": \"Brazil\", \"rank\": 370, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"samesite=true\", \"name\": \"browser-support\"}, {\"content\": \"BnxWhZJC-S8aS3wICglbeBwm3e2XwBhebfMo\", \"name\": \"csrf-token\"}, {\"content\": \"00-00000000000000008e61222cf4e99f27-8e61222cf4e99f27-00\", \"name\": \"traceparent\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845788,
+        "ttl": 1780049845368,
+        "value": "https://mercadolivre.com.br/perfil/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"lolchess.gg\", \"title\": \"KyleDerZweite#DSR - 시즌 16 전적 종합 - 롤체지지\", \"type\": \"Games > Video Games Consoles and Accessories\", \"country\": \"South Korea\", \"rank\": 4920, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"롤체지지\", \"name\": \"apple-mobile-web-app-title\"}, {\"content\": \"롤토체스, 전략적 팀 전투, TFT, 롤체, 덱, 조합, 시너지, 아이템, 추천, 공략, 전적, 검색, 순위표, 랭킹, 시뮬레이터, 모바일, 아이폰, 안드로이드, 앱, 다운로드, OP.GG, 인벤, 포우, FOW.KR, 블리츠, blitz, 롤체스지지, 오토체스, 가이드, 공략\", \"name\": \"keywords\"}, {\"content\": \"전략적 팀 전투 TFT 롤토체스 전적 검색 사이트입니다. 롤 TFT 모바일과 롤체 덱 조합 추천 정보를 시즌 별로 확인하세요\", \"name\": \"description\"}, {\"property\": \"og:description\", \"content\": \"전략적 팀 전투 TFT 롤토체스 전적 검색 사이트입니다. 롤 TFT 모바일과 롤체 덱 조합 추천 정보를 시즌 별로 확인하세요\"}, {\"property\": \"og:url\", \"content\": \"https://lolchess.gg/profile/euw/KyleDerZweite-DSR/set16\"}, {\"property\": \"og:image\", \"content\": \"//cdn.dak.gg/tft/images2/common/og_lolchessgg.png\"}, {\"property\": \"og:image:alt\", \"content\": \"LoLChess.GG\"}, {\"property\": \"og:site_name\", \"content\": \"롤체지지 전략적 팀 전투 TFT (롤토체스) 전적검색\"}, {\"property\": \"og:title\", \"content\": \"KyleDerZweite#DSR - 시즌 16 전적 종합 - 롤체지지\"}, {\"content\": \"23\", \"name\": \"next-head-count\"}, {\"content\": \"//cdn.dak.gg/tft/images2/favicon/ms-icon-144x144.png\", \"name\": \"msapplication-TileImage\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845774,
+        "ttl": 1780049845368,
+        "value": "https://lolchess.gg/profile/na/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"icq.im\", \"title\": \"ICQ\", \"type\": \"Internet\", \"country\": \"Egypt\", \"rank\": 390958, \"extracted\": \"unavailable\", \"metadata\": [{\"name\": \"Keywords\"}, {\"name\": \"Description\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"og:title\"}, {\"property\": \"og:url\"}, {\"property\": \"og:description\"}, {\"property\": \"og:image\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845751,
+        "ttl": 1780049845368,
+        "value": "https://icq.im/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"freelancer.com\", \"title\": \"Kyle G. Profile | Freelancer\", \"type\": \"Jobs and Career > Jobs and Employment\", \"country\": \"United States\", \"rank\": 592, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"black-translucent\", \"name\": \"apple-mobile-web-app-status-bar-style\"}, {\"content\": \"yes\", \"name\": \"apple-mobile-web-app-capable\"}, {\"content\": \"Freelancer\", \"name\": \"apple-mobile-web-app-title\"}, {\"content\": \"lOECm39vgYv4N9PwoW6nsSSLiUw\", \"name\": \"alexaVerifyID\"}, {\"content\": \"756854B52F963132E377E441F92F1136\", \"name\": \"msvalidate.01\"}, {\"content\": \"Kyle G. is a Freelancer specialising in Java and Python in Germany.\", \"name\": \"description\"}, {\"property\": \"og:title\", \"content\": \"Kyle G. Profile\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"og:site_name\", \"content\": \"Freelancer\"}, {\"property\": \"og:description\", \"content\": \"Kyle G. is a Freelancer specialising in Java and Python in Germany.\"}, {\"property\": \"og:url\", \"content\": \"https://www.freelancer.com/u/kylederzweite\"}, {\"property\": \"og:image\", \"content\": \"https://www.f-cdn.com/assets/main/en/assets/app-icons/share-make-it-real-thumbnail-1200x630.jpg\"}, {\"property\": \"og:image:alt\", \"content\": \"Freelancer Logo\"}, {\"property\": \"fb:app_id\", \"content\": \"120131118061981\"}, {\"content\": \"1, 2, 3, 4\", \"itemprop\": \"position\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845727,
+        "ttl": 1780049845368,
+        "value": "https://freelancer.com/u/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"en.gravatar.com\", \"title\": \"Gravatar - Globally Recognized Avatars\", \"type\": \"Computers\", \"country\": \"India\", \"rank\": 3079, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"Your email address becomes your passport to the digital world, empowering you with complete control over your personal data.\", \"name\": \"description\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845715,
+        "ttl": 1780049845368,
+        "value": "https://en.gravatar.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"colourlovers.com\", \"title\": \"filtered\", \"type\": \"Arts and Entertainment > Visual Arts and Design\", \"country\": \"India\", \"rank\": 29627, \"extracted\": \"unavailable\", \"metadata\": [{\"name\": \"keywords\"}, {\"name\": \"description\"}, {\"content\": \"d3d73d986e154a37860b6d8ab178e52d\", \"name\": \"p:domain_verify\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845574,
+        "ttl": 1780049845368,
+        "value": "https://colourlovers.com/lover/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"chess.com\", \"title\": \"filtered\", \"type\": \"Games > Board and Card Games\", \"country\": \"United States\", \"rank\": 220, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"TgxixMKtxcQ+9NUdD7grKbzw3tAl3iJWlTPSPKt9t0I=\", \"name\": \"verify-v1\"}, {\"content\": \"314c7ba9469cc171a12a46b43e0e2aed\", \"name\": \"p:domain_verify\"}, {\"content\": \"n7BdKb0xn1E9tRJXvmMxE3Ynr-QajBOi1yA1srT4Nrc\", \"name\": \"google-site-verification\"}, {\"content\": \"app-id=329218549\", \"name\": \"apple-itunes-app\"}, {\"content\": \"Discover the online chess profile of KyleDerZweite at Chess.com. See their chess rating, follow their best games, and challenge them to play a game.\", \"name\": \"description\"}, {\"content\": \"/bundles/app/css/language-banner.client.9d485435.css\", \"name\": \"language-banner-styles\"}, {\"content\": \"/bundles/app/js/language-banner.client.d764c742.js\", \"name\": \"language-banner-scripts\"}, {\"property\": \"og:title\", \"content\": \"KyleDerZweite - Chess Profile\"}, {\"property\": \"og:url\", \"content\": \"https://www.chess.com/member/kylederzweite\"}, {\"property\": \"fb:app_id\", \"content\": \"2427617054\"}, {\"property\": \"og:description\", \"content\": \"Discover the online chess profile of KyleDerZweite at Chess.com. See their chess rating, follow their best games, and challenge them to play a game.\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"og:image\", \"content\": \"https://www.chess.com/share/user/kylederzweite\"}, {\"property\": \"og:site_name\", \"content\": \"Chess.com\"}, {\"content\": \"KyleDerZweite - Chess Profile\", \"name\": \"twitter:title\"}, {\"content\": \"summary_large_image\", \"name\": \"twitter:card\"}, {\"content\": \"@chesscom\", \"name\": \"twitter:site\"}, {\"content\": \"Discover the online chess profile of KyleDerZweite at Chess.com. See their chess rating, follow their best games, and challenge them to play a game.\", \"name\": \"twitter:description\"}, {\"content\": \"https://www.chess.com/share/user/kylederzweite\", \"name\": \"twitter:image\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845562,
+        "ttl": 1780049845368,
+        "value": "https://chess.com/member/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"chaturbate.com\", \"title\": \"filtered\", \"type\": \"Adult\", \"country\": \"United States\", \"rank\": 48, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"7198395454E8014E0B82A087701FE16B\", \"name\": \"msvalidate.01\"}, {\"content\": \"Watch Live Cams Now! No Registration Required - 100% Free Uncensored Adult Chat. Start chatting with amateurs,  exhibitionists, pornstars w/ HD Video & Audio.\", \"name\": \"description\"}, {\"content\": \"free cams, free adult video chat, free sex webcams, live adult cams, adult webcams, free live porn\", \"name\": \"keywords\"}, {\"content\": \"mature\", \"name\": \"Rating\"}, {\"content\": \"RTA-5042-1996-1400-1577-RTA\", \"name\": \"RATING\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"og:title\", \"content\": \"Chaturbate - Free Adult Live Webcams!\"}, {\"property\": \"og:description\", \"content\": \"Enjoy free chat and live webcam broadcasts from amateurs around the world. No registration required!\"}, {\"property\": \"og:image\", \"content\": \"https://web.static.mmcdn.com/images/logo-square.png\"}, {\"property\": \"og:url\", \"content\": \"https://chaturbate.com/?next=/KyleDerZweite/\"}, {\"content\": \"@chaturbate\", \"name\": \"twitter:site\"}, {\"content\": \"summary\", \"name\": \"twitter:card\"}, {\"content\": \"https://web.static.mmcdn.com/images/logo-square.png\", \"name\": \"twitter:image\"}, {\"content\": \"https://web.static.mmcdn.com/favicons/mstile-144x144.png?hash=a190a3dab34a\", \"name\": \"msapplication-TileImage\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273845377,
+        "ttl": 1780049845368,
+        "value": "https://chaturbate.com/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Substack\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723612,
+        "ttl": 1780049720140,
+        "value": "https://substack.com/@KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"massagerepublic.com\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723598,
+        "ttl": 1780049720140,
+        "value": "https://massagerepublic.com/u/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"expoForum\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723587,
+        "ttl": 1780049720140,
+        "value": "https://forums.expo.dev/u/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"www.stopstalk.com\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723574,
+        "ttl": 1780049720140,
+        "value": "https://www.stopstalk.com/user/profile/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Google Scholar\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723561,
+        "ttl": 1780049720140,
+        "value": "https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=KyleDerZweite&btnG="
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"HuggingFace\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723551,
+        "ttl": 1780049720140,
+        "value": "https://huggingface.co/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"reactos.org\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723542,
+        "ttl": 1780049720140,
+        "value": "https://reactos.org/wiki/User:KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"airlinepilot.life\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723525,
+        "ttl": 1780049720140,
+        "value": "https://airlinepilot.life/u/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"playtime\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723510,
+        "ttl": 1780049720140,
+        "value": "https://forum.playtime-forum.info/members/?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Forum.quake2.com.ru\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723495,
+        "ttl": 1780049720140,
+        "value": "http://forum.quake2.com.ru/profile.php?mode=viewprofile&u=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Ninjakiwi\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723478,
+        "ttl": 1780049720140,
+        "value": "https://ninjakiwi.com/profile/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Splice\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723465,
+        "ttl": 1780049720140,
+        "value": "https://splice.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Bikemap\", \"status\": \"Claimed\", \"http_status\": 202, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723446,
+        "ttl": 1780049720140,
+        "value": "https://www.bikemap.net/en/u/KyleDerZweite/routes/created/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Needrom\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723426,
+        "ttl": 1780049720140,
+        "value": "https://www.needrom.com/author/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Lesswrong\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723406,
+        "ttl": 1780049720140,
+        "value": "https://www.lesswrong.com/users/@KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Cyberclock\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723387,
+        "ttl": 1780049720140,
+        "value": "https://cyberclock.cc/forum/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Buzznet\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723371,
+        "ttl": 1780049720140,
+        "value": "https://www.buzznet.com/author/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"EduGeek\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723357,
+        "ttl": 1780049720140,
+        "value": "https://www.edugeek.net/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Arduino\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 9223372036854775807}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723335,
+        "ttl": 1780049720140,
+        "value": "https://projecthub.arduino.cc/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Rugby-forum\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 7939583}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723314,
+        "ttl": 1780049720140,
+        "value": "http://rugby-forum.ru/polzovateli/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"ForumProSport\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 7963918}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723293,
+        "ttl": 1780049720140,
+        "value": "https://forumprosport.ru/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"porschec.ru\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 4645861}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723272,
+        "ttl": 1780049720140,
+        "value": "http://porschec.ru/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Sexwin\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 5812338}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723249,
+        "ttl": 1780049720140,
+        "value": "https://sexforum.win/search.php?keywords=&terms=all&author=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Boxing\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 4329606}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723225,
+        "ttl": 1780049720140,
+        "value": "http://boxing.ru/forum/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"mfarmer.ru\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 3962968}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723206,
+        "ttl": 1780049720140,
+        "value": "http://www.mfarmer.ru/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Astrogalaxy\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 1266828}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723192,
+        "ttl": 1780049720140,
+        "value": "https://astrogalaxy.ru/forum/phpBB2/search.php?keywords=&terms=all&author=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"caravelgames\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 2871774}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723169,
+        "ttl": 1780049720140,
+        "value": "http://forum.caravelgames.com/member.php?Action=viewprofile&username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"forum.zone-game.info\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 913014}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723147,
+        "ttl": 1780049720140,
+        "value": "https://forum.zone-game.info/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Phrack\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 1076320}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723129,
+        "ttl": 1780049720140,
+        "value": "http://phrack.org/author_KyleDerZweite.html"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"bluesystem\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 2076846}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723110,
+        "ttl": 1780049720140,
+        "value": "http://forum.bluesystem.online/profile.php?mode=viewprofile&u=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Runnersworld\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 562069}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723089,
+        "ttl": 1780049720140,
+        "value": "https://forums.runnersworld.co.uk/profile/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Solaris-club\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 781686}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723071,
+        "ttl": 1780049720140,
+        "value": "https://solaris-club.net/forum/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"forum.setcombg.com\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 583523}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723052,
+        "ttl": 1780049720140,
+        "value": "https://forum.setcombg.com/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Freelanced\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 554707}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723029,
+        "ttl": 1780049720140,
+        "value": "https://www.freelanced.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Hairmaniac\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 410477}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273723006,
+        "ttl": 1780049720140,
+        "value": "https://www.hairmaniac.ru/profile/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"bbs.evony.com\", \"status\": \"Claimed\", \"http_status\": 468, \"rank\": 457801}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722979,
+        "ttl": 1780049720140,
+        "value": "http://bbs.evony.com/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Pesiq\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 256808}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722955,
+        "ttl": 1780049720140,
+        "value": "http://pesiq.ru/forum/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Pogovorim\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 384128}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722933,
+        "ttl": 1780049720140,
+        "value": "https://pogovorim.by/forum/search.php?keywords=&terms=all&author=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Videosift\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 146177}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722904,
+        "ttl": 1780049720140,
+        "value": "https://videosift.com/member/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Chessclub\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 325766}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722880,
+        "ttl": 1780049720140,
+        "value": "https://www.chessclub.com/forums/member/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Magix\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 168753}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722862,
+        "ttl": 1780049720140,
+        "value": "https://www.magix.info/us/users/profile/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Shoppingzone\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 301890}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722842,
+        "ttl": 1780049720140,
+        "value": "http://shoppingzone.ru/forum/search.php?keywords=&terms=all&author=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"RPGGeek\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 229543}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722821,
+        "ttl": 1780049720140,
+        "value": "https://rpggeek.com/user/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Filmwatch\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 212729}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722800,
+        "ttl": 1780049720140,
+        "value": "https://filmwatch.com/user/home/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Fireworktv\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 132082}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722779,
+        "ttl": 1780049720140,
+        "value": "https://fireworktv.com/ch/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Pinme\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 113042}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722757,
+        "ttl": 1780049720140,
+        "value": "https://www.pinme.ru/u/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Hubski\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 168512}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722731,
+        "ttl": 1780049720140,
+        "value": "https://hubski.com/user/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"PacketStormSecurity\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 84296}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722701,
+        "ttl": 1780049720140,
+        "value": "https://packetstormsecurity.com/files/authors/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "created_at": 1772273720174,
+        "value": "KyleDerZweite"
+      },
+      "labels": [
+        "Observable"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"github.com\", \"title\": \"KyleDerZweite (Leander Grau) · GitHub\", \"type\": \"Computers Electronics and Technology > Programming and Developer Software\", \"country\": \"United States\", \"rank\": 89, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"/:user_id(.:format)\", \"name\": \"route-pattern\"}, {\"content\": \"profiles\", \"name\": \"route-controller\"}, {\"content\": \"show\", \"name\": \"route-action\"}, {\"content\": \"v2:bcf2abd5-a382-30b2-831c-67534ea25772\", \"name\": \"fetch-nonce\"}, {\"content\": \"4a1c50a83cf6cc4b55b6b9c53e553e3f847c876b87fb333f71f5d05db8f1a7db\", \"name\": \"current-catalog-service-hash\"}, {\"content\": \"120B:6BE5C:5A7A9E3:474E6B3:69A2C037\", \"name\": \"request-id\"}, {\"content\": \"ae39a6a84b31da72b0b26a257dc1cbb39865e2ac39394b65a837dae9b2be0b38\", \"name\": \"html-safe-nonce\"}, {\"content\": \"eyJyZWZlcnJlciI6IiIsInJlcXVlc3RfaWQiOiIxMjBCOjZCRTVDOjVBN0E5RTM6NDc0RTZCMzo2OUEyQzAzNyIsInZpc2l0b3JfaWQiOiI2NzQwNjg5NjIyMjIwODQ5MjA3IiwicmVnaW9uX2VkZ2UiOiJmcmEiLCJyZWdpb25fcmVuZGVyIjoiZnJhIn0=\", \"name\": \"visitor-payload\"}, {\"content\": \"205faafd266d153835ffded6e0a361d7a5c09f6cf94ac3ae54f206ccfb757fd4\", \"name\": \"visitor-hmac\"}, {\"content\": \"copilot\", \"name\": \"github-keyboard-shortcuts\"}, {\"name\": \"selected-link\"}, {\"content\": \"Apib7-x98H0j5cPqHWwSMm6dNU4GmODRoqxLiDzdx9I\", \"name\": \"google-site-verification\"}, {\"content\": \"https://collector.github.com/github/collect\", \"name\": \"octolytics-url\"}, {\"content\": \"/<user-name>\", \"name\": \"analytics-location\"}, {\"name\": \"user-login\"}, {\"content\": \"Student at university of applied sciences Ruhr-west - KyleDerZweite\", \"name\": \"description\"}, {\"property\": \"fb:app_id\", \"content\": \"1401488693436528\"}, {\"content\": \"app-id=1477376905, app-argument=https://github.com/KyleDerZweite\", \"name\": \"apple-itunes-app\"}, {\"content\": \"https://avatars.githubusercontent.com/u/54944446?v=4?s=400\", \"name\": \"twitter:image\"}, {\"content\": \"@github\", \"name\": \"twitter:site\"}, {\"content\": \"summary\", \"name\": \"twitter:card\"}, {\"content\": \"KyleDerZweite - Overview\", \"name\": \"twitter:title\"}, {\"content\": \"Student at university of applied sciences Ruhr-west - KyleDerZweite\", \"name\": \"twitter:description\"}, {\"property\": \"og:image\", \"content\": \"https://avatars.githubusercontent.com/u/54944446?v=4?s=400\"}, {\"property\": \"og:image:alt\", \"content\": \"Student at university of applied sciences Ruhr-west - KyleDerZweite\"}, {\"property\": \"og:site_name\", \"content\": \"GitHub\"}, {\"property\": \"og:type\", \"content\": \"profile\"}, {\"property\": \"og:title\", \"content\": \"KyleDerZweite - Overview\"}, {\"property\": \"og:url\", \"content\": \"https://github.com/KyleDerZweite\"}, {\"property\": \"og:description\", \"content\": \"Student at university of applied sciences Ruhr-west - KyleDerZweite\"}, {\"property\": \"profile:username\", \"content\": \"KyleDerZweite\"}, {\"content\": \"github.com\", \"name\": \"hostname\"}, {\"content\": \"github.com\", \"name\": \"expected-hostname\"}, {\"content\": \"no-preview\", \"name\": \"turbo-cache-control\"}, {\"content\": \"54944446\", \"name\": \"octolytics-dimension-user_id\"}, {\"content\": \"KyleDerZweite\", \"name\": \"octolytics-dimension-user_login\"}, {\"content\": \"logged-out env-production page-responsive page-profile\", \"name\": \"turbo-body-classes\"}, {\"content\": \"false\", \"name\": \"disable-turbo\"}, {\"content\": \"https://api.github.com/_private/browser/stats\", \"name\": \"browser-stats-url\"}, {\"content\": \"https://api.github.com/_private/browser/errors\", \"name\": \"browser-errors-url\"}, {\"content\": \"3b808a02058ef227fa5d29650f4e4fd2ff151519\", \"name\": \"release\"}, {\"content\": \"full\", \"name\": \"ui-target\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273720174,
+        "ttl": 1780049845368,
+        "value": "https://github.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"source_platform\": \"GitHub\", \"field\": \"fullname\"}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "created_at": 1772273720684,
+        "ttl": 1780049720140,
+        "value": "Leander Grau"
+      },
+      "labels": [
+        "Observable",
+        "Person"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"source_platform\": \"GitHub\", \"field\": \"location\"}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "created_at": 1772273720789,
+        "ttl": 1780049720140,
+        "value": "NRW, Germany"
+      },
+      "labels": [
+        "Observable",
+        "Person"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"source_platform\": \"GitHub\", \"field\": \"blog_url\"}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "created_at": 1772273720813,
+        "ttl": 1780049720140,
+        "value": "kylehub.dev"
+      },
+      "labels": [
+        "Observable",
+        "Domain"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"GitHubGist\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 26}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273720843,
+        "ttl": 1780049720140,
+        "value": "https://gist.github.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"steamcommunity.com\", \"title\": \"Steam Community :: Kyle\", \"type\": \"Games > Video Games Consoles and Accessories\", \"country\": \"United States\", \"rank\": 402, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"summary_large_image\", \"name\": \"twitter:card\"}, {\"content\": \"@steam\", \"name\": \"twitter:site\"}, {\"property\": \"og:title\", \"content\": \"Steam Community :: Kyle\"}, {\"property\": \"twitter:title\", \"content\": \"Steam Community :: Kyle\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"fb:app_id\", \"content\": \"105386699540688\"}, {\"property\": \"og:image\", \"content\": \"https://community.fastly.steamstatic.com/public/shared/images/responsive/steam_share_image.jpg\"}, {\"content\": \"https://community.fastly.steamstatic.com/public/shared/images/responsive/steam_share_image.jpg\", \"name\": \"twitter:image\"}, {\"property\": \"og:image:secure\", \"content\": \"https://community.fastly.steamstatic.com/public/shared/images/responsive/steam_share_image.jpg\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273720863,
+        "ttl": 1780049845368,
+        "value": "https://steamcommunity.com/id/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"source_platform\": \"Steam\", \"field\": \"nickname\"}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "created_at": 1772273720884,
+        "ttl": 1780049720140,
+        "value": "Kyle"
+      },
+      "labels": [
+        "Observable",
+        "Username"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Chess\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 211}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721149,
+        "ttl": 1780049720140,
+        "value": "https://www.chess.com/member/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"ChaturBate\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 62}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721186,
+        "ttl": 1780049720140,
+        "value": "https://chaturbate.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OP.GG [LeagueOfLegends] Korea\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 331}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721219,
+        "ttl": 1780049720140,
+        "value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=kr"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OP.GG [LeagueOfLegends] Europe Nordic & East\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 331}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721252,
+        "ttl": 1780049720140,
+        "value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=eune"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"opensea.io\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 259}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721538,
+        "ttl": 1780049720140,
+        "value": "https://opensea.io/accounts/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Twitch\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 34}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721576,
+        "ttl": 1780049720140,
+        "value": "https://twitchtracker.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OP.GG [LeagueOfLegends] Japan\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 331}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721611,
+        "ttl": 1780049720140,
+        "value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=jp"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Freelancer.com\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 661}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721639,
+        "ttl": 1780049720140,
+        "value": "https://www.freelancer.com/api/users/0.1/users?usernames%5B%5D=KyleDerZweite&compact=true"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"source_platform\": \"Freelancer.com\", \"field\": \"fullname\"}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "created_at": 1772273721670,
+        "ttl": 1780049720140,
+        "value": "Kyle G."
+      },
+      "labels": [
+        "Observable",
+        "Person"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"source_platform\": \"Freelancer.com\", \"field\": \"location\"}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "created_at": 1772273721701,
+        "ttl": 1780049720140,
+        "value": "Essen, Germany"
+      },
+      "labels": [
+        "Observable",
+        "Person"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Wattpad\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 805}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721731,
+        "ttl": 1780049720140,
+        "value": "https://www.wattpad.com/user/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"mercadolivre\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 361}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721833,
+        "ttl": 1780049720140,
+        "value": "https://www.mercadolivre.com.br/perfil/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"myanimelist.net\", \"title\": \"KyleDerZweite's Profile - MyAnimeList.net\", \"type\": \"Arts and Entertainment > Arts and Entertainment\", \"country\": \"United States\", \"rank\": 957, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"Check out KyleDerZweite's anime and manga lists, stats, favorites and so much more on MyAnimeList, the largest online anime and manga database in the world! Join the online community, create your anime and manga list, read reviews, explore the forums, follow news, and so much more!\", \"name\": \"description\"}, {\"content\": \"anime, myanimelist, anime news, manga\", \"name\": \"keywords\"}, {\"property\": \"og:locale\", \"content\": \"en_US\"}, {\"property\": \"fb:app_id\", \"content\": \"360769957454434\"}, {\"property\": \"og:site_name\", \"content\": \"MyAnimeList.net\"}, {\"content\": \"summary\", \"name\": \"twitter:card\"}, {\"content\": \"@myanimelist\", \"name\": \"twitter:site\"}, {\"property\": \"og:title\", \"content\": \"KyleDerZweite's Profile - MyAnimeList.net\"}, {\"property\": \"og:image\", \"content\": \"https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png\"}, {\"content\": \"https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png\", \"name\": \"twitter:image:src\"}, {\"property\": \"og:url\", \"content\": \"https://myanimelist.net/profile/KyleDerZweite\"}, {\"property\": \"og:description\", \"content\": \"Check out KyleDerZweite's anime and manga lists, stats, favorites and so much more on MyAnimeList, the largest online anime and manga database in the world! Join the online community, create your anime and manga list, read reviews, explore the forums, follow news, and so much more!\"}, {\"content\": \"default\", \"name\": \"referrer\"}, {\"content\": \"f4644721850a615f5ab915817923fc6e684836d7\", \"name\": \"csrf_token\"}, {\"content\": \"1e927243-8e02-48e3-b098-a7b78c5b4e36\", \"name\": \"fo-verify\"}, {\"content\": \"6Ld_1aIZAAAAAF6bNdR67ICKIaeXLKlbhE7t2Qz4\", \"name\": \"recaptcha_site_key\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273721868,
+        "ttl": 1780049845368,
+        "value": "https://myanimelist.net/profile/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OP.GG [LeagueOfLegends] LAS\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 331}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721895,
+        "ttl": 1780049720140,
+        "value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=las"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OP.GG [LeagueOfLegends] Vietnam\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 331}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721930,
+        "ttl": 1780049720140,
+        "value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=vn"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OP.GG [LeagueOfLegends] LAN\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 331}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721955,
+        "ttl": 1780049720140,
+        "value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=lan"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"OP.GG [LeagueOfLegends] Taiwan\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 331}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273721979,
+        "ttl": 1780049720140,
+        "value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=tw"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"lichess.org\", \"title\": \"KyleDerZweite : Activity • lichess.org\", \"type\": \"Games > Board and Card Games\", \"country\": \"United States\", \"rank\": 2017, \"extracted\": \"unavailable\", \"metadata\": [{\"content\": \"KyleDerZweite played 7 games since May 2, 2023.\", \"name\": \"description\"}, {\"content\": \"notranslate\", \"name\": \"google\"}, {\"property\": \"og:title\", \"content\": \"KyleDerZweite (1500)\"}, {\"property\": \"og:description\", \"content\": \"KyleDerZweite played 7 games since May 2, 2023.\"}, {\"property\": \"og:url\", \"content\": \"https://lichess.org/@/KyleDerZweite\"}, {\"property\": \"og:type\", \"content\": \"website\"}, {\"property\": \"og:site_name\", \"content\": \"lichess.org\"}, {\"property\": \"og:image\", \"content\": \"https://lichess1.org/assets/logo/lichess-tile-wide.png\"}]}",
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "created_at": 1772273722009,
+        "ttl": 1780049845368,
+        "value": "https://lichess.org/@/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"forums.bulbagarden.net\", \"status\": \"Claimed\", \"http_status\": 403, \"rank\": 4189}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722035,
+        "ttl": 1780049720140,
+        "value": "http://forums.bulbagarden.net/members/?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"TechPowerUp\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 4382}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722064,
+        "ttl": 1780049720140,
+        "value": "https://www.techpowerup.com/forums/members/?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"kofi\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 5421}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722089,
+        "ttl": 1780049720140,
+        "value": "https://ko-fi.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Livemaster\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 2913}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722119,
+        "ttl": 1780049720140,
+        "value": "https://www.livemaster.ru/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"authorSTREAM\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 6034}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722141,
+        "ttl": 1780049720140,
+        "value": "http://www.authorstream.com/author/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Kaggle\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 1947}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722165,
+        "ttl": 1780049720140,
+        "value": "https://www.kaggle.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Weedmaps\", \"status\": \"Claimed\", \"http_status\": 422, \"rank\": 7929}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722189,
+        "ttl": 1780049720140,
+        "value": "https://weedmaps.com/brands/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"hi5\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 10971}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722215,
+        "ttl": 1780049720140,
+        "value": "http://www.hi5.com/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Gog\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 5343}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722238,
+        "ttl": 1780049720140,
+        "value": "https://www.gog.com/u/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"hashnode\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 15106}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722262,
+        "ttl": 1780049720140,
+        "value": "https://hashnode.com/@KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Blu-ray\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 16342}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722288,
+        "ttl": 1780049720140,
+        "value": "https://forum.blu-ray.com/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Pepper\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 29244}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722315,
+        "ttl": 1780049720140,
+        "value": "https://www.pepper.ru/profile/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"forums.stevehoffman.tv\", \"status\": \"Claimed\", \"http_status\": 403, \"rank\": 35942}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722336,
+        "ttl": 1780049720140,
+        "value": "https://forums.stevehoffman.tv/members/?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"amateurvoyeurforum.com\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 35411}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722360,
+        "ttl": 1780049720140,
+        "value": "https://www.amateurvoyeurforum.com/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"GotovimDoma\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 30665}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722385,
+        "ttl": 1780049720140,
+        "value": "https://gotovim-doma.ru/forum/search.php?keywords=&terms=all&author=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Wanelo\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 29466}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722413,
+        "ttl": 1780049720140,
+        "value": "https://wanelo.co/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Infura\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 40621}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722435,
+        "ttl": 1780049720140,
+        "value": "https://community.infura.io/u/KyleDerZweite/summary"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Vero\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 97361}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722460,
+        "ttl": 1780049720140,
+        "value": "https://vero.co/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"VKMOnline\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 62559}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722487,
+        "ttl": 1780049720140,
+        "value": "http://forums.vkmonline.com/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"ForumOszone\", \"status\": \"Claimed\", \"http_status\": 409, \"rank\": 45176}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722513,
+        "ttl": 1780049720140,
+        "value": "http://forum.oszone.net/member.php?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Travelblog\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 84207}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722539,
+        "ttl": 1780049720140,
+        "value": "https://www.travelblog.org/Bloggers/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"IRC-Galleria\", \"status\": \"Claimed\", \"http_status\": 404, \"rank\": 118778}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722587,
+        "ttl": 1780049720140,
+        "value": "https://irc-galleria.net/user/KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"Libraries\", \"status\": \"Claimed\", \"http_status\": 200, \"rank\": 68610}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722617,
+        "ttl": 1780049720140,
+        "value": "https://libraries.io/github/KyleDerZweite/"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    },
+    {
+      "properties": {
+        "metadata": "{\"platform\": \"php.ru\", \"status\": \"Claimed\", \"http_status\": 403, \"rank\": 113293}",
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "created_at": 1772273722645,
+        "ttl": 1780049720140,
+        "value": "https://php.ru/forum/members/?username=KyleDerZweite"
+      },
+      "labels": [
+        "Observable",
+        "PlatformAccount"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "target_value": "https://onanistov.net/search.php?keywords=&terms=all&author=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722672
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://facebook.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845921
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://dailymotion.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845909
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://career.habr.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845898
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://wattpad.com/user/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845885
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://revealme.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845857
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://reddit.com/user/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845846
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://redbubble.com/people/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845835
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://mintme.com/token/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845813
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://metacritic.com/user/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845801
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://mercadolivre.com.br/perfil/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845788
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://lolchess.gg/profile/na/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845774
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://icq.im/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845751
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://freelancer.com/u/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845727
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://en.gravatar.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845715
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://colourlovers.com/lover/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845574
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://chess.com/member/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845562
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://chaturbate.com/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845377
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://substack.com/@KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723612
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://massagerepublic.com/u/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723598
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forums.expo.dev/u/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723587
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.stopstalk.com/user/profile/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723574
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=KyleDerZweite&btnG=",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723561
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://huggingface.co/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723551
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://reactos.org/wiki/User:KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723542
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://airlinepilot.life/u/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723525
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forum.playtime-forum.info/members/?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723510
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://forum.quake2.com.ru/profile.php?mode=viewprofile&u=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723495
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://ninjakiwi.com/profile/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723478
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://splice.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723465
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.bikemap.net/en/u/KyleDerZweite/routes/created/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723446
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.needrom.com/author/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723426
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.lesswrong.com/users/@KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723406
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://cyberclock.cc/forum/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723387
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.buzznet.com/author/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723371
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.edugeek.net/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723357
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://projecthub.arduino.cc/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723335
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://rugby-forum.ru/polzovateli/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723314
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forumprosport.ru/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723293
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://porschec.ru/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723272
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://sexforum.win/search.php?keywords=&terms=all&author=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723249
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://boxing.ru/forum/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723225
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://www.mfarmer.ru/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723206
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://astrogalaxy.ru/forum/phpBB2/search.php?keywords=&terms=all&author=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723192
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://forum.caravelgames.com/member.php?Action=viewprofile&username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723169
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forum.zone-game.info/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723147
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://phrack.org/author_KyleDerZweite.html",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723129
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://forum.bluesystem.online/profile.php?mode=viewprofile&u=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723110
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forums.runnersworld.co.uk/profile/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723089
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://solaris-club.net/forum/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723071
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forum.setcombg.com/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723052
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.freelanced.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723029
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.hairmaniac.ru/profile/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273723006
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://bbs.evony.com/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722979
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://pesiq.ru/forum/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722955
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://pogovorim.by/forum/search.php?keywords=&terms=all&author=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722933
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://videosift.com/member/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722904
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.chessclub.com/forums/member/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722880
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.magix.info/us/users/profile/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722862
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://shoppingzone.ru/forum/search.php?keywords=&terms=all&author=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722842
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://rpggeek.com/user/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722821
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://filmwatch.com/user/home/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722800
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://fireworktv.com/ch/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722779
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.pinme.ru/u/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722757
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://hubski.com/user/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722731
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://packetstormsecurity.com/files/authors/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722701
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://github.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845739
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "Leander Grau",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "discovered_at": 1772273720684
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "NRW, Germany",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "discovered_at": 1772273720789
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "kylehub.dev",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "discovered_at": 1772273720813
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://gist.github.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273720843
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://steamcommunity.com/id/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845871
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "Kyle",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "discovered_at": 1772273720884
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.chess.com/member/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721149
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://chaturbate.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721186
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=kr",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721219
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=eune",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721252
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://opensea.io/accounts/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721538
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://twitchtracker.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721576
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=jp",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721611
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.freelancer.com/api/users/0.1/users?usernames%5B%5D=KyleDerZweite&compact=true",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721639
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "Kyle G.",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "discovered_at": 1772273721670
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "Essen, Germany",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.7,
+        "discovered_at": 1772273721701
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.wattpad.com/user/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721731
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.mercadolivre.com.br/perfil/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721833
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://myanimelist.net/profile/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845826
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=las",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721895
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=vn",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721930
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=lan",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721955
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.op.gg/summoners/search?q=KyleDerZweite&region=tw",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273721979
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://lichess.org/@/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "social-analyzer",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 1.0,
+        "discovered_at": 1772273845763
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://forums.bulbagarden.net/members/?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722035
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.techpowerup.com/forums/members/?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722064
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://ko-fi.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722089
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.livemaster.ru/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722119
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://www.authorstream.com/author/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722141
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.kaggle.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722165
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://weedmaps.com/brands/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722189
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://www.hi5.com/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722215
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.gog.com/u/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722238
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://hashnode.com/@KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722262
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forum.blu-ray.com/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722288
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.pepper.ru/profile/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722315
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://forums.stevehoffman.tv/members/?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722336
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.amateurvoyeurforum.com/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722360
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://gotovim-doma.ru/forum/search.php?keywords=&terms=all&author=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722385
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://wanelo.co/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722413
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://community.infura.io/u/KyleDerZweite/summary",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722435
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://vero.co/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722460
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://forums.vkmonline.com/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722487
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "http://forum.oszone.net/member.php?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722513
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://www.travelblog.org/Bloggers/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722539
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://irc-galleria.net/user/KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722587
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://libraries.io/github/KyleDerZweite/",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722617
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    },
+    {
+      "target_value": "https://php.ru/forum/members/?username=KyleDerZweite",
+      "rel_props": {
+        "tool_source": "maigret",
+        "investigation_id": "inv-66c55026ce05",
+        "confidence": 0.9,
+        "discovered_at": 1772273722645
+      },
+      "rel_type": "ASSOCIATED_WITH",
+      "source_value": "KyleDerZweite"
+    }
+  ]
+}

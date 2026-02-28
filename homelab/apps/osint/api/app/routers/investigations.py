@@ -64,8 +64,9 @@ async def create_investigation(body: InvestigationCreate, request: Request):
         body.observable_type.value,
     )
 
-    # 2. Dispatch Celery tasks (async — returns immediately)
-    dispatch_analysis.delay(
+    # 2. Dispatch Celery tasks to worker queues (runs synchronously -
+    #    this is just a lightweight fan-out via send_task, not the actual analysis)
+    dispatch_analysis(
         investigation_id=raw["id"],
         query=body.query,
         observable_type=body.observable_type.value,

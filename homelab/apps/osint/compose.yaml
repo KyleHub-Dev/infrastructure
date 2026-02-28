@@ -1,5 +1,5 @@
 # ============================================================
-#  OSINT Platform — Full Stack (Podman Compose)
+#  OSINT Platform - Full Stack (Podman Compose)
 # ============================================================
 #  Runtime:   Podman (rootless)
 #  Ingress:   NEWT tunnel only (no exposed ports)
@@ -10,38 +10,47 @@
 services:
 
   # ── API Gateway ────────────────────────────────────────────
-  api:
+  osint-api:
     build:
       context: ./api
       dockerfile: Dockerfile
+    image: osint-api
     container_name: osint-api
     restart: unless-stopped
     environment:
       - REDIS_URL=${REDIS_URL}
       - NEO4J_URI=${NEO4J_URI}
       - NEO4J_AUTH=${NEO4J_AUTH}
-      - MEILI_URL=http://meilisearch:7700
+      - MEILI_URL=http://osint-meili:7700
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - AUTH_HEADER=${AUTH_HEADER:-Remote-User}
       - DEFAULT_TTL_DAYS=${DEFAULT_TTL_DAYS:-365}
+      - SEED_USER=${SEED_USER:-demo@osint.local}
     depends_on:
-      - redis
-      - neo4j
-      - meilisearch
+      osint-redis:
+        condition: service_started
+      osint-neo4j:
+        condition: service_healthy
+      osint-meili:
+        condition: service_started
     networks:
       - osint-net
 
   # ── Frontend (React + Sigma.js) ────────────────────────────
-  frontend:
+  osint-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: osint-frontend
     container_name: osint-frontend
     restart: unless-stopped
+    depends_on:
+      - osint-api
     networks:
       - osint-net
 
   # ── Redis (Celery Broker + Result Backend) ─────────────────
-  redis:
+  osint-redis:
     image: redis:7-alpine
     container_name: osint-redis
     restart: unless-stopped
@@ -52,7 +61,7 @@ services:
       - osint-net
 
   # ── Neo4j (Graph Database) ────────────────────────────────
-  neo4j:
+  osint-neo4j:
     image: neo4j:5-community
     container_name: osint-neo4j
     restart: unless-stopped
@@ -63,97 +72,111 @@ services:
       - NEO4J_server_memory_heap_max__size=512m
     volumes:
       - neo4j-data:/data
-      - ./config/neo4j/init.cypher:/var/lib/neo4j/import/init.cypher:ro
+    healthcheck:
+      test: ["CMD", "neo4j", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
     networks:
       - osint-net
 
   # ── Meilisearch (Document Store & Full-Text Search) ────────
-  meilisearch:
+  osint-meili:
     image: getmeili/meilisearch:v1
     container_name: osint-meili
     restart: unless-stopped
     environment:
       - MEILI_ENV=production
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - MEILI_NO_ANALYTICS=true
     volumes:
       - meili-data:/meili_data
     networks:
       - osint-net
 
-  # ── Celery Workers — OSINT Tool Analyzers ──────────────────
+  # ── Celery Workers - OSINT Tool Analyzers ──────────────────
 
-  worker-maigret:
+  osint-worker-maigret:
     build:
       context: .
       dockerfile: workers/maigret/Dockerfile
+    image: osint-worker-maigret
     container_name: osint-worker-maigret
     restart: unless-stopped
     environment:
       - REDIS_URL=${REDIS_URL}
       - NEO4J_URI=${NEO4J_URI}
       - NEO4J_AUTH=${NEO4J_AUTH}
-      - MEILI_URL=http://meilisearch:7700
-      - TOR_SOCKS_PROXY=${TOR_SOCKS_PROXY:-socks5://tor-proxy:9050}
-    command: celery -A worker worker -Q queue_username --concurrency=2 --loglevel=info
+      - MEILI_URL=http://osint-meili:7700
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - TOR_SOCKS_PROXY=${TOR_SOCKS_PROXY:-socks5://osint-tor:9050}
+    command: celery -A worker worker -Q queue_maigret --concurrency=2 --loglevel=info
     depends_on:
-      - redis
-      - tor-proxy
+      - osint-redis
+      - osint-tor
     networks:
       - osint-net
 
-  worker-holehe:
+  osint-worker-holehe:
     build:
       context: .
       dockerfile: workers/holehe/Dockerfile
+    image: osint-worker-holehe
     container_name: osint-worker-holehe
     restart: unless-stopped
     environment:
       - REDIS_URL=${REDIS_URL}
       - NEO4J_URI=${NEO4J_URI}
       - NEO4J_AUTH=${NEO4J_AUTH}
-      - MEILI_URL=http://meilisearch:7700
-    command: celery -A worker worker -Q queue_email --concurrency=2 --loglevel=info
+      - MEILI_URL=http://osint-meili:7700
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    command: celery -A worker worker -Q queue_holehe --concurrency=2 --loglevel=info
     depends_on:
-      - redis
+      - osint-redis
     networks:
       - osint-net
 
-  worker-theharvester:
+  osint-worker-harvester:
     build:
       context: .
       dockerfile: workers/theharvester/Dockerfile
+    image: osint-worker-harvester
     container_name: osint-worker-harvester
     restart: unless-stopped
     environment:
       - REDIS_URL=${REDIS_URL}
       - NEO4J_URI=${NEO4J_URI}
       - NEO4J_AUTH=${NEO4J_AUTH}
-      - MEILI_URL=http://meilisearch:7700
-    command: celery -A worker worker -Q queue_domain --concurrency=2 --loglevel=info
+      - MEILI_URL=http://osint-meili:7700
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    command: celery -A worker worker -Q queue_harvester --concurrency=2 --loglevel=info
     depends_on:
-      - redis
+      - osint-redis
     networks:
       - osint-net
 
-  worker-social:
+  osint-worker-social:
     build:
       context: .
       dockerfile: workers/social-analyzer/Dockerfile
+    image: osint-worker-social
     container_name: osint-worker-social
     restart: unless-stopped
     environment:
       - REDIS_URL=${REDIS_URL}
       - NEO4J_URI=${NEO4J_URI}
       - NEO4J_AUTH=${NEO4J_AUTH}
-      - MEILI_URL=http://meilisearch:7700
-    command: celery -A worker worker -Q queue_username --concurrency=2 --loglevel=info
+      - MEILI_URL=http://osint-meili:7700
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    command: celery -A worker worker -Q queue_social --concurrency=2 --loglevel=info
     depends_on:
-      - redis
+      - osint-redis
     networks:
       - osint-net
 
   # ── Tor SOCKS5 Proxy (outbound anonymization) ─────────────
-  tor-proxy:
+  osint-tor:
     image: osminogin/tor-simple
     container_name: osint-tor
     restart: unless-stopped
@@ -161,14 +184,14 @@ services:
       - osint-net
 
   # ── NEWT Tunnel (sole ingress into the stack) ──────────────
-  newt:
+  osint-newt:
     image: fosrl/newt:latest
     container_name: osint-newt
     restart: unless-stopped
     environment:
       - NEWT_ID=${NEWT_ID}
       - NEWT_SECRET=${NEWT_SECRET}
-      - NEWT_ENDPOINT=${PANGOLIN_ENDPOINT}
+      - PANGOLIN_ENDPOINT=${PANGOLIN_ENDPOINT}
     networks:
       - osint-net
 

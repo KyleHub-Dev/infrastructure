@@ -1,6 +1,7 @@
 """Celery task definitions for dispatching and managing analyzer jobs."""
 
 import logging
+from datetime import datetime
 
 from app.tasks.celery_app import celery_app
 
@@ -32,7 +33,8 @@ def dispatch_analysis(
     """Dispatch OSINT analysis tasks based on observable type.
 
     Fans out to all registered analyzers for the given type.
-    Each analyzer runs in its own containerized worker.
+    Each worker atomically increments a completion counter on the
+    investigation node; the last worker to finish sets status to completed.
     """
     task_names = ANALYZERS_BY_TYPE.get(observable_type, [])
 
@@ -62,11 +64,25 @@ def dispatch_analysis(
             investigation_id,
         )
 
-    # Update investigation status to running
+    # Set status to running and record expected worker count
     try:
         from app.services.neo4j import neo4j_service
 
-        neo4j_service.update_investigation_status(investigation_id, "running")
+        neo4j_service.execute_write(
+            """
+            MATCH (inv:Investigation {id: $id})
+            SET inv.status = 'running',
+                inv.updated_at = $now,
+                inv.expected_workers = $count,
+                inv.completed_workers = 0,
+                inv.failed_workers = 0
+            """,
+            {
+                "id": investigation_id,
+                "now": datetime.utcnow().isoformat(),
+                "count": len(dispatched),
+            },
+        )
     except Exception:
         logger.exception("Failed to update investigation status to 'running'")
 

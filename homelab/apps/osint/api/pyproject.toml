@@ -1,7 +1,7 @@
 [project]
 name = "osint-api"
 version = "0.1.0"
-description = "OSINT Platform — FastAPI API Gateway"
+description = "OSINT Platform - FastAPI API Gateway"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115,<1.0",

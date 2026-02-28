@@ -1,13 +1,13 @@
-# OSINT Platform — Architecture Documentation
+# OSINT Platform - Architecture Documentation
 
 ## Overview
 
 The platform follows a **decoupled microservices architecture** split into four distinct layers:
 
-1. **Orchestration Layer** — API Gateway + Celery task queue
-2. **Worker Layer** — Containerized OSINT tool executors
-3. **Persistence Layer** — Neo4j (graph) + Meilisearch (document search)
-4. **Presentation Layer** — React dashboard with Sigma.js graph visualization
+1. **Orchestration Layer** - API Gateway + Celery task queue
+2. **Worker Layer** - Containerized OSINT tool executors
+3. **Persistence Layer** - Neo4j (graph) + Meilisearch (document search)
+4. **Presentation Layer** - React dashboard with Sigma.js graph visualization
 
 ## Layer Details
 
@@ -22,9 +22,9 @@ The platform follows a **decoupled microservices architecture** split into four 
 **Celery + Redis**
 - Redis acts as the high-speed message broker
 - Tasks are routed to named queues by observable type:
-  - `queue_username` — Maigret, Social Analyzer
-  - `queue_email` — Holehe
-  - `queue_domain` — TheHarvester
+  - `queue_username` - Maigret, Social Analyzer
+  - `queue_email` - Holehe
+  - `queue_domain` - TheHarvester
 - Celery Beat handles scheduled jobs (GDPR TTL cleanup, stale task reaping)
 
 ### 2. Worker Layer (OSINT Tool Containers)
@@ -68,7 +68,7 @@ Each OSINT tool runs in its own isolated container acting as a Celery worker. Wo
 - Linked back to Neo4j via `node_id` reference fields
 
 **Why Meilisearch over Elasticsearch?**
-The research document recommended Elasticsearch, but for a homelab deployment the JVM overhead is excessive. Meilisearch provides the full-text search capability needed for raw payload retrieval at a fraction of the resource cost. The platform doesn't need ES-level aggregation pipelines or complex analytics DSL — it needs fast document search with filtering, which Meilisearch handles excellently.
+The research document recommended Elasticsearch, but for a homelab deployment the JVM overhead is excessive. Meilisearch provides the full-text search capability needed for raw payload retrieval at a fraction of the resource cost. The platform doesn't need ES-level aggregation pipelines or complex analytics DSL - it needs fast document search with filtering, which Meilisearch handles excellently.
 
 ### 4. Presentation Layer
 

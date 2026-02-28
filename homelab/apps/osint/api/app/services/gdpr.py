@@ -1,4 +1,4 @@
-"""GDPR compliance services — TTL enforcement and DPIA audit logging."""
+"""GDPR compliance services - TTL enforcement and DPIA audit logging."""
 
 import logging
 from datetime import datetime
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def purge_expired_nodes():
     """Delete all Neo4j nodes whose TTL has expired.
 
-    Implements GDPR Article 5(1)(e) — Storage Limitation.
+    Implements GDPR Article 5(1)(e) - Storage Limitation.
     Runs as a scheduled Celery Beat task (daily).
     """
     now_ms = int(datetime.utcnow().timestamp() * 1000)

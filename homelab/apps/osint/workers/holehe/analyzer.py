@@ -1,4 +1,4 @@
-"""Holehe OSINT worker — email-to-account discovery.
+"""Holehe OSINT worker - email-to-account discovery.
 
 Checks if an email address is registered on 120+ platforms by
 exploiting password reset / signup API flows (without alerting the target).
@@ -12,8 +12,8 @@ from worker_base import WorkerBase
 
 app = Celery("worker")
 app.config_from_object({
-    "broker_url": __import__("os").environ.get("REDIS_URL", "redis://redis:6379/0"),
-    "result_backend": __import__("os").environ.get("REDIS_URL", "redis://redis:6379/0"),
+    "broker_url": __import__("os").environ.get("REDIS_URL", "redis://osint-redis:6379/0"),
+    "result_backend": __import__("os").environ.get("REDIS_URL", "redis://osint-redis:6379/0"),
     "task_serializer": "json",
     "accept_content": ["json"],
 })
@@ -72,7 +72,7 @@ class HoleheWorker(WorkerBase):
 worker = HoleheWorker()
 
 
-@app.task(name="workers.holehe.analyzer.analyze_email", queue="queue_email")
+@app.task(name="workers.holehe.analyzer.analyze_email", queue="queue_holehe")
 def analyze_email(observable: str, investigation_id: str, ttl_days: int | None = None):
     """Celery task: run Holehe email-to-account discovery."""
     return worker.execute(observable, investigation_id, ttl_days)

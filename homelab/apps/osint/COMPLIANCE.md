@@ -1,4 +1,4 @@
-# OSINT Platform — GDPR & EU AI Act Compliance Guide
+# OSINT Platform - GDPR & EU AI Act Compliance Guide
 
 > **This document is a compliance framework, not legal advice.**
 > Consult a qualified data protection officer before deploying in production.
@@ -7,15 +7,15 @@
 
 ## 1. Legal Basis for Processing
 
-This platform processes publicly available personal data under **GDPR Article 6(1)(f) — Legitimate Interest**.
+This platform processes publicly available personal data under **GDPR Article 6(1)(f) - Legitimate Interest**.
 
 ### Three-Part Balancing Test (Mandatory)
 
 Before any investigation is initiated, the operator must document:
 
-1. **Legitimate Interest** — A clear, lawful, specific purpose (e.g., fraud prevention, cybersecurity threat investigation, IP infringement, corporate due diligence)
-2. **Necessity** — The data processing is strictly necessary; no less-invasive alternative exists
-3. **Balancing** — The data subject's fundamental rights do not override the operator's interest
+1. **Legitimate Interest** - A clear, lawful, specific purpose (e.g., fraud prevention, cybersecurity threat investigation, IP infringement, corporate due diligence)
+2. **Necessity** - The data processing is strictly necessary; no less-invasive alternative exists
+3. **Balancing** - The data subject's fundamental rights do not override the operator's interest
 
 > ⚠️ The public nature of data does **not** nullify GDPR obligations. Algorithmic correlation of diverse datasets raises the risk profile significantly.
 
@@ -107,7 +107,7 @@ Every investigation created through the API serves as a micro-DPIA record:
   "query": "jdoe_89",
   "observable_type": "username",
   "legal_basis": "legitimate_interest",
-  "purpose": "Cybersecurity threat investigation — tracking compromised account resale",
+  "purpose": "Cybersecurity threat investigation - tracking compromised account resale",
   "justification": "Target username linked to credential dumps on dark web forums. Article 14(5)(b) exemption applied: notification would alert the threat actor.",
   "ttl_days": 180,
   "status": "active"

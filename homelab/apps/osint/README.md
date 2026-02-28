@@ -1,4 +1,4 @@
-# OSINT Platform — Self-Hosted Intelligence Gathering & Visualization
+# OSINT Platform - Self-Hosted Intelligence Gathering & Visualization
 
 > A GDPR-compliant, self-hosted OSINT platform for targeted intelligence investigations.
 > Single data point in → automated scraping → unified relational graph out.
@@ -54,10 +54,10 @@
 | Decision | Rationale |
 |---|---|
 | **IntelOwl-inspired + Celery** | Purpose-built analyzer framework with high-throughput async task routing |
-| **Neo4j + Meilisearch** | Polyglot persistence — graph for relationships, Meili for full-text search (Rust, ~50MB vs ES's JVM heap) |
+| **Neo4j + Meilisearch** | Polyglot persistence - graph for relationships, Meili for full-text search (Rust, ~50MB vs ES's JVM heap) |
 | **Sigma.js (WebGL)** | Handles 10k–100k+ nodes without browser lag, unlike Canvas-based libs |
 | **Pangolin + NEWT** | Zero exposed ports; auth handled at IAP layer via `Remote-User` header |
-| **Containerized workers** | Each OSINT tool in its own image — independent deps, independent scaling |
+| **Containerized workers** | Each OSINT tool in its own image - independent deps, independent scaling |
 | **GDPR by design** | TTL enforcement, data minimization, DPIA logging, RBAC, audit trail |
 
 ## Quick Start
@@ -84,7 +84,7 @@ osint/
 ├── ARCHITECTURE.md                    # Detailed architecture documentation
 ├── COMPLIANCE.md                      # GDPR & EU AI Act compliance guide
 ├── DEPLOYMENT.md                      # Deployment & operations guide
-├── compose.yaml                       # Podman Compose — full stack
+├── compose.yaml                       # Podman Compose - full stack
 ├── .env.example                       # Environment variable template
 ├── .gitignore                         # Git ignore rules
 │

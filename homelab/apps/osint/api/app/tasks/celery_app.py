@@ -12,12 +12,12 @@ celery_app = Celery(
 )
 
 celery_app.conf.update(
-    # Task routing — each observable type goes to its dedicated queue
+    # Task routing - each observable type goes to its dedicated queue
     task_routes={
-        "workers.maigret.analyzer.analyze_username": {"queue": "queue_username"},
-        "workers.holehe.analyzer.analyze_email": {"queue": "queue_email"},
-        "workers.theharvester.analyzer.analyze_domain": {"queue": "queue_domain"},
-        "workers.social-analyzer.analyzer.analyze_username": {"queue": "queue_username"},
+        "workers.maigret.analyzer.analyze_username": {"queue": "queue_maigret"},
+        "workers.holehe.analyzer.analyze_email": {"queue": "queue_holehe"},
+        "workers.theharvester.analyzer.analyze_domain": {"queue": "queue_harvester"},
+        "workers.social-analyzer.analyzer.analyze_username": {"queue": "queue_social"},
     },
     # Serialization
     task_serializer="json",

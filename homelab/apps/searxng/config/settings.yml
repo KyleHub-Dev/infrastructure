@@ -1,0 +1,89 @@
+# SearXNG settings
+# Docs: https://docs.searxng.org/admin/settings/settings.html
+
+use_default_settings: true
+
+general:
+  debug: false
+  instance_name: "SearXNG"
+  privacypolicy_url: false
+  donation_url: false
+  contact_url: false
+  enable_metrics: true
+
+server:
+  # Must match SEARXNG_BASE_URL in .env
+  base_url: false  # set via SEARXNG_BASE_URL env var
+  secret_key: "changeme"  # overridden by SEARXNG_SECRET_KEY env var
+  limiter: false   # disable built-in rate limiter — Pangolin IAP handles access control
+  image_proxy: true
+  method: "GET"
+  default_http_headers:
+    X-Content-Type-Options: nosniff
+    X-Download-Options: noopen
+    X-Robots-Tag: noindex, nofollow
+    Referrer-Policy: no-referrer
+
+redis:
+  url: false  # no Redis needed when limiter is disabled
+
+ui:
+  static_use_hash: true
+  default_locale: ""
+  query_in_title: false
+  infinite_scroll: false
+  center_alignment: false
+  default_theme: simple
+  theme_args:
+    simple_style: auto
+
+# Enable both HTML and JSON output formats, plus support for scripts/API consumers
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "auto"
+  ban_time_on_fail: 5
+  max_ban_time_on_fail: 120
+  formats:
+    - html
+    - json
+    - csv
+    - rss
+
+engines:
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: false
+
+  - name: bing
+    engine: bing
+    shortcut: b
+    disabled: false
+
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: d
+    disabled: false
+
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: w
+    disabled: false
+
+  - name: github
+    engine: github
+    shortcut: gh
+    disabled: false
+
+
+outgoing:
+  request_timeout: 3.0
+  max_request_timeout: 15.0
+  useragent_suffix: ""
+  pool_connections: 100
+  pool_maxsize: 20
+  # Set a custom source IP or proxy here if needed
+  # proxies:
+  #   all://:
+  #     - socks5://proxy:1080

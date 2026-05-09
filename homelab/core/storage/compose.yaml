@@ -1,0 +1,77 @@
+# =====================================================================
+# homelab/core/storage — RustFS S3-compatible object storage
+# =====================================================================
+#   rustfs-perms : one-shot ownership fix for the host bind mount
+#   rustfs       : S3-compatible object storage API + admin console
+#   newt         : Pangolin tunnel for HTTPS console access
+#
+# Pangolin route target:
+#   console: storage.kylehub.dev -> storage-newt -> rustfs:9001
+#
+# Optional S3 route target, only if external S3 access is required:
+#   s3.kylehub.dev -> storage-newt -> rustfs:9000
+#
+# No host ports are exposed by default. Internal clients can use:
+#   http://rustfs:9000
+# =====================================================================
+
+services:
+  rustfs-perms:
+    image: docker.io/alpine:3.20
+    container_name: storage-rustfs-perms
+    user: root
+    command: chown -R 10001:10001 /data
+    volumes:
+      - ${RUSTFS_DATA_DIR:-/srv/rustfs/data}:/data:Z
+    restart: "no"
+
+  rustfs:
+    image: docker.io/rustfs/rustfs:latest
+    container_name: storage-rustfs
+    restart: unless-stopped
+    depends_on:
+      rustfs-perms:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_SERVER_DOMAINS: ${RUSTFS_SERVER_DOMAINS:-storage.kylehub.dev}
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+    volumes:
+      - ${RUSTFS_DATA_DIR:-/srv/rustfs/data}:/data:Z
+    networks:
+      - storage-net
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9001/rustfs/console/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  newt:
+    image: docker.io/fosrl/newt:latest
+    container_name: storage-newt
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT}
+      NEWT_ID: ${NEWT_ID}
+      NEWT_SECRET: ${NEWT_SECRET}
+    networks:
+      - storage-net
+    depends_on:
+      rustfs:
+        condition: service_healthy
+
+networks:
+  storage-net:
+    driver: bridge

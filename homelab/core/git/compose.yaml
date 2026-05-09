@@ -1,0 +1,112 @@
+# =====================================================================
+# homelab/core/git — Self-hosted Forgejo stack
+# =====================================================================
+#   forgejo  : Git forge UI/API, repositories, issues, pull requests
+#   postgres : durable Forgejo database
+#   newt     : Pangolin tunnel for HTTPS access to Forgejo
+#
+# Pangolin route target:
+#   service: forgejo
+#   port:    3000
+#
+# SSH is enabled inside the Podman network on port 2222. Expose it via
+# Pangolin TCP routing if available, or uncomment the host port mapping
+# below and forward git.kylehub.dev:2222 at the firewall.
+# =====================================================================
+
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:15-rootless
+    container_name: git-forgejo
+    user: "${FORGEJO_UID:-1000}:${FORGEJO_GID:-1000}"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      USER_UID: ${FORGEJO_UID:-1000}
+      USER_GID: ${FORGEJO_GID:-1000}
+      FORGEJO____APP_NAME: ${FORGEJO_APP_NAME:-KyleHub Git}
+      FORGEJO__database__DB_TYPE: postgres
+      FORGEJO__database__HOST: postgres:5432
+      FORGEJO__database__NAME: ${POSTGRES_DB:-forgejo}
+      FORGEJO__database__USER: ${POSTGRES_USER:-forgejo}
+      FORGEJO__database__PASSWD: ${POSTGRES_PASSWORD}
+      FORGEJO__server__DOMAIN: ${FORGEJO_DOMAIN:-git.kylehub.dev}
+      FORGEJO__server__ROOT_URL: ${FORGEJO_ROOT_URL:-https://git.kylehub.dev/}
+      FORGEJO__server__HTTP_PORT: 3000
+      FORGEJO__server__START_SSH_SERVER: "true"
+      FORGEJO__server__SSH_DOMAIN: ${FORGEJO_SSH_DOMAIN:-git.kylehub.dev}
+      FORGEJO__server__SSH_PORT: ${FORGEJO_SSH_PORT:-2222}
+      FORGEJO__server__SSH_LISTEN_PORT: 2222
+      FORGEJO__service__DISABLE_REGISTRATION: ${FORGEJO_DISABLE_REGISTRATION:-false}
+      FORGEJO__service__REQUIRE_SIGNIN_VIEW: ${FORGEJO_REQUIRE_SIGNIN_VIEW:-false}
+      FORGEJO__service__REGISTER_EMAIL_CONFIRM: ${FORGEJO_REGISTER_EMAIL_CONFIRM:-false}
+      FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: ${FORGEJO_ALLOW_ONLY_EXTERNAL_REGISTRATION:-false}
+      FORGEJO__repository__DEFAULT_PRIVATE: ${FORGEJO_DEFAULT_PRIVATE:-last}
+      FORGEJO__repository__ENABLE_PUSH_CREATE_USER: ${FORGEJO_ENABLE_PUSH_CREATE_USER:-true}
+      FORGEJO__repository__ENABLE_PUSH_CREATE_ORG: ${FORGEJO_ENABLE_PUSH_CREATE_ORG:-true}
+      FORGEJO__ui__DEFAULT_THEME: ${FORGEJO_DEFAULT_THEME:-forgejo-auto}
+      FORGEJO__ui__THEMES: forgejo-auto,forgejo-light,forgejo-dark,gitea-auto,gitea-light,gitea-dark
+    volumes:
+      - forgejo-data:/var/lib/gitea
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - git-net
+    # ports:
+    #   - "2222:2222/tcp"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  postgres:
+    image: docker.io/postgres:16-alpine
+    container_name: git-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forgejo}
+      POSTGRES_USER: ${POSTGRES_USER:-forgejo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - git-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  newt:
+    image: docker.io/fosrl/newt:latest
+    container_name: git-newt
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT}
+      NEWT_ID: ${NEWT_ID}
+      NEWT_SECRET: ${NEWT_SECRET}
+    networks:
+      - git-net
+    depends_on:
+      forgejo:
+        condition: service_healthy
+
+networks:
+  git-net:
+    driver: bridge
+
+volumes:
+  forgejo-data:
+    driver: local
+  postgres-data:
+    driver: local

@@ -1,510 +1,127 @@
-# Observability Stack Setup
+# Observability stack reference
 
-> **Last Updated:** 2026-01-09
-> 
-> This file is designed to be copied to your infrastructure repository.
-
-Complete setup guide for a self-hosted observability stack using OpenTelemetry Collector, Loki, Prometheus, and Grafana.
-
----
-
-## Architecture Overview
-
-```
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│   Application 1 │  │   Application 2 │  │   Application N │
-│   (OTLP/HTTP)   │  │   (OTLP/HTTP)   │  │  (Docker logs)  │
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
-         │                    │                    │
-         └────────────────────┼────────────────────┘
-                              │
-                              ▼
-                 ┌────────────────────────┐
-                 │  OpenTelemetry Collector │
-                 │  Port 4317 (gRPC)       │
-                 │  Port 4318 (HTTP)       │
-                 └────────────┬─────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-         ┌─────────┐    ┌──────────┐    ┌─────────┐
-         │  Loki   │    │Prometheus│    │ (Tempo) │
-         │  :3100  │    │  :9090   │    │ (later) │
-         └────┬────┘    └────┬─────┘    └─────────┘
-              │              │
-              └──────┬───────┘
-                     ▼
-              ┌───────────┐
-              │  Grafana  │
-              │   :3000   │
-              └───────────┘
-```
+> **STATUS: design under review - DO NOT DEPLOY YET.**
+>
+> The structural refactor (container prefixes, network attachments,
+> removal of the broken Newt mock, drop of the wrong-path filelog
+> receiver) is in place so this stack is consistent with the rest of
+> `homelab/core/*`. The overall design still needs a second pass
+> before first deploy:
+>
+> - Scope: which apps push telemetry, which are scraped?
+> - Auth: Pangolin IAP in front of Grafana, native Grafana OIDC
+>   against Zitadel, or both?
+> - Retention sizing on the Hetzner host (`obs-loki-data`,
+>   `obs-prometheus-data`, `obs-grafana-data` volumes).
+> - Whether `homelab-apps-edge` apps should reach `obs-otel` via
+>   `homelab-core-data` or via a dedicated cross-zone telemetry net.
+>
+> Skip this stack in the deploy runbook until that conversation has
+> happened. See `core/DEPLOY.md`.
 
 ---
 
-## Quick Start
+> **Source of truth:** `compose.yaml` and `config/*` in this directory.
+> This file is reference-only - cheatsheet for sending data in,
+> querying it back out, and the day-to-day maintenance.
 
-```bash
-# Clone/copy these files to your infra repo
-mkdir -p observability
-cd observability
+## Topology (current)
 
-# Create configs (see below)
-# Then start the stack
-docker compose up -d
 ```
+   apps (homelab/apps/* and external producers)
+     |
+     | OTLP gRPC :4317 / HTTP :4318  (over homelab-core-data)
+     v
+  obs-otel  ----logs---->  obs-loki :3100
+              \--metrics->  obs-prometheus :9090 (scrapes :8889 on obs-otel)
+                                       |
+                                       v
+                               obs-grafana :3000
+                          (exposed via core-newt -> Pangolin)
+```
+
+Scope today: receive telemetry pushed by user-developed webapps. Infra
+scraping (node-exporter, cAdvisor, postgres-exporter, etc.) is
+intentionally out of scope until the user defines what infra signals
+matter. Add scrape jobs to `config/prometheus.yml` when needed.
 
 ---
 
-## Docker Compose
+## Sending logs from an application
 
-```yaml
-# docker-compose.yml
-version: '3.8'
+### Option 1 - structured JSON to stdout (simplest)
 
-services:
-  # ============================================
-  # OpenTelemetry Collector
-  # Receives logs/metrics from all applications
-  # ============================================
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: otel-collector
-    command: ["--config=/etc/otelcol/config.yaml"]
-    volumes:
-      - ./config/otel-collector.yaml:/etc/otelcol/config.yaml:ro
-      - /var/lib/docker/containers:/var/log/containers:ro
-    ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
-      - "8889:8889"   # Prometheus metrics endpoint
-    environment:
-      - ENVIRONMENT=${ENVIRONMENT:-production}
-    restart: unless-stopped
-    networks:
-      - observability
-
-  # ============================================
-  # Loki - Log aggregation
-  # ============================================
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    command: -config.file=/etc/loki/config.yaml
-    volumes:
-      - ./config/loki.yaml:/etc/loki/config.yaml:ro
-      - loki_data:/loki
-    ports:
-      - "3100:3100"
-    restart: unless-stopped
-    networks:
-      - observability
-
-  # ============================================
-  # Prometheus - Metrics aggregation
-  # ============================================
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
-    volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    restart: unless-stopped
-    networks:
-      - observability
-
-  # ============================================
-  # Grafana - Dashboards & Visualization
-  # ============================================
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
-      - GF_USERS_DEFAULT_THEME=dark
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
-    restart: unless-stopped
-    networks:
-      - observability
-    depends_on:
-      - loki
-      - prometheus
-
-networks:
-  observability:
-    driver: bridge
-
-volumes:
-  loki_data:
-  prometheus_data:
-  grafana_data:
-```
-
----
-
-## Configuration Files
-
-### Directory Structure
-
-```
-observability/
-├── docker-compose.yml
-├── .env
-└── config/
-    ├── otel-collector.yaml
-    ├── loki.yaml
-    ├── prometheus.yml
-    └── grafana/
-        └── provisioning/
-            └── datasources/
-                └── datasources.yml
-```
-
----
-
-### OpenTelemetry Collector
-
-```yaml
-# config/otel-collector.yaml
-receivers:
-  # Receive OTLP from applications
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
-  
-  # Collect Docker container logs (optional)
-  filelog:
-    include:
-      - /var/log/containers/*.log
-    include_file_path: true
-    operators:
-      # Parse Docker JSON log format
-      - type: json_parser
-        timestamp:
-          parse_from: attributes.time
-          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-      # Extract container name
-      - type: regex_parser
-        regex: '/var/log/containers/(?P<container_name>[^_]+)_.*\.log'
-        parse_from: attributes["log.file.path"]
-      - type: move
-        from: attributes.container_name
-        to: resource["service.name"]
-
-processors:
-  # Batch for efficiency
-  batch:
-    timeout: 1s
-    send_batch_size: 1024
-  
-  # Add environment label
-  resource:
-    attributes:
-      - key: deployment.environment
-        value: ${ENVIRONMENT}
-        action: insert
-  
-  # Memory limiter (prevent OOM)
-  memory_limiter:
-    check_interval: 1s
-    limit_mib: 400
-    spike_limit_mib: 100
-
-exporters:
-  # Export logs to Loki
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-    labels:
-      attributes:
-        service.name: "service"
-        level: "level"
-      resource:
-        deployment.environment: "environment"
-  
-  # Export metrics for Prometheus scraping
-  prometheus:
-    endpoint: 0.0.0.0:8889
-    namespace: otel
-  
-  # Debug output (disable in production)
-  # debug:
-  #   verbosity: detailed
-
-service:
-  pipelines:
-    logs:
-      receivers: [otlp, filelog]
-      processors: [memory_limiter, batch, resource]
-      exporters: [loki]
-    
-    metrics:
-      receivers: [otlp]
-      processors: [memory_limiter, batch]
-      exporters: [prometheus]
-```
-
----
-
-### Loki
-
-```yaml
-# config/loki.yaml
-auth_enabled: false
-
-server:
-  http_listen_port: 3100
-  grpc_listen_port: 9096
-  log_level: warn
-
-common:
-  instance_addr: 127.0.0.1
-  path_prefix: /loki
-  storage:
-    filesystem:
-      chunks_directory: /loki/chunks
-      rules_directory: /loki/rules
-  replication_factor: 1
-  ring:
-    kvstore:
-      store: inmemory
-
-query_range:
-  results_cache:
-    cache:
-      embedded_cache:
-        enabled: true
-        max_size_mb: 100
-
-schema_config:
-  configs:
-    - from: 2020-10-24
-      store: tsdb
-      object_store: filesystem
-      schema: v13
-      index:
-        prefix: index_
-        period: 24h
-
-limits_config:
-  retention_period: 30d
-  ingestion_rate_mb: 10
-  ingestion_burst_size_mb: 20
-  max_streams_per_user: 10000
-  max_global_streams_per_user: 10000
-
-# Compactor for retention enforcement
-compactor:
-  working_directory: /loki/compactor
-  retention_enabled: true
-  retention_delete_delay: 2h
-  delete_request_store: filesystem
-```
-
----
-
-### Prometheus
-
-```yaml
-# config/prometheus.yml
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
-scrape_configs:
-  # Scrape OTel Collector metrics
-  - job_name: 'otel-collector'
-    static_configs:
-      - targets: ['otel-collector:8889']
-  
-  # Scrape Prometheus itself
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
-  
-  # Scrape Loki metrics
-  - job_name: 'loki'
-    static_configs:
-      - targets: ['loki:3100']
-  
-  # Add your application metrics endpoints here
-  # - job_name: 'dno-crawler'
-  #   static_configs:
-  #     - targets: ['dno-crawler-backend:8000']
-  #   metrics_path: /metrics
-```
-
----
-
-### Grafana Data Sources
-
-```yaml
-# config/grafana/provisioning/datasources/datasources.yml
-apiVersion: 1
-
-datasources:
-  - name: Loki
-    type: loki
-    access: proxy
-    url: http://loki:3100
-    isDefault: true
-    jsonData:
-      maxLines: 1000
-    
-  - name: Prometheus
-    type: prometheus
-    access: proxy
-    url: http://prometheus:9090
-    jsonData:
-      timeInterval: "15s"
-```
-
----
-
-## Environment Variables
-
-```bash
-# .env
-ENVIRONMENT=production
-GRAFANA_USER=admin
-GRAFANA_PASSWORD=your-secure-password
-GRAFANA_ROOT_URL=https://grafana.yourdomain.com
-```
-
----
-
-## Sending Logs from Applications
-
-### Python (structlog + OTLP)
+Print one JSON object per line; the app's container can be wired to
+ship to OTel via a sidecar or Loki driver. Useful when the app does
+not directly speak OTLP.
 
 ```python
-# Option 1: stdout JSON (recommended - collector reads Docker logs)
-import json
-import sys
-
-def emit_event(event: dict):
+import json, sys
+def emit(event: dict) -> None:
     print(json.dumps(event), file=sys.stdout, flush=True)
+```
 
-# Option 2: Direct OTLP HTTP
-import httpx
+### Option 2 - direct OTLP HTTP
 
-async def send_to_otel(event: dict):
+```python
+import httpx, json, time
+
+async def send_to_otel(event: dict) -> None:
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "http://otel-collector:4318/v1/logs",
+        await client.post(
+            "http://obs-otel:4318/v1/logs",
             json={
                 "resourceLogs": [{
                     "resource": {
                         "attributes": [
-                            {"key": "service.name", "value": {"stringValue": "my-app"}}
-                        ]
+                            {"key": "service.name",
+                             "value": {"stringValue": "my-app"}},
+                        ],
                     },
                     "scopeLogs": [{
                         "logRecords": [{
                             "timeUnixNano": str(int(time.time() * 1e9)),
                             "body": {"stringValue": json.dumps(event)},
                             "attributes": [
-                                {"key": "level", "value": {"stringValue": event.get("level", "info")}}
-                            ]
-                        }]
-                    }]
-                }]
+                                {"key": "level",
+                                 "value": {"stringValue": event.get("level", "info")}},
+                            ],
+                        }],
+                    }],
+                }],
             },
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
 ```
 
-### Docker Logging Driver
-
-Configure containers to send logs directly:
-
-```yaml
-# In your application's docker-compose.yml
-services:
-  my-app:
-    image: my-app:latest
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # OTel collector reads from /var/lib/docker/containers
-```
+The producing container must be on the `homelab-core-data` network so
+it can resolve `obs-otel`.
 
 ---
 
-## Useful Loki Queries (LogQL)
+## LogQL cheatsheet
 
 ```logql
 # All logs from a service
-{service="dno-crawler"}
+{service="my-app"}
 
 # Errors only
-{service="dno-crawler"} |= "error" | json | level = "error"
+{service="my-app"} |= "error" | json | level = "error"
 
-# Slow requests (>2 seconds)
-{service="dno-crawler"} | json | duration_ms > 2000
+# Slow requests (>2 s) when log lines are JSON with duration_ms
+{service="my-app"} | json | duration_ms > 2000
 
-# Specific user's requests
-{service="dno-crawler"} | json | user_id = "user_456"
+# Specific user
+{service="my-app"} | json | user_id = "user_456"
 
-# Error rate (last 5 minutes)
+# Error rate, last 5 min
 sum(rate({level="error"}[5m])) by (service)
 
 # Top 10 slowest endpoints
 topk(10, avg by (http_path) (
-  {service="dno-crawler"} | json | unwrap duration_ms
+  {service="my-app"} | json | unwrap duration_ms
 ))
 ```
-
----
-
-## Grafana Dashboard Ideas
-
-### Request Overview Panel
-- Request rate by status code (2xx, 4xx, 5xx)
-- P50/P95/P99 latency histogram
-- Error rate trend
-
-### Service Health Panel
-- Active services
-- Log ingestion rate
-- Error count by service
-
-### User Activity Panel
-- Requests by user tier
-- Top users by request count
-- User error rate
-
----
-
-## Resource Requirements
-
-| Component | Min RAM | Recommended | Storage |
-|-----------|---------|-------------|---------|
-| OTel Collector | 128MB | 256MB | minimal |
-| Loki | 512MB | 1GB | 50GB+ |
-| Prometheus | 256MB | 512MB | 20GB |
-| Grafana | 256MB | 512MB | 1GB |
-| **Total** | **~1.2GB** | **~2.5GB** | **~70GB** |
-
-Suitable for: VPS with 4GB RAM, 100GB+ storage
 
 ---
 
@@ -512,50 +129,47 @@ Suitable for: VPS with 4GB RAM, 100GB+ storage
 
 ### Backup Grafana
 
-```bash
+```sh
 # Export dashboards
-docker exec grafana grafana-cli admin export-dashboards /tmp/dashboards
-docker cp grafana:/tmp/dashboards ./backups/
+podman exec obs-grafana grafana-cli admin export-dashboards /tmp/dashboards
+podman cp obs-grafana:/tmp/dashboards ./backups/
 
-# Or backup the volume
-docker run --rm -v grafana_data:/data -v $(pwd):/backup alpine \
+# Or back up the volume
+podman run --rm -v obs-grafana-data:/data -v "$PWD":/backup alpine \
   tar czf /backup/grafana-backup.tar.gz /data
 ```
 
-### Check Loki Retention
+### Loki retention
 
-```bash
-# View Loki storage usage
-docker exec loki du -sh /loki/chunks
+```sh
+# Disk usage
+podman exec obs-loki du -sh /loki/chunks
 
-# Force compaction (if needed)
-curl -X POST http://localhost:3100/compactor/ring/forget
+# Force compaction (rare)
+curl -X POST http://obs-loki:3100/compactor/ring/forget
 ```
 
-### Update Stack
+### Update images
 
-```bash
-docker compose pull
-docker compose up -d
+```sh
+podman-compose pull
+podman-compose up -d
 ```
 
 ---
 
 ## Troubleshooting
 
-### Logs not appearing in Loki
+**Logs not appearing in Loki**
+1. `podman-compose logs obs-otel` - look for receiver / exporter errors.
+2. Verify Loki: `curl http://obs-loki:3100/ready` from inside obs-net.
+3. Confirm the `service.name` attribute is being set on the producer.
 
-1. Check OTel Collector logs: `docker logs otel-collector`
-2. Verify Loki is healthy: `curl http://localhost:3100/ready`
-3. Check labels are being set correctly
+**High memory in obs-otel**
+Lower `processors.batch.send_batch_size` in `config/otel-collector.yaml`,
+or raise the OTLP client's sampling rate.
 
-### High memory usage
-
-1. Reduce Loki's `max_streams_per_user`
-2. Lower OTel Collector's batch size
-3. Increase sampling rate (drop more logs)
-
-### Grafana can't connect to data sources
-
-1. Verify network connectivity: `docker exec grafana ping loki`
-2. Check data source URLs use container names, not localhost
+**Grafana cannot reach data sources**
+Data source URLs in `config/grafana/provisioning/datasources/datasources.yml`
+use container names (`obs-loki`, `obs-prometheus`), not `localhost`.
+Verify network attachment: `podman exec obs-grafana getent hosts obs-loki`.

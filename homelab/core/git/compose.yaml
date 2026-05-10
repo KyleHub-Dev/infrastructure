@@ -1,21 +1,26 @@
 # =====================================================================
-# homelab/core/git — Self-hosted Forgejo stack
+# homelab/core/git - Self-hosted Forgejo (PREPARED, NOT DEPLOYED)
 # =====================================================================
-#   forgejo  : Git forge UI/API, repositories, issues, pull requests
-#   postgres : durable Forgejo database
-#   newt     : Pangolin tunnel for HTTPS access to Forgejo
+# This stack is structurally complete and consistent with the rest of
+# homelab/core/* but is intentionally NOT started. See SETUP.md
+# (Status section) for the reasoning and unblocking conditions.
 #
-# Pangolin route target:
-#   service: forgejo
-#   port:    3000
+#   git-forgejo  : Git forge UI/API, repositories, issues, pull requests
+#   git-postgres : durable Forgejo database
 #
-# SSH is enabled inside the Podman network on port 2222. Expose it via
-# Pangolin TCP routing if available, or uncomment the host port mapping
-# below and forward git.kylehub.dev:2222 at the firewall.
+# Edge attachment (when this stack is eventually deployed):
+#   git-forgejo joins homelab-core-edge so core-newt (in core/_edge)
+#   can reach it. Pangolin Resource:
+#     git.kylehub.dev -> git-forgejo:3000
+#
+# SSH (port 2222 inside the Podman network) is intentionally NOT
+# exposed to the host. Expose it via Pangolin TCP routing if available,
+# or uncomment the host port mapping below and forward
+# git.kylehub.dev:2222 at the gateway when ready.
 # =====================================================================
 
 services:
-  forgejo:
+  git-forgejo:
     image: codeberg.org/forgejo/forgejo:15-rootless
     container_name: git-forgejo
     user: "${FORGEJO_UID:-1000}:${FORGEJO_GID:-1000}"
@@ -27,7 +32,7 @@ services:
       USER_GID: ${FORGEJO_GID:-1000}
       FORGEJO____APP_NAME: ${FORGEJO_APP_NAME:-KyleHub Git}
       FORGEJO__database__DB_TYPE: postgres
-      FORGEJO__database__HOST: postgres:5432
+      FORGEJO__database__HOST: git-postgres:5432
       FORGEJO__database__NAME: ${POSTGRES_DB:-forgejo}
       FORGEJO__database__USER: ${POSTGRES_USER:-forgejo}
       FORGEJO__database__PASSWD: ${POSTGRES_PASSWORD}
@@ -52,10 +57,11 @@ services:
       - /etc/localtime:/etc/localtime:ro
     networks:
       - git-net
+      - homelab-core-edge
     # ports:
     #   - "2222:2222/tcp"
     depends_on:
-      postgres:
+      git-postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --spider http://localhost:3000/"]
@@ -64,7 +70,7 @@ services:
       retries: 5
       start_period: 60s
 
-  postgres:
+  git-postgres:
     image: docker.io/postgres:16-alpine
     container_name: git-postgres
     restart: unless-stopped
@@ -85,25 +91,11 @@ services:
       retries: 5
       start_period: 20s
 
-  newt:
-    image: docker.io/fosrl/newt:latest
-    container_name: git-newt
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT}
-      NEWT_ID: ${NEWT_ID}
-      NEWT_SECRET: ${NEWT_SECRET}
-    networks:
-      - git-net
-    depends_on:
-      forgejo:
-        condition: service_healthy
-
 networks:
   git-net:
     driver: bridge
+  homelab-core-edge:
+    external: true
 
 volumes:
   forgejo-data:

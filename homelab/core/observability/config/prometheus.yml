@@ -1,25 +1,31 @@
+# =====================================================================
+# Prometheus - obs-prometheus
+# =====================================================================
+# Minimal scrape config: self + the OTel collector's prometheus
+# exporter + Loki self-metrics. Cross-stack and infra-wide scraping
+# (node-exporter, cAdvisor, postgres exporters, application /metrics
+# endpoints) is intentionally NOT configured yet - add as needed.
+# =====================================================================
+
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
 scrape_configs:
-  # Scrape OTel Collector metrics
-  - job_name: 'otel-collector'
+  - job_name: 'obs-otel'
     static_configs:
-      - targets: ['otel-collector:8889']
-  
-  # Scrape Prometheus itself
-  - job_name: 'prometheus'
+      - targets: ['obs-otel:8889']
+
+  - job_name: 'obs-prometheus'
     static_configs:
       - targets: ['localhost:9090']
-  
-  # Scrape Loki metrics
-  - job_name: 'loki'
+
+  - job_name: 'obs-loki'
     static_configs:
-      - targets: ['loki:3100']
-  
-  # Add your application metrics endpoints here
-  # - job_name: 'dno-crawler'
+      - targets: ['obs-loki:3100']
+
+  # Add application metrics endpoints here, e.g.:
+  # - job_name: 'my-app'
   #   static_configs:
-  #     - targets: ['dno-crawler-backend:8000']
+  #     - targets: ['my-app:8000']
   #   metrics_path: /metrics

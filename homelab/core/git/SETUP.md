@@ -1,6 +1,45 @@
 # KyleHub Git
 
-This stack runs Forgejo behind a Pangolin Newt tunnel with Podman Compose.
+## Status: prepared, NOT deployed
+
+This stack exists in the repo but is intentionally not brought up.
+The structural refactor (container prefixes, attachment to
+`homelab-core-edge`, removal of the per-stack Newt) was applied so
+the stack is drop-in deployable later, but the unblocking conditions
+below are still open.
+
+The concern is operational coupling: if the homelab or wider infra
+has to move, the primary source forge would move with it. That makes
+the Git host a bottleneck for recovering or rebuilding the rest of
+the infrastructure. GitHub does not have that problem because the
+repositories are reachable from outside the homelab regardless of
+local infra state.
+
+Current direction:
+
+- Keep GitHub as the practical primary home for repos that are tied
+  to infrastructure recovery, private work, or broad ecosystem
+  expectations.
+- Use Codeberg for new FOSS projects where the project is truly free
+  software and the community/non-profit forge alignment matters.
+- Do not self-host Forgejo as the canonical source of truth unless
+  there is a stronger reason than dissatisfaction with GitHub's UX
+  or ownership.
+
+If this stack is revisited later, solve these first:
+
+- Offsite backups and tested restores.
+- A bootstrap path that does not depend on the Forgejo instance itself.
+- Clear rules for which repos are canonical here versus mirrored elsewhere.
+- External SSH/HTTPS access that works during partial infra failure.
+
+For now, Codeberg for new FOSS plus GitHub for continuity is the
+simpler and lower-risk path.
+
+---
+
+This stack runs Forgejo and is wired to the central Pangolin Newt in
+`homelab/core/_edge` (when deployed).
 
 ## Why this shape
 
@@ -31,10 +70,11 @@ Sources:
 
    ```sh
    POSTGRES_PASSWORD=...
-   PANGOLIN_ENDPOINT=...
-   NEWT_ID=...
-   NEWT_SECRET=...
    ```
+
+   Pangolin / Newt credentials are NOT in this stack any more. The
+   single Newt in `homelab/core/_edge` handles tunnelling for the
+   whole core zone - bring it up first per `_edge/README.md`.
 
 3. Start the stack:
 
@@ -48,11 +88,15 @@ Sources:
    podman-compose up -d
    ```
 
-4. In Pangolin, create an HTTPS resource for:
+4. In Pangolin, under the existing `Homelab Core` Site (created by
+   `homelab/core/_edge`), add an HTTPS resource:
 
    ```text
-   git.kylehub.dev -> git-newt -> forgejo:3000
+   git.kylehub.dev -> git-forgejo:3000
    ```
+
+   `git-forgejo` is reachable because the compose attaches it to
+   the `homelab-core-edge` external network alongside `core-newt`.
 
 5. Open `https://git.kylehub.dev`. If the install page appears, keep the Postgres settings from `.env`, verify the public URL is `https://git.kylehub.dev/`, and submit the install form.
 

@@ -1,22 +1,36 @@
 # =====================================================================
-# homelab/core/dns — Self-hosted DNS stack
+# homelab/core/dns - Self-hosted DNS stack
 # =====================================================================
-#   unbound  : recursive resolver with DNSSEC + caching, internal-only
-#   adguard  : DNS filter, DoT/DoH endpoints, dashboard
-#   lego     : Let's Encrypt cert (Cloudflare DNS-01) for ${CERT_DOMAIN}
-#   newt     : Pangolin tunnel for the AdGuard dashboard
+#   dns-unbound : recursive resolver with DNSSEC + caching, internal-only
+#   dns-adguard : DNS filter, DoT/DoH endpoints, dashboard
+#   dns-lego    : Let's Encrypt cert (Cloudflare DNS-01) for ${CERT_DOMAIN}
+#
+# Edge attachment:
+#   dns-adguard joins homelab-core-edge so core-newt (in core/_edge)
+#   can reach the dashboard at dns-adguard:3000. Pangolin Resource:
+#     adguard.kylehub.dev -> dns-adguard:3000  (Zitadel IAP)
+#
+# Public host ports (DoT/DoH cannot tunnel through Pangolin and are
+# the only services in this zone that bind to the host's public
+# interface):
+#   853/tcp+udp - DoT
+#   443/tcp     - DoH
+# Family-device restriction is enforced inside AdGuard via "Allowed
+# clients" / DoT client identifiers, NOT at the network layer.
+#
+# Plain DNS (port 53) is intentionally NOT bound: this is a Hetzner
+# dedicated server, there is no LAN behind it. Mobile devices and
+# routers must use DoT or DoH.
+#
+# Loopback-only debug binding for the dashboard (127.0.0.1:3000).
+# Production access is via core-newt -> Pangolin.
 #
 # See SETUP.md for first-run instructions and the Cloudflare DNS records
-# you need to create manually.
+# you must create manually.
 # =====================================================================
 
 services:
-  # ===================================================================
-  # Unbound — recursive resolver
-  # Reachable internally as `unbound:53` over dns-net. No host port
-  # binding — it never sees public traffic directly.
-  # ===================================================================
-  unbound:
+  dns-unbound:
     image: docker.io/mvance/unbound:latest
     container_name: dns-unbound
     restart: unless-stopped
@@ -26,7 +40,10 @@ services:
       - ./config/unbound/forward-records.conf:/opt/unbound/etc/unbound/forward-records.conf:ro
       - dns-unbound-data:/opt/unbound/etc/unbound/var
     networks:
-      - dns-net
+      # Pinned address so AdGuard's upstream config stays stable across
+      # recreates (Podman 4.x reassigns IPs by container start order).
+      dns-net:
+        ipv4_address: 172.30.10.10
     healthcheck:
       test: ["CMD", "drill", "@127.0.0.1", "-p", "53", "nlnetlabs.nl"]
       interval: 30s
@@ -34,42 +51,29 @@ services:
       retries: 3
       start_period: 15s
 
-  # ===================================================================
-  # AdGuard Home — filter + DoT/DoH endpoints + dashboard
-  # ===================================================================
-  # Public host bindings: 853 (DoT), 443 (DoH).
-  # LAN-only host binding: ${LAN_IP}:53 (plain DNS for local router).
-  # Dashboard (3000) is reachable only through the NEWT tunnel.
-  # ===================================================================
-  adguard:
+  dns-adguard:
     image: docker.io/adguard/adguardhome:latest
     container_name: dns-adguard
     restart: unless-stopped
     depends_on:
-      unbound:
+      dns-unbound:
         condition: service_healthy
     networks:
       - dns-net
+      - homelab-core-edge
     ports:
-      # --- Public ---
-      # DNS over TLS — primary endpoint for mobile (Android Private DNS).
+      # Public DoT - primary endpoint for mobile (Android Private DNS).
       - "853:853/tcp"
       - "853:853/udp"
-      # DNS over HTTPS — alternative for clients that prefer DoH.
+      # Public DoH - alternative for clients that prefer DoH.
       - "443:443/tcp"
-      # --- LAN only ---
-      # Plain DNS, bound to the host's LAN IP only. Public 53 = open
-      # resolver = abuse vector, do NOT change this to 0.0.0.0.
-      - "${LAN_IP}:53:53/tcp"
-      - "${LAN_IP}:53:53/udp"
-      # --- Bridge only ---
-      # Dashboard. The host port mapping exists for local-host debugging
-      # only; production access is via newt → Pangolin.
-      - "3000:3000/tcp"
+      # Dashboard - loopback only for ad-hoc debug. Production access
+      # is via core-newt -> Pangolin (adguard.kylehub.dev).
+      - "127.0.0.1:3000:3000/tcp"
     volumes:
       - dns-adguard-work:/opt/adguardhome/work
       - dns-adguard-conf:/opt/adguardhome/conf
-      # Shared cert volume populated by lego, mounted read-only.
+      # Shared cert volume populated by dns-lego, mounted read-only.
       - dns-certs:/opt/adguardhome/conf/certs:ro
     environment:
       TZ: ${TZ:-Europe/Berlin}
@@ -80,21 +84,13 @@ services:
       retries: 3
       start_period: 30s
 
-  # ===================================================================
-  # lego — Let's Encrypt cert for ${CERT_DOMAIN} via Cloudflare DNS-01
-  # ===================================================================
-  # Issues on first run, then renews every 12h. After a successful
-  # issue/renew, the renew-hook copies the cert into the shared
-  # dns-certs volume and `podman restart`s dns-adguard so AdGuard
-  # picks up the new TLS material (it does not auto-reload from disk).
-  # ===================================================================
-  lego:
+  dns-lego:
     image: docker.io/goacme/lego:latest
     container_name: dns-lego
     restart: unless-stopped
     entrypoint: ["/bin/sh", "/scripts/run.sh"]
     environment:
-      CERT_DOMAIN: ${CERT_DOMAIN:-dns.kylehub.dev}
+      CERT_DOMAINS: ${CERT_DOMAINS:-dns.kylehub.dev}
       ACME_EMAIL: ${ACME_EMAIL}
       CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
     volumes:
@@ -102,41 +98,25 @@ services:
       - dns-certs:/certs
       - ./config/lego/run.sh:/scripts/run.sh:ro
       - ./config/lego/renew-hook.sh:/scripts/renew-hook.sh:ro
-      # Mounted so the renew-hook can `podman restart dns-adguard`.
-      # See SETUP.md for the rootful-podman socket path.
-      - /run/podman/podman.sock:/run/podman/podman.sock
+      # Podman API socket - mounted so the renew-hook can trigger
+      # `podman restart dns-adguard` after a successful renew. Path
+      # depends on runtime mode; set PODMAN_SOCKET in .env. Defaults
+      # to the rootless socket for the typical UID 1000 layout.
+      - ${PODMAN_SOCKET:-/run/user/1000/podman/podman.sock}:/run/podman/podman.sock
     networks:
       - dns-net
-
-  # ===================================================================
-  # NEWT — Pangolin tunnel for the AdGuard dashboard
-  # Pangolin routes adguard.kylehub.dev → newt:3000 → AdGuard.
-  # Same shape as the existing apps/adguard NEWT block.
-  # ===================================================================
-  newt:
-    image: docker.io/fosrl/newt:latest
-    container_name: dns-newt
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT}
-      NEWT_ID: ${NEWT_ID}
-      NEWT_SECRET: ${NEWT_SECRET}
-    networks:
-      - dns-net
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    sysctls:
-      - net.ipv4.ip_forward=1
-    depends_on:
-      adguard:
-        condition: service_healthy
 
 networks:
   dns-net:
     driver: bridge
+    # Pinned subnet so dns-unbound's static IP (172.30.10.10) is valid
+    # and stable. Default Podman IPAM picks 10.89.x/24 dynamically and
+    # would conflict with that.
+    ipam:
+      config:
+        - subnet: 172.30.10.0/24
+  homelab-core-edge:
+    external: true
 
 volumes:
   dns-unbound-data:

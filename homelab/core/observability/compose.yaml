@@ -1,47 +1,65 @@
+# =====================================================================
+# homelab/core/observability - Central log/metric aggregation
+# =====================================================================
+#   obs-otel       : OpenTelemetry collector (OTLP receiver)
+#   obs-loki       : log storage
+#   obs-prometheus : metrics storage
+#   obs-grafana    : UI / dashboards
+#
+# Edge attachment:
+#   obs-grafana joins homelab-core-edge so core-newt (in core/_edge)
+#   can reach the UI at obs-grafana:3000. Pangolin Resource:
+#     grafana.kylehub.dev -> obs-grafana:3000  (Zitadel IAP for Phase 1;
+#     swap to native Grafana OIDC against Zitadel later if desired)
+#
+# Data attachment:
+#   obs-otel joins homelab-core-data so on-host apps (langfuse-*,
+#   future homelab/apps/*) can ship telemetry directly to
+#   obs-otel:4317 (gRPC) or obs-otel:4318 (HTTP) without traversing
+#   the public network.
+#
+# obs-loki and obs-prometheus stay private to obs-net. obs-grafana
+# reaches them by service name on obs-net.
+#
+# Scope (see project memory project_observability_scope.md):
+#   This stack is the receiving end for app telemetry pushed via OTel
+#   from user-developed webapps. Infra-wide scraping (node-exporter,
+#   cAdvisor, postgres-exporter) is intentionally NOT included yet -
+#   add when the user has decided what infra signals matter.
+#
+# No host ports are exposed.
+# =====================================================================
+
 services:
-  # ============================================
-  # OpenTelemetry Collector
-  # Receives logs/metrics from all applications
-  # ============================================
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: otel-collector
+  obs-otel:
+    image: docker.io/otel/opentelemetry-collector-contrib:latest
+    container_name: obs-otel
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./config/otel-collector.yaml:/etc/otelcol/config.yaml:ro
-      - /var/lib/docker/containers:/var/log/containers:ro
-    ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
-      - "8889:8889"   # Prometheus metrics endpoint
     environment:
-      - ENVIRONMENT=${ENVIRONMENT:-production}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
     restart: unless-stopped
     networks:
-      - observability
+      - obs-net
+      - homelab-core-data
+    depends_on:
+      - obs-loki
 
-  # ============================================
-  # Loki - Log aggregation
-  # ============================================
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
+  obs-loki:
+    image: docker.io/grafana/loki:latest
+    container_name: obs-loki
     command: -config.file=/etc/loki/config.yaml
     volumes:
       - ./config/loki.yaml:/etc/loki/config.yaml:ro
-      - loki_data:/loki
-    ports:
-      - "3100:3100"
+      - obs-loki-data:/loki
     restart: unless-stopped
     networks:
-      - observability
+      - obs-net
 
-  # ============================================
-  # Prometheus - Metrics aggregation
-  # ============================================
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
+  obs-prometheus:
+    image: docker.io/prom/prometheus:latest
+    container_name: obs-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -49,52 +67,45 @@ services:
       - '--web.enable-lifecycle'
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
+      - obs-prometheus-data:/prometheus
     restart: unless-stopped
     networks:
-      - observability
+      - obs-net
 
-  # ============================================
-  # Grafana - Dashboards & Visualization
-  # ============================================
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
+  obs-grafana:
+    image: docker.io/grafana/grafana:latest
+    container_name: obs-grafana
+    env_file:
+      - .env
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_DEFAULT_THEME: dark
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-https://grafana.kylehub.dev}
     volumes:
-      - grafana_data:/var/lib/grafana
+      - obs-grafana-data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
-      - GF_USERS_DEFAULT_THEME=dark
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
     restart: unless-stopped
     networks:
-      - observability
+      - obs-net
+      - homelab-core-edge
     depends_on:
-      - loki
-      - prometheus
-
-  # Dedicated Newt agent for Observability stack
-  newt-observability:
-    image: pangolin/agent:latest
-    restart: always
-    environment:
-      - PANGOLIN_SERVER=https://pangolin.kylehub.dev
-      # - PANGOLIN_TOKEN=${OBSERVABILITY_NEWT_TOKEN}
-    networks:
-      - observability
+      - obs-loki
+      - obs-prometheus
 
 networks:
-  observability:
+  obs-net:
     driver: bridge
+  homelab-core-edge:
+    external: true
+  homelab-core-data:
+    external: true
 
 volumes:
-  loki_data:
-  prometheus_data:
-  grafana_data:
+  obs-loki-data:
+    driver: local
+  obs-prometheus-data:
+    driver: local
+  obs-grafana-data:
+    driver: local

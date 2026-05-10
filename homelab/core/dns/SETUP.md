@@ -1,119 +1,144 @@
-# DNS Stack — Unbound + AdGuard Home + Lego + Newt
+# DNS Stack - Unbound + AdGuard Home + Lego
 
-A self-hosted private DNS resolver for the homelab. Replaces the older
-`apps/adguard/` stack with a recursive (no third-party upstreams)
-DNSSEC-validating resolver behind AdGuard Home for filtering and
-DoT/DoH endpoints.
+A self-hosted private DNS resolver. Replaces the older `apps/adguard/`
+stack with a recursive (no third-party upstreams) DNSSEC-validating
+resolver behind AdGuard Home for filtering and DoT/DoH endpoints.
+
+The Pangolin Newt for this zone lives in `homelab/core/_edge` and is
+shared by all `core/*` stacks. Bring `_edge` up first (see
+`_edge/README.md`).
 
 ## Architecture
 
 ```
                            Internet
-                              │
-             ┌────────────────┼─────────────────┐
-             │                │                 │
-   Mobile (Android Private    LAN router        Pangolin/Traefik
-   DNS: dns.kylehub.dev)     (192.168.x.y:53)   (dashboard only)
-             │                │                 │
-             ▼                ▼                 ▼
-   ┌──────────────────────────────────────────────────────┐
-   │       Root Server (homelab/core/dns stack)           │
-   │                                                      │
-   │   host:853  (DoT, public)                            │
-   │   host:443  (DoH, public)                            │
-   │   ${LAN_IP}:53  (plain DNS, LAN-only)                │
-   │   host:3000 ── NEWT tunnel ── Pangolin               │
-   │                      │                               │
-   │   ┌──────────────────┴────────────────┐              │
-   │   │ adguard (filter + DoT/DoH server) │              │
-   │   │   upstream → unbound:53            │              │
-   │   └──────────────┬─────────────────────┘              │
-   │                  │ dns-net                            │
-   │   ┌──────────────▼─────────────────┐                 │
-   │   │ unbound (recursive + DNSSEC)   │                 │
-   │   │   talks to root DNS directly    │                 │
-   │   └────────────────────────────────┘                 │
-   │                                                      │
-   │   ┌────────────────────────────────┐                 │
-   │   │ lego (Cloudflare DNS-01 ACME)  │                 │
-   │   │   renews dns.kylehub.dev cert  │                 │
-   │   │   → restarts dns-adguard       │                 │
-   │   └────────────────────────────────┘                 │
-   │                                                      │
-   │   ┌────────────────────────────────┐                 │
-   │   │ newt (tunnel for dashboard)    │                 │
-   │   └────────────────────────────────┘                 │
-   └──────────────────────────────────────────────────────┘
+                              |
+             +----------------+-----------------+
+             |                                  |
+   Mobile (Android Private DNS:        Pangolin / Traefik
+   dns.kylehub.dev, port 853)          (dashboard only)
+             |                                  |
+             v                                  v
+   +-----------------------------------------------------+
+   |        Hetzner dedicated server (this host)         |
+   |                                                     |
+   |   host:853  (DoT, public, IAP via DoT client-id)    |
+   |   host:443  (DoH, public)                           |
+   |   host:127.0.0.1:3000  (dashboard, debug only)      |
+   |                                                     |
+   |   +---------- dns-net ------------------------------+
+   |   |                                                 |
+   |   |  dns-adguard (filter + DoT/DoH server)          |
+   |   |    upstream -> dns-unbound:53                   |
+   |   |  also on homelab-core-edge for core-newt        |
+   |   |                                                 |
+   |   |  dns-unbound (recursive + DNSSEC)               |
+   |   |    talks to root DNS directly                   |
+   |   |                                                 |
+   |   |  dns-lego (Cloudflare DNS-01 ACME)              |
+   |   |    renews dns.kylehub.dev cert                  |
+   |   |    -> restarts dns-adguard via podman socket    |
+   |   +-------------------------------------------------+
+   |                                                     |
+   |   homelab-core-edge ----> core-newt (in core/_edge) |
+   +-----------------------------------------------------+
 ```
+
+Plain DNS (port 53) is intentionally NOT bound on this host: this is
+a Hetzner dedicated server with no LAN behind it. Clients (your phone,
+your family's phones) use DoT or DoH; family-device restriction is
+enforced inside AdGuard via "Allowed clients" / DoT client identifiers,
+not at the network layer.
 
 ## Prerequisites
 
-Before bringing the stack up:
+Before bringing this stack up:
 
 1. **Cloudflare DNS records** (in the `kylehub.dev` zone):
 
-   | Record                | Type | Value                            | Proxy   |
-   |-----------------------|------|----------------------------------|---------|
-   | `dns.kylehub.dev`     | A    | `<this server's public IPv4>`    | **OFF** |
-   | `dns.kylehub.dev`     | AAAA | `<this server's public IPv6>`    | **OFF** |
-   | `adguard.kylehub.dev` | A    | `<gateway-vps Pangolin public IP>` | ON    |
+   | Record                | Type | Value                              | Proxy   |
+   |-----------------------|------|------------------------------------|---------|
+   | `dns.kylehub.dev`     | A    | this server's public IPv4          | **OFF** |
+   | `dns.kylehub.dev`     | AAAA | this server's public IPv6 (if any) | **OFF** |
+   | `adguard.kylehub.dev` | A    | gateway-vps Pangolin public IP     | ON      |
 
-   `dns.kylehub.dev` MUST be unproxied — Cloudflare cannot proxy
+   `dns.kylehub.dev` MUST be unproxied - Cloudflare cannot proxy
    port 853 (DoT). The dashboard hostname goes through Pangolin so it
    stays proxied as usual.
 
 2. **Cloudflare API token** with `Zone:DNS:Edit` on the `kylehub.dev`
-   zone. The same token gateway-vps' Traefik uses (`CF_DNS_API_TOKEN`
-   in `gateway-vps/.env`) is fine — it's read-only on everything else.
+   zone. The same token gateway-vps' Traefik uses
+   (`CF_DNS_API_TOKEN` in `gateway-vps/.env`) is fine.
 
-3. **Pangolin resource** for the dashboard. In Pangolin admin:
-   - New resource → `adguard.kylehub.dev` → upstream `http://newt:3000`
-   - Auth: OIDC via Zitadel, same pattern as the old `apps/adguard`
-   - Generate a NEWT_ID + NEWT_SECRET pair for this stack
+3. **`homelab/core/_edge` is up.** The shared external network
+   `homelab-core-edge` must already exist, and `core-newt` must be
+   connected to Pangolin. See `core/_edge/README.md`.
 
-4. **Privileged ports on rootless Podman** (if applicable). Ports 53,
-   443, 853 are below 1024. Pick one:
+4. **Pangolin Resource** for the dashboard, under the `Homelab Core`
+   Site (created by `_edge`):
+   - New Resource -> `adguard.kylehub.dev` -> upstream
+     `http://dns-adguard:3000`
+   - Auth: Zitadel IAP (Phase-1 posture).
+   - No per-stack NEWT_ID/SECRET to provision - the central
+     `core-newt` already owns the Site.
 
-   - **Run rootful Podman** (simplest): `sudo podman-compose up -d`.
-   - **Allow unprivileged ports** on the host:
-     ```bash
-     echo "net.ipv4.ip_unprivileged_port_start=53" | \
-       sudo tee /etc/sysctl.d/99-dns-ports.conf
-     sudo sysctl --system
-     ```
+5. **Rootless Podman host setup** (one-time, persistent). Two
+   sysctl/systemd nudges so the rootless runtime can bind privileged
+   ports and the renew-hook can reach the Podman API after the cert
+   rotates:
 
-5. **Find the host's LAN IP** for the `LAN_IP` env variable:
    ```bash
-   ip -4 addr show | awk '/inet 192\.168/{print $2}' | cut -d/ -f1
+   # 5a. Allow unprivileged user processes to bind ports >= 443.
+   echo "net.ipv4.ip_unprivileged_port_start=443" | \
+     sudo tee /etc/sysctl.d/99-rootless-ports.conf
+   sudo sysctl --system
+
+   # 5b. Enable the rootless Podman API socket. lego's renew-hook
+   #     POSTs to it to restart dns-adguard with the fresh cert.
+   systemctl --user enable --now podman.socket
+
+   # 5c. Keep the user services alive across logout/reboot so the
+   #     socket is still there when lego renews 60 days from now.
+   sudo loginctl enable-linger "$USER"
    ```
+
+   Verify the socket exists:
+   ```bash
+   ls -l "/run/user/$(id -u)/podman/podman.sock"
+   ```
+
+   Set `PODMAN_SOCKET` in `.env` to match your UID (default in
+   `.env.example` is the typical `/run/user/1000/podman/podman.sock`).
+
+   If you instead need to run rootful (privileged podman, system-wide
+   socket at `/run/podman/podman.sock`): set `PODMAN_SOCKET` to that
+   path and prepend `sudo` to the `podman-compose` calls below.
 
 ## Deployment
 
-### 1. Stop the old AdGuard stack
+### 1. Stop the old AdGuard stack (if still running)
 
 ```bash
-cd /home/kyle/KyleHub/infrastructure/homelab/apps/adguard
+cd /home/kyle/infrastructure/homelab/apps/adguard
 podman-compose down
 ```
 
 (The old `adguard-conf` / `adguard-work` volumes stay intact in case
-we need to roll back. They get cleaned up after the new stack is
-verified — see "Cleanup" below.)
+of rollback. Clean up after the new stack is verified - see
+"Cleanup" below.)
 
 ### 2. Configure environment
 
 ```bash
-cd /home/kyle/KyleHub/infrastructure/homelab/core/dns
+cd /home/kyle/infrastructure/homelab/core/dns
 cp .env.example .env
 nano .env
 ```
 
 Required values:
-- `PANGOLIN_ENDPOINT`, `NEWT_ID`, `NEWT_SECRET`  — from Pangolin
-- `ACME_EMAIL`                                   — your address
-- `CF_DNS_API_TOKEN`                             — Cloudflare token
-- `LAN_IP`                                       — host LAN IPv4
-- `CERT_DOMAIN`                                  — defaults to `dns.kylehub.dev`
+- `ACME_EMAIL`        - your address
+- `CF_DNS_API_TOKEN`  - Cloudflare token
+- `CERT_DOMAIN`       - defaults to `dns.kylehub.dev`
 
 ### 3. Bring up the stack
 
@@ -122,14 +147,13 @@ podman-compose up -d
 podman-compose ps
 ```
 
-Expected: 4 containers running (`dns-unbound`, `dns-adguard`,
-`dns-lego`, `dns-newt`). `dns-unbound` should report healthy within
-~15s.
+Expected: 3 containers running (`dns-unbound`, `dns-adguard`,
+`dns-lego`). `dns-unbound` should report healthy within ~15s.
 
 ### 4. Watch lego issue the cert
 
 ```bash
-podman-compose logs -f lego
+podman-compose logs -f dns-lego
 ```
 
 You should see, within a minute or two:
@@ -149,71 +173,80 @@ podman exec dns-adguard ls -la /opt/adguardhome/conf/certs/dns.kylehub.dev/
 
 ### 5. AdGuard Home initial setup
 
-Open `https://adguard.kylehub.dev` (via Pangolin) — Zitadel SSO →
+Open `https://adguard.kylehub.dev` (via Pangolin) -> Zitadel SSO ->
 AdGuard setup wizard. (For the very first wizard step you may need to
-hit `http://<server-lan-ip>:3000` directly until the upstream/cert is
-configured; revert to Pangolin once the dashboard is set up.)
+hit `http://127.0.0.1:3000` directly on the host until the upstream
+and cert are configured; revert to Pangolin once the dashboard is
+set up.)
 
 In the wizard:
 
-1. **Admin web interface**: `0.0.0.0:3000` (default)
-2. **DNS server**: `0.0.0.0:53`
+1. **Admin web interface**: `0.0.0.0:3000` (default).
+2. **DNS server**: `0.0.0.0:53`.
 3. **Admin user / password**: store in your password manager.
 
 After the wizard finishes and you log in:
 
-#### a. Upstream DNS → Unbound only
+#### a. Upstream DNS -> Unbound only
 
-`Settings → DNS settings → Upstream DNS servers`:
+`Settings -> DNS settings -> Upstream DNS servers`:
 
 ```
-unbound:53
+dns-unbound:53
 ```
 
-That's it — no Cloudflare, Google, or Quad9 fallback. Adding fallbacks
-re-introduces the third-party leak we are trying to avoid.
+That's it - no Cloudflare, Google, or Quad9 fallback. Adding
+fallbacks re-introduces the third-party leak we are trying to avoid.
 
 `Bootstrap DNS servers`: `1.1.1.1` and `8.8.8.8` are fine here. They
 are used **only** to resolve the names of upstream DoT/DoH servers,
-and since our upstream is the IP-addressable name `unbound`, this list
-isn't used in practice.
+and since our upstream is the IP-addressable name `dns-unbound`, this
+list isn't used in practice.
 
-Click "Test upstreams" — should return OK.
+Click "Test upstreams" - should return OK.
 
-#### b. Encryption settings → DoT + DoH
+#### b. Encryption settings -> DoT + DoH
 
-`Settings → Encryption settings`:
+`Settings -> Encryption settings`:
 
-| Field                                | Value                                                |
-|--------------------------------------|------------------------------------------------------|
-| Enable encryption                    | ✅                                                    |
-| Server name                          | `dns.kylehub.dev`                                    |
-| Redirect to HTTPS                    | ✅                                                    |
-| HTTPS port                           | `443`                                                |
-| TLS port (DoT)                       | `853`                                                |
-| Certificates → Set a certificate path| ✅                                                    |
+| Field                                | Value                                                  |
+|--------------------------------------|--------------------------------------------------------|
+| Enable encryption                    | yes                                                    |
+| Server name                          | `dns.kylehub.dev`                                      |
+| Redirect to HTTPS                    | yes                                                    |
+| HTTPS port                           | `443`                                                  |
+| TLS port (DoT)                       | `853`                                                  |
+| Certificates -> Set certificate path | yes                                                    |
 | Path to certificate file             | `/opt/adguardhome/conf/certs/dns.kylehub.dev/cert.pem` |
-| Set a private key path               | ✅                                                    |
+| Set a private key path               | yes                                                    |
 | Path to private key                  | `/opt/adguardhome/conf/certs/dns.kylehub.dev/key.pem`  |
 
-Click "Save". AdGuard validates the cert chain and starts listening on
-443/853.
+Click "Save". AdGuard validates the cert chain and starts listening
+on 443/853.
 
-#### c. Filters → blocklists
+#### c. Filters -> blocklists
 
-`Filters → DNS blocklists`. Recommended starter set:
+`Filters -> DNS blocklists`. Recommended starter set:
 
 - AdGuard DNS filter
 - AdAway Default Blocklist
 - OISD (Big or Small)
 
-#### d. Optional: client identifiers
+#### d. Family-device restriction (DoT client identifiers)
 
-`Settings → Client settings → Persistent clients`:
+Because plain DNS (port 53) is not bound on this Hetzner host, the
+only way clients reach AdGuard is via DoT (`853`) or DoH (`443`).
+Restrict to your family devices using DoT client identifiers:
 
-For DoT-style clients you can set per-client rules using AdGuard's
-"Client tag" mechanism — useful if you want different blocklists for
-your phone vs. router. Not required for first deploy.
+- On Android Private DNS, set the provider to e.g.
+  `phone-kyle.dns.kylehub.dev` instead of plain `dns.kylehub.dev`.
+- In AdGuard `Settings -> Client settings -> Persistent clients`,
+  add the client identifier (e.g. `phone-kyle`) and set per-client
+  rules.
+- Under `Settings -> DNS settings -> Allowed clients`, list only
+  the identifiers you want to permit.
+
+This is a setup task in the AdGuard UI, not a compose change.
 
 ## Verification
 
@@ -223,10 +256,11 @@ podman exec dns-unbound drill @127.0.0.1 -p 53 +dnssec example.com | grep -E "rc
 # Expect: rcode: NOERROR; flags include "ad" (DNSSEC validated)
 ```
 
-### Internal chain (AdGuard → Unbound)
+### Internal chain (AdGuard -> Unbound)
 ```bash
-# Anywhere on the host
-dig @${LAN_IP} example.com +short
+# From inside the dns-net network
+podman exec dns-adguard wget -qO- http://dns-unbound:53 || \
+  podman exec dns-adguard nslookup example.com 127.0.0.1
 # Expect: a normal IP address answer
 ```
 
@@ -247,9 +281,10 @@ curl -v -H 'accept: application/dns-message' \
 ```
 
 ### Mobile end-to-end
-Android → Settings → Network & Internet → Private DNS → Provider name
-→ `dns.kylehub.dev` → Save. Then browse for a minute and check
-AdGuard `Top clients` — your phone should appear.
+Android -> Settings -> Network & Internet -> Private DNS -> Provider
+name -> `dns.kylehub.dev` (or `phone-yourname.dns.kylehub.dev` if
+using client identifiers) -> Save. Browse for a minute and check
+AdGuard `Top clients` - your phone should appear.
 
 ### Cert renewal smoke test
 ```bash
@@ -260,15 +295,15 @@ podman exec dns-lego openssl x509 -in /data/certificates/dns.kylehub.dev.crt \
 ```
 
 ### Dashboard via Pangolin
-`https://adguard.kylehub.dev` → Zitadel → AdGuard UI loads cleanly,
-TLS cert is the Pangolin/Traefik cert (not the dns.kylehub.dev one —
+`https://adguard.kylehub.dev` -> Zitadel -> AdGuard UI loads cleanly,
+TLS cert is the Pangolin/Traefik cert (not the dns.kylehub.dev one -
 those are two different chains).
 
 ## Cleanup (after ~2 weeks of stable operation)
 
 ```bash
 # Remove the old app stack
-rm -rf /home/kyle/KyleHub/infrastructure/homelab/apps/adguard
+rm -rf /home/kyle/infrastructure/homelab/apps/adguard
 
 # Remove the old volumes
 podman volume rm adguard-work adguard-conf
@@ -279,56 +314,45 @@ podman volume rm adguard-work adguard-conf
 ### `dns-lego` keeps failing with `dns: NS ns.example.com.: dns: lookup ...`
 
 Cloudflare API token is missing or lacks `Zone:DNS:Edit`. Check
-`podman-compose logs lego` for the exact error and re-issue the
-token via Cloudflare → My Profile → API Tokens.
-
-### `dns-adguard` won't start, port `${LAN_IP}:53` already in use
-
-Most distros run `systemd-resolved` on 127.0.0.53 and sometimes also
-on the LAN IP. Check with `sudo lsof -i :53` and disable the
-conflicting service:
-```bash
-sudo systemctl disable --now systemd-resolved
-sudo rm /etc/resolv.conf
-echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf
-```
-
-### Mobile's "Private DNS" says "Couldn't connect"
-
-1. `dns.kylehub.dev` Cloudflare proxy is ON — turn it OFF.
-2. The cert hasn't been issued yet — `podman-compose logs lego`.
-3. Your ISP blocks outbound 853 — try DoH on 443 instead, or use a
-   non-residential connection.
+`podman-compose logs dns-lego` for the exact error and re-issue the
+token via Cloudflare -> My Profile -> API Tokens.
 
 ### Cert renewed but AdGuard still serves the old one
 
 The renew-hook didn't restart AdGuard. Check
-`podman-compose logs lego` for the hook output. Manual fix:
+`podman-compose logs dns-lego` for the hook output. Manual fix:
 ```bash
 podman restart dns-adguard
 ```
+
+### Mobile's "Private DNS" says "Couldn't connect"
+
+1. `dns.kylehub.dev` Cloudflare proxy is ON - turn it OFF.
+2. The cert hasn't been issued yet - `podman-compose logs dns-lego`.
+3. Your ISP blocks outbound 853 - try DoH on 443 instead, or use a
+   non-residential connection.
 
 ### Need to roll back to the old `apps/adguard` stack
 
 The old volumes (`adguard-conf`, `adguard-work`) are untouched until
 you run "Cleanup". To roll back:
 ```bash
-cd homelab/core/dns && podman-compose down
-cd homelab/apps/adguard && podman-compose up -d
+cd homelab/core/dns       && podman-compose down
+cd homelab/apps/adguard   && podman-compose up -d
 ```
 
 ## Caveats
 
-- **Image choice — `mvance/unbound` vs `nlnetlabs/unbound`:** The plan
-  originally specified the official NLnet Labs image. We use
-  `mvance/unbound:latest` because its config layout (`/opt/unbound/etc/
-  unbound/`) is the de-facto standard for compose-based homelab
-  setups, has stable paths, and ships `drill` for the healthcheck.
-  Switching is a one-line change later — `unbound.conf` is portable.
+- **Image choice - `mvance/unbound` vs `nlnetlabs/unbound`:** we use
+  `mvance/unbound:latest` because its config layout
+  (`/opt/unbound/etc/unbound/`) is the de-facto standard for
+  compose-based homelab setups, has stable paths, and ships `drill`
+  for the healthcheck. Switching is a one-line change later -
+  `unbound.conf` is portable.
 
 - **IPv6:** the compose binds v6 inside the bridge but the host's v6
-  reachability is up to your ISP/server. Add an `AAAA` record for
-  `dns.kylehub.dev` if the box has public v6 — cellular clients
+  reachability is up to the data centre. Add an `AAAA` record for
+  `dns.kylehub.dev` if the box has public v6 - cellular clients
   often arrive over v6 and will fall back to v4 if AAAA isn't present.
 
 - **Backups:** the named volumes worth backing up are
@@ -339,13 +363,5 @@ cd homelab/apps/adguard && podman-compose up -d
 
 - **Cert volume permissions:** lego writes mode 644 inside `/certs/`.
   AdGuard mounts it read-only. If you ever see "permission denied"
-  reading the cert, exec into adguard and check ownership — it should
-  not require root to read.
-
-- **ISP blocking:** some German residential ISPs block outbound 53/853.
-  Not relevant on the chosen separate-root-server topology, but called
-  out for awareness if you ever move the stack home.
-
-- **No remote routers in scope:** if you later need to point a remote
-  router (e.g. parents' house) at this resolver, use DoT on 853, not
-  plain 53. Plain 53 is bound to LAN only by design.
+  reading the cert, exec into adguard and check ownership - it
+  should not require root to read.

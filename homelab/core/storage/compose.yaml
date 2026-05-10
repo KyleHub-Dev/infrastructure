@@ -1,37 +1,43 @@
 # =====================================================================
-# homelab/core/storage — RustFS S3-compatible object storage
+# homelab/core/storage - RustFS S3-compatible object storage
 # =====================================================================
-#   rustfs-perms : one-shot ownership fix for the host bind mount
-#   rustfs       : S3-compatible object storage API + admin console
-#   newt         : Pangolin tunnel for HTTPS console access
+#   storage-rustfs : S3-compatible object storage API + admin console
 #
-# Pangolin route target:
-#   console: storage.kylehub.dev -> storage-newt -> rustfs:9001
+# Host prep (one-time, before first `podman-compose up`):
+#   The data directory must be owned by UID 10001 (RustFS' runtime UID
+#   inside the container). Pick the path that matches your runtime:
+#     Rootful Podman  :  sudo chown -R 10001:10001 /srv/rustfs/data
+#     Rootless Podman :  sudo chown $(id -u):$(id -g) /srv/rustfs/data
+#                        podman unshare chown -R 10001:10001 /srv/rustfs/data
+#   See SETUP.md for details.
 #
-# Optional S3 route target, only if external S3 access is required:
-#   s3.kylehub.dev -> storage-newt -> rustfs:9000
+# Edge attachment:
+#   storage-rustfs joins homelab-core-edge so core-newt (in core/_edge)
+#   can reach the console at storage-rustfs:9001. Pangolin Resource:
+#     storage.kylehub.dev -> storage-rustfs:9001  (Zitadel IAP)
 #
-# No host ports are exposed by default. Internal clients can use:
-#   http://rustfs:9000
+# Data attachment:
+#   storage-rustfs ALSO joins homelab-core-data so on-host clients
+#   (langfuse-web, langfuse-worker, future apps) can reach the S3 API
+#   directly at storage-rustfs:9000 without traversing the Pangolin
+#   tunnel. core-newt is deliberately NOT on homelab-core-data, so the
+#   S3 API is not accidentally re-exposed via Pangolin.
+#
+# Optional external S3 access (s3.kylehub.dev) is opt-in: create a
+# Pangolin Resource pointing at storage-rustfs:9000 with NO IAP. Do
+# NOT enable IAP on the S3 endpoint - normal S3 clients use AWS-Sig
+# request signing and an auth gateway will break the flow.
+#
+# No host ports are exposed.
 # =====================================================================
 
 services:
-  rustfs-perms:
-    image: docker.io/alpine:3.20
-    container_name: storage-rustfs-perms
-    user: root
-    command: chown -R 10001:10001 /data
-    volumes:
-      - ${RUSTFS_DATA_DIR:-/srv/rustfs/data}:/data:Z
-    restart: "no"
-
-  rustfs:
+  storage-rustfs:
+    # RustFS does not yet ship a stable major.minor scheme; track
+    # :latest and pin once releases stabilise.
     image: docker.io/rustfs/rustfs:latest
     container_name: storage-rustfs
     restart: unless-stopped
-    depends_on:
-      rustfs-perms:
-        condition: service_completed_successfully
     env_file:
       - .env
     environment:
@@ -46,7 +52,8 @@ services:
     volumes:
       - ${RUSTFS_DATA_DIR:-/srv/rustfs/data}:/data:Z
     networks:
-      - storage-net
+      - homelab-core-edge
+      - homelab-core-data
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -56,22 +63,8 @@ services:
       retries: 3
       start_period: 40s
 
-  newt:
-    image: docker.io/fosrl/newt:latest
-    container_name: storage-newt
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT}
-      NEWT_ID: ${NEWT_ID}
-      NEWT_SECRET: ${NEWT_SECRET}
-    networks:
-      - storage-net
-    depends_on:
-      rustfs:
-        condition: service_healthy
-
 networks:
-  storage-net:
-    driver: bridge
+  homelab-core-edge:
+    external: true
+  homelab-core-data:
+    external: true

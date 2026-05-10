@@ -1,0 +1,39 @@
+# =====================================================================
+# homelab/core/_edge - Shared Pangolin/Newt agent for the core zone
+# =====================================================================
+#   core-newt : the ONLY Newt agent for all homelab/core/* stacks.
+#               Registered in Pangolin as the Site "Homelab Core".
+#               Reaches each stack's user-facing front-end through
+#               the external network homelab-core-edge.
+#
+# Networks (created MANUALLY before bringing any stack up):
+#   homelab-core-edge   - user-facing traffic, core-newt <-> front-end UIs
+#   homelab-core-data   - internal service-to-service backbone
+#                         (S3, telemetry); core-newt is NOT on it
+#
+# See README.md for the full network model, the manual create commands,
+# and the bring-up order across the core zone.
+# =====================================================================
+
+services:
+  core-newt:
+    image: docker.io/fosrl/newt:latest
+    container_name: core-newt
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT}
+      NEWT_ID: ${NEWT_ID}
+      NEWT_SECRET: ${NEWT_SECRET}
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      - homelab-core-edge
+
+networks:
+  homelab-core-edge:
+    external: true

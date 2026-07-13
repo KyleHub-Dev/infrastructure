@@ -76,7 +76,23 @@ certbot certonly --standalone \
     -d "$WINGS_DOMAIN"
 
 # 5. Enable certbot auto-renewal timer
-systemctl enable --now certbot-renew.timer
+# The unit is named certbot.timer on Debian/Ubuntu and certbot-renew.timer on Fedora/RHEL.
+for timer in certbot.timer certbot-renew.timer; do
+    if systemctl list-unit-files "$timer" &> /dev/null; then
+        systemctl enable --now "$timer" && break
+    fi
+done
+
+# 5b. Restart Wings whenever a cert is renewed.
+# Wings reads its TLS cert once at startup and never hot-reloads it, so without
+# this hook it keeps serving the old cert until it expires.
+mkdir -p /etc/letsencrypt/renewal-hooks/deploy
+cat <<'EOF' > /etc/letsencrypt/renewal-hooks/deploy/restart-wings.sh
+#!/bin/bash
+# Wings loads its TLS cert at startup and never hot-reloads it.
+systemctl restart wings
+EOF
+chmod +x /etc/letsencrypt/renewal-hooks/deploy/restart-wings.sh
 
 # 6. Create Systemd Service
 echo "Creating systemd service..."
